@@ -1,3 +1,4 @@
+// services/employee.service.ts
 import {
   PutCommand,
   ScanCommand,
@@ -21,7 +22,6 @@ export async function createEmployee(employee: Employee) {
       Item: employee,
     })
   );
-
   return employee;
 }
 
@@ -34,7 +34,6 @@ export async function getEmployees() {
       TableName: TABLE,
     })
   );
-
   return result.Items ?? [];
 }
 
@@ -45,12 +44,9 @@ export async function getEmployeeById(employeeId: string) {
   const result = await db.send(
     new GetCommand({
       TableName: TABLE,
-      Key: {
-        employeeId,
-      },
+      Key: { employeeId },
     })
   );
-
   return result.Item;
 }
 
@@ -64,25 +60,22 @@ export async function updateEmployee(
   await db.send(
     new UpdateCommand({
       TableName: TABLE,
-      Key: {
-        employeeId,
-      },
+      Key: { employeeId },
       UpdateExpression: `
-        SET
-          firstName = :firstName,
-          lastName = :lastName,
-          email = :email,
-          mobile = :mobile,
-          designation = :designation,
-          department = :department,
-          #role = :role,
-          #status = :status,
-          joiningDate = :joiningDate,
-          address = :address,
-          city = :city,
-          #state = :state,
-          pincode = :pincode,
-          updatedAt = :updatedAt
+        SET firstName = :firstName,
+            lastName = :lastName,
+            email = :email,
+            mobile = :mobile,
+            designation = :designation,
+            department = :department,
+            #role = :role,
+            #status = :status,
+            joiningDate = :joiningDate,
+            address = :address,
+            city = :city,
+            #state = :state,
+            pincode = :pincode,
+            updatedAt = :updatedAt
       `,
       ExpressionAttributeNames: {
         "#role": "role",
@@ -107,7 +100,6 @@ export async function updateEmployee(
       },
     })
   );
-
   return true;
 }
 
@@ -118,11 +110,8 @@ export async function deleteEmployee(employeeId: string) {
   await db.send(
     new DeleteCommand({
       TableName: TABLE,
-      Key: {
-        employeeId,
-      },
+      Key: { employeeId },
     })
   );
-
   return true;
 }

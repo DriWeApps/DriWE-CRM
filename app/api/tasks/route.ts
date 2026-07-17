@@ -5,10 +5,36 @@ import {
   createTask,
   getTasks,
 } from "@/services/task.service";
+import { getUserFromRequest, isAdminUser } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const tasks = await getTasks();
+    const user = await getUserFromRequest(req);
+    console.log("Logged in user:", user);
+    let tasks = await getTasks();
+    console.log("Task assignedTo values:", tasks.map((t: any) => ({
+  title: t.title,
+  assignedTo: t.assignedTo,
+})));
+
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Unauthorized",
+        },
+        { status: 401 }
+      );
+    }
+
+    // let tasks = await getTasks();
+
+    // Employees should only see their own tasks
+   if (!isAdminUser(user)) {
+  tasks = tasks.filter(
+    (task: any) => task.assignedToEmail === user.email
+  );
+}
 
     return NextResponse.json(tasks);
   } catch (error) {
@@ -19,15 +45,27 @@ export async function GET() {
         success: false,
         message: "Failed to fetch tasks",
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     );
   }
 }
 
 export async function POST(req: Request) {
   try {
+    const user = await getUserFromRequest(req);
+
+    if (!user || !isAdminUser(user)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Only admins can create tasks",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
     const body = await req.json();
 
     const task = {
@@ -39,8 +77,9 @@ export async function POST(req: Request) {
       companyId: body.companyId,
       companyName: body.companyName,
 
-      assignedTo: body.assignedTo,
-      assignedToName: body.assignedToName,
+      assignedTo: body.assignedTo,           // employeeId
+  assignedToName: body.assignedToName,   // John Doe
+  assignedToEmail: body.assignedToEmail,
 
       assignedBy: body.assignedBy,
       assignedByName: body.assignedByName,

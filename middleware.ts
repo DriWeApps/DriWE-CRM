@@ -1,30 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verifyToken } from "@/lib/auth";
 
-const protectedRoutes = [
-  "/dashboard",
-  "/employees",
-  "/companies",
-  "/tasks",
-  "/meetings",
-  "/followups",
-  "/reports",
-  "/settings",
+const publicPaths = [
+  "/login",
+  "/api/auth",
+  "/_next",
+  "/favicon.ico",
 ];
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const isProtected = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
+  const isPublicPath = publicPaths.some((publicPath) =>
+    pathname === publicPath || pathname.startsWith(publicPath)
   );
 
-  if (!isProtected) {
+  if (isPublicPath) {
     return NextResponse.next();
   }
 
-  const token = request.cookies.get("token");
+  const token = request.cookies.get("token")?.value;
 
   if (!token) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  const payload = await verifyToken(token);
+
+  if (!payload) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
@@ -32,14 +35,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/dashboard/:path*",
-    "/employees/:path*",
-    "/companies/:path*",
-    "/tasks/:path*",
-    "/meetings/:path*",
-    "/followups/:path*",
-    "/reports/:path*",
-    "/settings/:path*",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

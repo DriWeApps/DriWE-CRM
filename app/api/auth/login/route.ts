@@ -36,16 +36,29 @@ export async function POST(req: Request) {
       );
     }
 
-    const token = await createToken({
-      userId: user.userId,
-      email: user.email,
-      role: user.role,
-    });
+//    const token = await createToken({
+//   userId: user.userId,
+//   employeeId: user.employeeId,
+//   email: user.email,
+//   role: user.role,
+// });
+
+console.log("User from DB:", user);
+
+const token = await createToken({
+  userId: user.userId,
+  employeeId: user.employeeId,
+  email: user.email,
+  role: user.role,
+});
+
+console.log("Created token");
 
     const response = NextResponse.json({
       success: true,
       user: {
         userId: user.userId,
+        employeeId: user.employeeId,
         name: user.name,
         email: user.email,
         role: user.role,
@@ -70,3 +83,4 @@ export async function POST(req: Request) {
     );
   }
 }
+

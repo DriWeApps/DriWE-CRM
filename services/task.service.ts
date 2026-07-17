@@ -28,14 +28,14 @@ export async function createTask(task: Task) {
 /**
  * Get All Tasks
  */
-export async function getTasks() {
+export async function getTasks(): Promise<Task[]> {
   const result = await db.send(
     new ScanCommand({
       TableName: TABLE,
     })
   );
 
-  return result.Items ?? [];
+  return (result.Items as Task[] | undefined) ?? [];
 }
 
 /**
@@ -57,6 +57,7 @@ export async function getTaskById(taskId: string) {
 /**
  * Update Task
  */
+// console.log("Update data:", data);
 export async function updateTask(
   taskId: string,
   data: Partial<Task>
@@ -75,6 +76,7 @@ export async function updateTask(
           companyName = :companyName,
           assignedTo = :assignedTo,
           assignedToName = :assignedToName,
+          assignedToEmail = :assignedToEmail,
           assignedBy = :assignedBy,
           assignedByName = :assignedByName,
           priority = :priority,
@@ -89,16 +91,26 @@ export async function updateTask(
       ExpressionAttributeValues: {
         ":title": data.title,
         ":description": data.description,
-        ":companyId": data.companyId,
-        ":companyName": data.companyName,
-        ":assignedTo": data.assignedTo,
-        ":assignedToName": data.assignedToName,
-        ":assignedBy": data.assignedBy,
-        ":assignedByName": data.assignedByName,
+        // ":companyId": data.companyId,
+        // ":companyName": data.companyName,
+        ":companyId": data.companyId ?? "",
+":companyName": data.companyName ?? "",
+        // ":assignedTo": data.assignedTo,
+        // ":assignedToName": data.assignedToName,
+        // ":assignedToEmail": data.assignedToEmail,
+        // ":assignedBy": data.assignedBy,
+        // ":assignedByName": data.assignedByName,
+
+        ":assignedBy": data.assignedBy ?? "",
+":assignedByName": data.assignedByName ?? "",
+":assignedTo": data.assignedTo ?? "",
+":assignedToName": data.assignedToName ?? "",
+":assignedToEmail": data.assignedToEmail ?? "",
+":remarks": data.remarks ?? "",
         ":priority": data.priority,
         ":status": data.status,
         ":dueDate": data.dueDate,
-        ":remarks": data.remarks ?? "",
+        // ":remarks": data.remarks ?? "",
         ":updatedAt": new Date().toISOString(),
       },
     })
@@ -106,7 +118,6 @@ export async function updateTask(
 
   return true;
 }
-
 /**
  * Delete Task
  */

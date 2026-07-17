@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 
 import {
-  getEmployeeById,
-  updateEmployee,
-  deleteEmployee,
-} from "@/services/employee.service";
+  deleteCompany,
+  getCompany,
+  updateCompany,
+} from "@/services/company.service";
 
 interface RouteContext {
   params: Promise<{
@@ -12,39 +12,31 @@ interface RouteContext {
   }>;
 }
 
-export async function GET(
-  req: Request,
-  { params }: RouteContext
-) {
+export async function GET(req: Request, { params }: RouteContext) {
   const { id } = await params;
+  const company = await getCompany(id);
 
-  const employee = await getEmployeeById(id);
-
-  return NextResponse.json(employee);
+  return NextResponse.json({
+    success: true,
+    company,
+  });
 }
 
-export async function PUT(
-  req: Request,
-  { params }: RouteContext
-) {
+export async function PUT(req: Request, { params }: RouteContext) {
   const { id } = await params;
-
   const body = await req.json();
 
-  await updateEmployee(id, body);
+  await updateCompany(id, body);
 
   return NextResponse.json({
     success: true,
   });
 }
 
-export async function DELETE(
-  req: Request,
-  { params }: RouteContext
-) {
+export async function DELETE(req: Request, { params }: RouteContext) {
   const { id } = await params;
 
-  await deleteEmployee(id);
+  await deleteCompany(id);
 
   return NextResponse.json({
     success: true,

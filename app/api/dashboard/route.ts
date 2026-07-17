@@ -1,17 +1,55 @@
 import { NextResponse } from "next/server";
-import { getDashboardStats } from "@/services/dashboard.service";
+import { ScanCommand } from "@aws-sdk/lib-dynamodb";
+
+import { db } from "@/lib/dynamodb";
 
 export async function GET() {
   try {
-    const data = await getDashboardStats();
+    const [
+      companies,
+      employees,
+      tasks,
+      meetings,
+    ] = await Promise.all([
+      db.send(
+        new ScanCommand({
+          TableName: process.env.COMPANIES_TABLE!,
+          Select: "COUNT",
+        })
+      ),
+      db.send(
+        new ScanCommand({
+          TableName: process.env.EMPLOYEES_TABLE!,
+          Select: "COUNT",
+        })
+      ),
+      db.send(
+        new ScanCommand({
+          TableName: process.env.TASKS_TABLE!,
+          Select: "COUNT",
+        })
+      ),
+      db.send(
+        new ScanCommand({
+          TableName: process.env.MEETINGS_TABLE!,
+          Select: "COUNT",
+        })
+      ),
+    ]);
 
-    return NextResponse.json(data);
+    return NextResponse.json({
+      companies: companies.Count ?? 0,
+      employees: employees.Count ?? 0,
+      tasks: tasks.Count ?? 0,
+      meetings: meetings.Count ?? 0,
+    });
   } catch (error) {
     console.error(error);
 
     return NextResponse.json(
       {
-        message: "Failed to load dashboard",
+        success: false,
+        message: "Dashboard Error",
       },
       {
         status: 500,

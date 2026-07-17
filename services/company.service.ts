@@ -1,43 +1,54 @@
-import { PutCommand } from "@aws-sdk/lib-dynamodb";
-import { db } from "@/lib/dynamodb";
 import { Company } from "@/types/company";
+import { db } from "@/lib/dynamodb";
 import {
-  GetCommand,
-  UpdateCommand,
   DeleteCommand,
+  GetCommand,
+  PutCommand,
+  ScanCommand,
+  UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 
-const TABLE = process.env.COMPANIES_TABLE!;
+const TABLE_NAME = process.env.COMPANY_TABLE_NAME || process.env.COMPANY_TABLE || "CRM_Companies";
 
 export async function createCompany(company: Company) {
+  const now = new Date().toISOString();
+  const id = crypto.randomUUID();
+
+  const item = {
+    id,
+    companyId: id,
+    ...company,
+    phone: company.phone ?? company.mobile ?? "",
+    createdAt: now,
+    updatedAt: now,
+  };
+
   await db.send(
     new PutCommand({
-      TableName: TABLE,
-      Item: company,
+      TableName: TABLE_NAME,
+      Item: item,
     })
   );
 
-  return company;
+  return item;
 }
-
-import { ScanCommand } from "@aws-sdk/lib-dynamodb";
 
 export async function getCompanies() {
   const result = await db.send(
     new ScanCommand({
-      TableName: TABLE,
+      TableName: TABLE_NAME,
     })
   );
 
-  return result.Items ?? [];
+  return result.Items || [];
 }
 
-export async function getCompanyById(companyId: string) {
+export async function getCompany(id: string) {
   const result = await db.send(
     new GetCommand({
-      TableName: TABLE,
+      TableName: TABLE_NAME,
       Key: {
-        companyId,
+        companyId: id,
       },
     })
   );
@@ -45,47 +56,65 @@ export async function getCompanyById(companyId: string) {
   return result.Item;
 }
 
-export async function deleteCompany(companyId: string) {
-  await db.send(
-    new DeleteCommand({
-      TableName: TABLE,
-      Key: {
-        companyId,
-      },
-    })
-  );
-}
+export async function updateCompany(id: string, data: Partial<Company>) {
+  const updates = [
+    { field: "companyName", value: data.companyName ?? "" },
+    { field: "companyType", value: data.companyType ?? "" },
+    { field: "contactPerson", value: data.contactPerson ?? "" },
+    { field: "designation", value: data.designation ?? "" },
+    { field: "mobile", value: data.mobile ?? "" },
+    { field: "alternateMobile", value: data.alternateMobile ?? "" },
+    { field: "email", value: data.email ?? "" },
+    { field: "address", value: data.address ?? "" },
+    { field: "city", value: data.city ?? "" },
+    { field: "state", value: data.state ?? "" },
+    { field: "pincode", value: data.pincode ?? "" },
+    { field: "gstNumber", value: data.gstNumber ?? "" },
+    { field: "panNumber", value: data.panNumber ?? "" },
+    { field: "website", value: data.website ?? "" },
+    { field: "assignedEmployeeId", value: data.assignedEmployeeId ?? "" },
+    { field: "status", value: data.status ?? "Active" },
+    { field: "notes", value: data.notes ?? "" },
+    { field: "phone", value: data.phone ?? data.mobile ?? "" },
+    { field: "updatedAt", value: new Date().toISOString() },
+  ];
 
-export async function updateCompany(
-  companyId: string,
-  data: Record<string, unknown>
-) {
+  const updateExpression = updates
+    .map(({ field }) => `#${field} = :${field}`)
+    .join(", ");
+
+  const expressionAttributeNames = Object.fromEntries(
+    updates.map(({ field }) => [`#${field}`, field])
+  );
+
+  const expressionAttributeValues = Object.fromEntries(
+    updates.map(({ field, value }) => [`:${field}`, value])
+  );
+
   await db.send(
     new UpdateCommand({
-      TableName: TABLE,
+      TableName: TABLE_NAME,
       Key: {
-        companyId,
+        companyId: id,
       },
-      UpdateExpression:
-        "SET companyName=:companyName, companyType=:companyType, contactPerson=:contactPerson, designation=:designation, mobile=:mobile, email=:email, address=:address, city=:city, #state=:state, pincode=:pincode, status=:status, notes=:notes, updatedAt=:updatedAt",
-      ExpressionAttributeNames: {
-        "#state": "state",
-      },
-      ExpressionAttributeValues: {
-        ":companyName": data.companyName,
-        ":companyType": data.companyType,
-        ":contactPerson": data.contactPerson,
-        ":designation": data.designation,
-        ":mobile": data.mobile,
-        ":email": data.email,
-        ":address": data.address,
-        ":city": data.city,
-        ":state": data.state,
-        ":pincode": data.pincode,
-        ":status": data.status,
-        ":notes": data.notes,
-        ":updatedAt": new Date().toISOString(),
+      UpdateExpression: `set ${updateExpression}`,
+      ExpressionAttributeNames: expressionAttributeNames,
+      ExpressionAttributeValues: expressionAttributeValues,
+    })
+  );
+
+  return true;
+}
+
+export async function deleteCompany(id: string) {
+  await db.send(
+    new DeleteCommand({
+      TableName: TABLE_NAME,
+      Key: {
+        companyId: id,
       },
     })
   );
+
+  return true;
 }

@@ -19,6 +19,7 @@ export default function TaskForm() {
 
   const [companies, setCompanies] = useState<Company[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const [form, setForm] = useState({
     title: "",
@@ -43,8 +44,28 @@ export default function TaskForm() {
     loadData();
   }, []);
 
+  useEffect(() => {
+    async function loadUser() {
+      try {
+        const res = await fetch("/api/auth/me");
+        const data = await res.json();
+        const role = data.user?.role?.toString().toLowerCase();
+        setIsAdmin(role === "admin");
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    loadUser();
+  }, []);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    if (!isAdmin) {
+      alert("Only admins can create tasks.");
+      return;
+    }
 
     const company = companies.find(
       (c) => c.companyId === form.companyId
@@ -193,9 +214,10 @@ export default function TaskForm() {
       />
 
       <button
-        className="rounded bg-blue-600 px-6 py-3 text-white"
+        className="rounded bg-blue-600 px-6 py-3 text-white disabled:cursor-not-allowed disabled:opacity-60"
+        disabled={!isAdmin}
       >
-        Create Task
+        {isAdmin ? "Create Task" : "Admin access required"}
       </button>
     </form>
   );
