@@ -11,6 +11,8 @@ import {
   Settings,
 } from "lucide-react";
 
+import PageContainer from "@/components/layout/page-container";
+
 export default function SettingsPage() {
   const [role, setRole] = useState("");
 
@@ -32,214 +34,191 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-6">
+    <PageContainer
+      title="Settings"
+      description="Manage your CRM settings and preferences."
+      icon={<Settings size={30} />}
+    >
+      <div className="space-y-8">
 
-      {/* Header */}
+        {/* Setting Cards */}
 
-      <div className="mb-8 flex items-center gap-4">
+        <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-2">
 
-        <div className="rounded-2xl bg-cyan-500/20 p-4">
-          <Settings className="h-8 w-8 text-cyan-400" />
-        </div>
+          {/* Profile */}
 
-        <div>
-          <h1 className="text-3xl font-bold text-white">
-            Settings
-          </h1>
+         <Link
+  href="/settings/profile"
+  className="group flex w-full items-center justify-between rounded-3xl border border-slate-800 bg-zinc-900/70 p-8 transition-all duration-300 hover:border-cyan-500 hover:bg-zinc-900 hover:shadow-2xl hover:shadow-cyan-500/10"
+>
+            <div className="flex items-center justify-between">
 
-          <p className="text-slate-400">
-            Manage your CRM settings and preferences.
-          </p>
-        </div>
+              <div className="flex items-center gap-4">
 
-      </div>
+                <div className="rounded-2xl bg-cyan-500/10 p-4">
+                  <User className="h-7 w-7 text-cyan-400" />
+                </div>
 
-      {/* Cards */}
+                <div>
+                  <h2 className="text-xl font-semibold text-white">
+                    Profile
+                  </h2>
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-2">
-
-        {/* Profile */}
-
-        <Link
-          href="/settings/profile"
-          className="group rounded-2xl border border-slate-800 bg-slate-950 p-6 transition hover:border-cyan-500 hover:shadow-lg hover:shadow-cyan-500/10"
-        >
-          <div className="flex items-center justify-between">
-
-            <div className="flex items-center gap-4">
-
-              <div className="rounded-xl bg-cyan-500/10 p-3">
-                <User className="text-cyan-400" />
-              </div>
-
-              <div>
-
-                <h2 className="text-xl font-semibold text-white">
-                  Profile
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-400">
-                  Update your personal information.
-                </p>
+                  <p className="mt-1 text-sm text-slate-400">
+                    Update your personal information.
+                  </p>
+                </div>
 
               </div>
+
+              <ArrowRight className="text-slate-500 transition group-hover:text-cyan-400 group-hover:translate-x-1" />
 
             </div>
+          </Link>
 
-            <ArrowRight className="text-slate-500 transition group-hover:text-cyan-400" />
+          {/* Company */}
 
-          </div>
-        </Link>
+          {role === "ADMIN" && (
+            <Link
+              href="/settings/company"
+              className="group rounded-3xl border border-slate-800 bg-slate-900/60 p-6 transition-all hover:-translate-y-1 hover:border-green-500 hover:shadow-xl hover:shadow-green-500/10"
+            >
+              <div className="flex items-center justify-between">
 
-        {/* Company (Admin Only) */}
+                <div className="flex items-center gap-4">
 
-        {role === "ADMIN" && (
+                  <div className="rounded-2xl bg-green-500/10 p-4">
+                    <Building2 className="h-7 w-7 text-green-400" />
+                  </div>
+
+                  <div>
+                    <h2 className="text-xl font-semibold text-white">
+                      Company
+                    </h2>
+
+                    <p className="mt-1 text-sm text-slate-400">
+                      Manage company information.
+                    </p>
+                  </div>
+
+                </div>
+
+                <ArrowRight className="text-slate-500 transition group-hover:text-green-400 group-hover:translate-x-1" />
+
+              </div>
+            </Link>
+          )}
+
+          {/* Security */}
 
           <Link
-            href="/settings/company"
-            className="group rounded-2xl border border-slate-800 bg-slate-950 p-6 transition hover:border-cyan-500 hover:shadow-lg hover:shadow-cyan-500/10"
+            href="/settings/security"
+            className="group rounded-3xl border border-slate-800 bg-slate-900/60 p-6 transition-all hover:-translate-y-1 hover:border-yellow-500 hover:shadow-xl hover:shadow-yellow-500/10"
           >
             <div className="flex items-center justify-between">
 
               <div className="flex items-center gap-4">
 
-                <div className="rounded-xl bg-green-500/10 p-3">
-                  <Building2 className="text-green-400" />
+                <div className="rounded-2xl bg-yellow-500/10 p-4">
+                  <Shield className="h-7 w-7 text-yellow-400" />
                 </div>
 
                 <div>
-
                   <h2 className="text-xl font-semibold text-white">
-                    Company
+                    Security
                   </h2>
 
                   <p className="mt-1 text-sm text-slate-400">
-                    Manage company information.
+                    Change your account password.
                   </p>
-
                 </div>
 
               </div>
 
-              <ArrowRight className="text-slate-500 transition group-hover:text-green-400" />
+              <ArrowRight className="text-slate-500 transition group-hover:text-yellow-400 group-hover:translate-x-1" />
 
             </div>
           </Link>
 
-        )}
+          {/* Notifications */}
 
-        {/* Security */}
+          <Link
+            href="/settings/notifications"
+            className="group rounded-3xl border border-slate-800 bg-slate-900/60 p-6 transition-all hover:-translate-y-1 hover:border-purple-500 hover:shadow-xl hover:shadow-purple-500/10"
+          >
+            <div className="flex items-center justify-between">
 
-        <Link
-          href="/settings/security"
-          className="group rounded-2xl border border-slate-800 bg-slate-950 p-6 transition hover:border-cyan-500 hover:shadow-lg hover:shadow-cyan-500/10"
-        >
-          <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
 
-            <div className="flex items-center gap-4">
+                <div className="rounded-2xl bg-purple-500/10 p-4">
+                  <Bell className="h-7 w-7 text-purple-400" />
+                </div>
 
-              <div className="rounded-xl bg-yellow-500/10 p-3">
-                <Shield className="text-yellow-400" />
-              </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-white">
+                    Notifications
+                  </h2>
 
-              <div>
-
-                <h2 className="text-xl font-semibold text-white">
-                  Security
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-400">
-                  Change your account password.
-                </p>
+                  <p className="mt-1 text-sm text-slate-400">
+                    Manage reminders and notifications.
+                  </p>
+                </div>
 
               </div>
+
+              <ArrowRight className="text-slate-500 transition group-hover:text-purple-400 group-hover:translate-x-1" />
 
             </div>
+          </Link>
 
-            <ArrowRight className="text-slate-500 transition group-hover:text-yellow-400" />
+        </div>
 
-          </div>
-        </Link>
+        {/* System Information */}
 
-        {/* Notifications */}
+        <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-8">
 
-        <Link
-          href="/settings/notifications"
-          className="group rounded-2xl border border-slate-800 bg-slate-950 p-6 transition hover:border-cyan-500 hover:shadow-lg hover:shadow-cyan-500/10"
-        >
-          <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-semibold text-white">
+            System Information
+          </h2>
 
-            <div className="flex items-center gap-4">
+          <div className="mt-8 grid gap-6 md:grid-cols-3">
 
-              <div className="rounded-xl bg-purple-500/10 p-3">
-                <Bell className="text-purple-400" />
-              </div>
+<div className="mt-10 w-full rounded-3xl border border-slate-800 bg-zinc-900/70 p-8">
+            {/* <div className="rounded-2xl border border-slate-800 bg-slate-950 p-6"> */}
+              <p className="text-sm text-slate-400">
+                CRM Version
+              </p>
 
-              <div>
-
-                <h2 className="text-xl font-semibold text-white">
-                  Notifications
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-400">
-                  Manage reminders and notifications.
-                </p>
-
-              </div>
-
+              <p className="mt-2 text-2xl font-bold text-white">
+                v1.0.0
+              </p>
             </div>
 
-            <ArrowRight className="text-slate-500 transition group-hover:text-purple-400" />
+            <div className="rounded-2xl border border-slate-800 bg-slate-950 p-6">
+              <p className="text-sm text-slate-400">
+                Database
+              </p>
 
-          </div>
-        </Link>
+              <p className="mt-2 text-2xl font-bold text-green-400">
+                Connected
+              </p>
+            </div>
 
-      </div>
+            <div className="rounded-2xl border border-slate-800 bg-slate-950 p-6">
+              <p className="text-sm text-slate-400">
+                Environment
+              </p>
 
-      {/* Footer */}
+              <p className="mt-2 text-2xl font-bold text-cyan-400">
+                Production
+              </p>
+            </div>
 
-      <div className="mt-10 rounded-2xl border border-slate-800 bg-slate-950 p-6">
-
-        <h2 className="text-lg font-semibold text-white">
-          System Information
-        </h2>
-
-        <div className="mt-4 grid gap-4 md:grid-cols-3">
-
-          <div>
-            <p className="text-sm text-slate-400">
-              CRM Version
-            </p>
-
-            <p className="font-medium text-white">
-              v1.0.0
-            </p>
-          </div>
-
-          <div>
-            <p className="text-sm text-slate-400">
-              Database
-            </p>
-
-            <p className="font-medium text-green-400">
-              Connected
-            </p>
-          </div>
-
-          <div>
-            <p className="text-sm text-slate-400">
-              Environment
-            </p>
-
-            <p className="font-medium text-cyan-400">
-              Production
-            </p>
           </div>
 
         </div>
 
       </div>
-
-    </div>
+    </PageContainer>
   );
 }

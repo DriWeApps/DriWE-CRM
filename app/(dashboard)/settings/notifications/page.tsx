@@ -115,7 +115,7 @@ export default function NotificationSettingsPage() {
   ];
 
   return (
-    <div className="max-w-5xl p-6">
+    <div className="w-full p-6">
 
       {/* Header */}
 

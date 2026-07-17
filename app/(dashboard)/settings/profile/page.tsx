@@ -94,7 +94,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="max-w-4xl p-6">
+    <div className="w-full p-6">
 
       {/* Header */}
 

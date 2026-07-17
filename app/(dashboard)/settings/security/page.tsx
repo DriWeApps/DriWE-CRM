@@ -66,7 +66,7 @@ export default function SecurityPage() {
   }
 
   return (
-    <div className="max-w-3xl p-6">
+    <div className="w-full p-6">
 
       {/* Header */}
 
