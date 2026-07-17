@@ -8,11 +8,12 @@ const publicPaths = [
   "/favicon.ico",
 ];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const isPublicPath = publicPaths.some((publicPath) =>
-    pathname === publicPath || pathname.startsWith(publicPath)
+  const isPublicPath = publicPaths.some(
+    (publicPath) =>
+      pathname === publicPath || pathname.startsWith(publicPath)
   );
 
   if (isPublicPath) {
