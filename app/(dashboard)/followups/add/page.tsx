@@ -7,48 +7,48 @@ import Link from "next/link";
 
 
 interface Company {
-  companyId:string;
-  companyName:string;
+  companyId: string;
+  companyName: string;
 }
 
 
 interface Employee {
-  employeeId:string;
-  firstName:string;
-  lastName:string;
+  employeeId: string;
+  firstName: string;
+  lastName: string;
 }
 
 
 
-export default function AddFollowupPage(){
+export default function AddFollowupPage() {
 
   const router = useRouter();
 
 
-  const [companies,setCompanies] = useState<Company[]>([]);
-  const [employees,setEmployees] = useState<Employee[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
 
-  const [loading,setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
 
 
-  const [form,setForm] = useState({
+  const [form, setForm] = useState({
 
-    title:"",
+    title: "",
 
-    companyId:"",
-    companyName:"",
+    companyId: "",
+    companyName: "",
 
-    employeeId:"",
-    employeeName:"",
+    employeeId: "",
+    employeeName: "",
 
-    followupDate:new Date().toISOString().split("T")[0],
+    followupDate: new Date().toISOString().split("T")[0],
 
-    priority:"Medium",
+    priority: "Medium",
 
-    status:"Pending",
+    status: "Pending",
 
-    notes:""
+    notes: ""
 
   });
 
@@ -56,34 +56,34 @@ export default function AddFollowupPage(){
 
 
 
-  useEffect(()=>{
+  useEffect(() => {
 
     fetchCompanies();
     fetchEmployees();
 
-  },[]);
+  }, []);
 
 
 
 
 
 
-  async function fetchCompanies(){
+  async function fetchCompanies() {
 
-    try{
+    try {
 
       const res = await fetch("/api/companies");
 
       const data = await res.json();
 
 
-      if(data.success){
+      if (data.success) {
 
         const defaultCompany = {
 
-          companyId:"driwe-default",
+          companyId: "driwe-default",
 
-          companyName:"DriWE Smartech Pvt. Ltd."
+          companyName: "DriWE Smartech Pvt. Ltd."
 
         };
 
@@ -94,20 +94,20 @@ export default function AddFollowupPage(){
         ]);
 
 
-        setForm(prev=>({
+        setForm(prev => ({
 
           ...prev,
 
-          companyId:"driwe-default",
+          companyId: "driwe-default",
 
-          companyName:"DriWE Smartech Pvt. Ltd."
+          companyName: "DriWE Smartech Pvt. Ltd."
 
         }));
 
       }
 
 
-    }catch(error){
+    } catch (error) {
 
       console.log(error);
 
@@ -121,9 +121,9 @@ export default function AddFollowupPage(){
 
 
 
-  async function fetchEmployees(){
+  async function fetchEmployees() {
 
-    try{
+    try {
 
       const res = await fetch("/api/employees");
 
@@ -133,7 +133,7 @@ export default function AddFollowupPage(){
       setEmployees(data);
 
 
-    }catch(error){
+    } catch (error) {
 
       console.log(error);
 
@@ -148,14 +148,14 @@ export default function AddFollowupPage(){
 
 
   function handleChange(
-    e:React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ){
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) {
 
     setForm({
 
       ...form,
 
-      [e.target.name]:e.target.value
+      [e.target.name]: e.target.value
 
     });
 
@@ -168,25 +168,25 @@ export default function AddFollowupPage(){
 
 
 
-  async function handleSubmit(e:React.FormEvent){
+  async function handleSubmit(e: React.FormEvent) {
 
     e.preventDefault();
 
     setLoading(true);
 
 
-    try{
+    try {
 
 
-      const res = await fetch("/api/followups",{
+      const res = await fetch("/api/followups", {
 
-        method:"POST",
+        method: "POST",
 
-        headers:{
-          "Content-Type":"application/json"
+        headers: {
+          "Content-Type": "application/json"
         },
 
-        body:JSON.stringify(form)
+        body: JSON.stringify(form)
 
       });
 
@@ -196,12 +196,12 @@ export default function AddFollowupPage(){
 
 
 
-      if(data.success){
+      if (data.success) {
 
         router.push("/followups");
 
       }
-      else{
+      else {
 
         alert(data.message);
 
@@ -209,14 +209,14 @@ export default function AddFollowupPage(){
 
 
 
-    }catch(error){
+    } catch (error) {
 
       console.log(error);
 
       alert("Something went wrong");
 
     }
-    finally{
+    finally {
 
       setLoading(false);
 
@@ -230,252 +230,252 @@ export default function AddFollowupPage(){
 
 
 
-return (
+  return (
 
-<div className="p-6 max-w-3xl">
+    <div className="p-6 max-w-3xl">
 
 
-<div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-6">
 
 
-<Link
-href="/followups"
-className="rounded-lg border border-slate-800 p-2 text-slate-300 hover:bg-slate-800"
->
+        <Link
+          href="/followups"
+          className="rounded-lg border border-slate-800 p-2 text-slate-300 hover:bg-slate-800"
+        >
 
-<ArrowLeft size={18}/>
+          <ArrowLeft size={18} />
 
-</Link>
+        </Link>
 
 
-<div>
+        <div>
 
-<h1 className="text-3xl font-bold text-white">
-Add Follow-up
-</h1>
+          <h1 className="text-3xl font-bold text-white">
+            Add Follow-up
+          </h1>
 
-<p className="text-slate-400">
-Create customer follow-up activity
-</p>
+          <p className="text-slate-400">
+            Create customer follow-up activity
+          </p>
 
-</div>
+        </div>
 
 
-</div>
+      </div>
 
 
 
 
 
 
-<form
-onSubmit={handleSubmit}
-className="space-y-5 rounded-xl border border-slate-800 bg-slate-950 p-6"
->
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-5 rounded-xl border border-slate-800 bg-slate-950 p-6"
+      >
 
 
 
 
-<div>
+        <div>
 
-<label className="text-sm text-slate-300">
-Follow-up Title
-</label>
+          <label className="text-sm text-slate-300">
+            Follow-up Title
+          </label>
 
 
-<input
+          <input
 
-name="title"
+            name="title"
 
-value={form.title}
+            value={form.title}
 
-onChange={handleChange}
+            onChange={handleChange}
 
-placeholder="Call client regarding quotation"
+            placeholder="Call client regarding quotation"
 
-className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 p-3 text-white"
+            className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 p-3 text-white"
 
-required
+            required
 
-/>
+          />
 
-</div>
+        </div>
 
 
 
 
 
 
-<div>
+        <div>
 
-<label className="text-sm text-slate-300">
-Company
-</label>
+          <label className="text-sm text-slate-300">
+            Company
+          </label>
 
 
-<select
+          <select
 
-value={form.companyId}
+            value={form.companyId}
 
-onChange={(e)=>{
+            onChange={(e) => {
 
 
-const company =
-companies.find(
-c=>c.companyId===e.target.value
-);
+              const company =
+                companies.find(
+                  c => c.companyId === e.target.value
+                );
 
 
-setForm({
+              setForm({
 
-...form,
+                ...form,
 
-companyId:e.target.value,
+                companyId: e.target.value,
 
-companyName:company?.companyName || ""
+                companyName: company?.companyName || ""
 
-});
+              });
 
 
-}}
+            }}
 
-className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 p-3 text-white"
+            className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 p-3 text-white"
 
-required
+            required
 
->
+          >
 
 
-<option value="">
-Select Company
-</option>
+            <option value="">
+              Select Company
+            </option>
 
 
-{
-companies.map(company=>(
+            {
+              companies.map(company => (
 
-<option
-key={company.companyId}
-value={company.companyId}
->
+                <option
+                  key={company.companyId}
+                  value={company.companyId}
+                >
 
-{company.companyName}
+                  {company.companyName}
 
-</option>
+                </option>
 
-))
-}
+              ))
+            }
 
 
-</select>
+          </select>
 
 
-</div>
+        </div>
 
 
 
 
 
 
-<div>
+        <div>
 
-<label className="text-sm text-slate-300">
-Assign Employee
-</label>
+          <label className="text-sm text-slate-300">
+            Assign Employee
+          </label>
 
 
-<select
+          <select
 
-value={form.employeeId}
+            value={form.employeeId}
 
-onChange={(e)=>{
+            onChange={(e) => {
 
 
-const employee =
-employees.find(
-emp=>emp.employeeId===e.target.value
-);
+              const employee =
+                employees.find(
+                  emp => emp.employeeId === e.target.value
+                );
 
 
 
-setForm({
+              setForm({
 
-...form,
+                ...form,
 
-employeeId:e.target.value,
+                employeeId: e.target.value,
 
-employeeName:
-`${employee?.firstName || ""} ${employee?.lastName || ""}`.trim()
+                employeeName:
+                  `${employee?.firstName || ""} ${employee?.lastName || ""}`.trim()
 
-});
+              });
 
 
-}}
+            }}
 
-className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 p-3 text-white"
+            className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 p-3 text-white"
 
-required
+            required
 
->
+          >
 
 
-<option value="">
-Select Employee
-</option>
+            <option value="">
+              Select Employee
+            </option>
 
 
-{
-employees.map(emp=>(
+            {
+              employees.map(emp => (
 
-<option
-key={emp.employeeId}
-value={emp.employeeId}
->
+                <option
+                  key={emp.employeeId}
+                  value={emp.employeeId}
+                >
 
-{emp.firstName} {emp.lastName}
+                  {emp.firstName} {emp.lastName}
 
-</option>
+                </option>
 
-))
-}
+              ))
+            }
 
 
-</select>
+          </select>
 
 
-</div>
+        </div>
 
 
 
 
 
 
-<div>
+        <div>
 
 
-<label className="text-sm text-slate-300">
-Follow-up Date
-</label>
+          <label className="text-sm text-slate-300">
+            Follow-up Date
+          </label>
 
 
-<input
+          <input
 
-type="date"
+            type="date"
 
-name="followupDate"
+            name="followupDate"
 
-value={form.followupDate}
+            value={form.followupDate}
 
-onChange={handleChange}
+            onChange={handleChange}
 
-className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 p-3 text-white cursor-pointer"
+            className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 p-3 text-white cursor-pointer"
 
-required
+            required
 
-/>
+          />
 
 
-</div>
+        </div>
 
 
 
@@ -483,91 +483,91 @@ required
 
 
 
-<div className="grid md:grid-cols-2 gap-4">
+        <div className="grid md:grid-cols-2 gap-4">
 
 
-<div>
+          <div>
 
-<label className="text-sm text-slate-300">
-Priority
-</label>
+            <label className="text-sm text-slate-300">
+              Priority
+            </label>
 
 
-<select
+            <select
 
-name="priority"
+              name="priority"
 
-value={form.priority}
+              value={form.priority}
 
-onChange={handleChange}
+              onChange={handleChange}
 
-className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 p-3 text-white"
+              className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 p-3 text-white"
 
->
+            >
 
-<option>
-Low
-</option>
+              <option>
+                Low
+              </option>
 
-<option>
-Medium
-</option>
+              <option>
+                Medium
+              </option>
 
-<option>
-High
-</option>
+              <option>
+                High
+              </option>
 
 
-</select>
+            </select>
 
-</div>
+          </div>
 
 
 
 
 
-<div>
+          <div>
 
-<label className="text-sm text-slate-300">
-Status
-</label>
+            <label className="text-sm text-slate-300">
+              Status
+            </label>
 
 
-<select
+            <select
 
-name="status"
+              name="status"
 
-value={form.status}
+              value={form.status}
 
-onChange={handleChange}
+              onChange={handleChange}
 
-className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 p-3 text-white"
+              className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 p-3 text-white"
 
->
+            >
 
 
-<option>
-Pending
-</option>
+              <option>
+                Pending
+              </option>
 
 
-<option>
-Completed
-</option>
+              <option>
+                Completed
+              </option>
 
 
-<option>
-Cancelled
-</option>
+              <option>
+                Cancelled
+              </option>
 
 
-</select>
+            </select>
 
 
-</div>
+          </div>
 
 
-</div>
+        </div>
 
 
 
@@ -575,31 +575,31 @@ Cancelled
 
 
 
-<div>
+        <div>
 
-<label className="text-sm text-slate-300">
-Notes
-</label>
+          <label className="text-sm text-slate-300">
+            Notes
+          </label>
 
 
-<textarea
+          <textarea
 
-name="notes"
+            name="notes"
 
-value={form.notes}
+            value={form.notes}
 
-onChange={handleChange}
+            onChange={handleChange}
 
-rows={4}
+            rows={4}
 
-placeholder="Follow-up details..."
+            placeholder="Follow-up details..."
 
-className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 p-3 text-white"
+            className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 p-3 text-white"
 
-/>
+          />
 
 
-</div>
+        </div>
 
 
 
@@ -607,37 +607,37 @@ className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 p-3 text-
 
 
 
-<button
+        <button
 
-disabled={loading}
+          disabled={loading}
 
-className="flex items-center gap-2 rounded-xl bg-cyan-500 px-6 py-3 font-medium text-slate-950 hover:bg-cyan-400"
+          className="flex items-center gap-2 rounded-xl bg-cyan-500 px-6 py-3 font-medium text-slate-950 hover:bg-cyan-400"
 
->
+        >
 
-<Save size={18}/>
+          <Save size={18} />
 
-{
-loading
-?
-"Saving..."
-:
-"Create Follow-up"
-}
+          {
+            loading
+              ?
+              "Saving..."
+              :
+              "Create Follow-up"
+          }
 
 
-</button>
+        </button>
 
 
 
 
 
-</form>
+      </form>
 
 
-</div>
+    </div>
 
-);
+  );
 
 
 }

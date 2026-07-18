@@ -15,22 +15,11 @@ const defaultForm: Company = {
   companyName: "",
   companyType: "",
   contactPerson: "",
-  designation: "",
   mobile: "",
-  alternateMobile: "",
   email: "",
   address: "",
-  city: "",
-  state: "",
-  pincode: "",
-  gstNumber: "",
-  panNumber: "",
-  website: "",
-  assignedEmployeeId: "",
   status: "Active",
-  notes: "",
 };
-
 const inputClass =
   "w-full rounded-xl border border-slate-700/80 bg-slate-950/70 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20";
 
@@ -122,206 +111,101 @@ export default function CompanyForm({
 
   return (
     <form onSubmit={handleSubmit} className="mx-auto max-w-4xl space-y-5">
-      <div className="grid gap-5 md:grid-cols-2">
-        <div className="space-y-2">
-          <label className="text-sm text-slate-400">Company name</label>
-          <input
-            className={inputClass}
-            placeholder="DriWE Solutions"
-            name="companyName"
-            value={form.companyName}
-            onChange={handleChange}
-            required
-          />
-        </div>
+    <div className="grid gap-6 md:grid-cols-2">
 
-        <div className="space-y-2">
-          <label className="text-sm text-slate-400">Company type</label>
-          <input
-            className={inputClass}
-            placeholder="Enterprise"
-            name="companyType"
-            value={form.companyType}
-            onChange={handleChange}
-          />
-        </div>
+  {/* Company Name */}
+  <div className="space-y-2">
+    <label className="text-sm font-medium text-slate-300">
+      Company Name
+    </label>
 
-        <div className="space-y-2">
-          <label className="text-sm text-slate-400">Contact person</label>
-          <input
-            className={inputClass}
-            placeholder="Jane Doe"
-            name="contactPerson"
-            value={form.contactPerson}
-            onChange={handleChange}
-          />
-        </div>
+    <input
+      className={inputClass}
+      name="companyName"
+      placeholder="Enter company name"
+      value={form.companyName}
+      onChange={handleChange}
+      required
+    />
+  </div>
 
-        <div className="space-y-2">
-          <label className="text-sm text-slate-400">Designation</label>
-          <input
-            className={inputClass}
-            placeholder="Operations Lead"
-            name="designation"
-            value={form.designation}
-            onChange={handleChange}
-          />
-        </div>
+  {/* Company Type */}
+  <div className="space-y-2">
+    <label className="text-sm font-medium text-slate-300">
+      Company Type
+    </label>
 
-        <div className="space-y-2">
-          <label className="text-sm text-slate-400">Mobile</label>
-          <input
-            className={inputClass}
-            placeholder="9876543210"
-            name="mobile"
-            value={form.mobile}
-            onChange={handleChange}
-          />
-        </div>
+    <input
+      className={inputClass}
+      name="companyType"
+      placeholder="IT, Manufacturing, Finance..."
+      value={form.companyType}
+      onChange={handleChange}
+    />
+  </div>
 
-        <div className="space-y-2">
-          <label className="text-sm text-slate-400">Alternate mobile</label>
-          <input
-            className={inputClass}
-            placeholder="9876543211"
-            name="alternateMobile"
-            value={form.alternateMobile}
-            onChange={handleChange}
-          />
-        </div>
+  {/* Contact Person */}
+  <div className="space-y-2">
+    <label className="text-sm font-medium text-slate-300">
+      Contact Person Name
+    </label>
 
-        <div className="space-y-2">
-          <label className="text-sm text-slate-400">Email</label>
-          <input
-            className={inputClass}
-            type="email"
-            placeholder="hello@company.com"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-          />
-        </div>
+    <input
+      className={inputClass}
+      name="contactPerson"
+      placeholder="Enter contact person"
+      value={form.contactPerson}
+      onChange={handleChange}
+    />
+  </div>
 
-        <div className="space-y-2">
-          <label className="text-sm text-slate-400">Website</label>
-          <input
-            className={inputClass}
-            placeholder="https://company.com"
-            name="website"
-            value={form.website}
-            onChange={handleChange}
-          />
-        </div>
-      </div>
+  {/* Mobile */}
+  <div className="space-y-2">
+    <label className="text-sm font-medium text-slate-300">
+      Mobile Number
+    </label>
 
-      <div className="space-y-2">
-        <label className="text-sm text-slate-400">Address</label>
-        <textarea
-          className={`${inputClass} min-h-24`}
-          placeholder="Street, suite, landmark"
-          name="address"
-          value={form.address}
-          onChange={handleChange}
-        />
-      </div>
+    <input
+      className={inputClass}
+      name="mobile"
+      placeholder="9876543210"
+      value={form.mobile}
+      onChange={handleChange}
+    />
+  </div>
 
-      <div className="grid gap-5 md:grid-cols-3">
-        <div className="space-y-2">
-          <label className="text-sm text-slate-400">City</label>
-          <input
-            className={inputClass}
-            placeholder="Mumbai"
-            name="city"
-            value={form.city}
-            onChange={handleChange}
-          />
-        </div>
+  {/* Email */}
+  <div className="space-y-2 md:col-span-2">
+    <label className="text-sm font-medium text-slate-300">
+      Email
+    </label>
 
-        <div className="space-y-2">
-          <label className="text-sm text-slate-400">State</label>
-          <input
-            className={inputClass}
-            placeholder="Maharashtra"
-            name="state"
-            value={form.state}
-            onChange={handleChange}
-          />
-        </div>
+    <input
+      type="email"
+      className={inputClass}
+      name="email"
+      placeholder="company@example.com"
+      value={form.email}
+      onChange={handleChange}
+    />
+  </div>
 
-        <div className="space-y-2">
-          <label className="text-sm text-slate-400">Pincode</label>
-          <input
-            className={inputClass}
-            placeholder="400001"
-            name="pincode"
-            value={form.pincode}
-            onChange={handleChange}
-          />
-        </div>
-      </div>
+  {/* Address */}
+  <div className="space-y-2 md:col-span-2">
+    <label className="text-sm font-medium text-slate-300">
+      Address
+    </label>
 
-      <div className="grid gap-5 md:grid-cols-2">
-        <div className="space-y-2">
-          <label className="text-sm text-slate-400">GST number</label>
-          <input
-            className={inputClass}
-            placeholder="27ABCDE1234F1Z5"
-            name="gstNumber"
-            value={form.gstNumber}
-            onChange={handleChange}
-          />
-        </div>
+    <textarea
+      className={`${inputClass} min-h-28`}
+      name="address"
+      placeholder="Enter company address"
+      value={form.address}
+      onChange={handleChange}
+    />
+  </div>
 
-        <div className="space-y-2">
-          <label className="text-sm text-slate-400">PAN number</label>
-          <input
-            className={inputClass}
-            placeholder="ABCDE1234F"
-            name="panNumber"
-            value={form.panNumber}
-            onChange={handleChange}
-          />
-        </div>
-      </div>
-
-      <div className="grid gap-5 md:grid-cols-2">
-        <div className="space-y-2">
-          <label className="text-sm text-slate-400">Assigned employee</label>
-          <input
-            className={inputClass}
-            placeholder="Employee ID"
-            name="assignedEmployeeId"
-            value={form.assignedEmployeeId}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm text-slate-400">Status</label>
-          <select
-            className={inputClass}
-            name="status"
-            value={form.status}
-            onChange={handleChange}
-          >
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-sm text-slate-400">Notes</label>
-        <textarea
-          className={`${inputClass} min-h-24`}
-          placeholder="Additional context about the client"
-          name="notes"
-          value={form.notes}
-          onChange={handleChange}
-        />
-      </div>
-
-      <div className="flex items-center gap-3 pt-2">
+</div>      <div className="flex items-center gap-3 pt-2">
         <button
           className="inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-5 py-2.5 font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-70"
           disabled={loading || loadingCompany}

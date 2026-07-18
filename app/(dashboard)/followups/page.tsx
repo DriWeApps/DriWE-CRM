@@ -13,55 +13,55 @@ import {
 
 interface Followup {
 
-  followUpId:string;
+  followUpId: string;
 
-  title:string;
+  title: string;
 
-  companyName:string;
+  companyName: string;
 
-  employeeName:string;
+  employeeName: string;
 
-  followupDate:string;
+  followupDate: string;
 
-  priority:string;
+  priority: string;
 
-  status:string;
+  status: string;
 
 }
 
 
 
-export default function Followups(){
+export default function Followups() {
 
 
-  const [followups,setFollowups] = useState<Followup[]>([]);
+  const [followups, setFollowups] = useState<Followup[]>([]);
 
-  const [loading,setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
 
 
-  async function fetchFollowups(){
+  async function fetchFollowups() {
 
-    try{
+    try {
 
       const res = await fetch("/api/followups");
 
       const data = await res.json();
 
 
-      if(data.success){
+      if (data.success) {
 
         setFollowups(data.followups);
 
       }
 
 
-    }catch(error){
+    } catch (error) {
 
       console.log(error);
 
     }
-    finally{
+    finally {
 
       setLoading(false);
 
@@ -72,11 +72,11 @@ export default function Followups(){
 
 
 
-  useEffect(()=>{
+  useEffect(() => {
 
     fetchFollowups();
 
-  },[]);
+  }, []);
 
 
 
@@ -114,7 +114,7 @@ export default function Followups(){
 
         >
 
-          <Plus size={18}/>
+          <Plus size={18} />
 
           Add Follow-up
 
@@ -134,7 +134,7 @@ export default function Followups(){
 
         <div className="rounded-xl border border-slate-800 bg-slate-950 p-5">
 
-          <CalendarDays className="text-cyan-400"/>
+          <CalendarDays className="text-cyan-400" />
 
           <h2 className="mt-3 text-2xl font-bold text-white">
             {followups.length}
@@ -152,13 +152,13 @@ export default function Followups(){
 
         <div className="rounded-xl border border-slate-800 bg-slate-950 p-5">
 
-          <Clock className="text-yellow-400"/>
+          <Clock className="text-yellow-400" />
 
           <h2 className="mt-3 text-2xl font-bold text-white">
 
             {
               followups.filter(
-                f=>f.status==="Pending"
+                f => f.status === "Pending"
               ).length
             }
 
@@ -179,16 +179,16 @@ export default function Followups(){
 
         <div className="rounded-xl border border-slate-800 bg-slate-950 p-5">
 
-          <CheckCircle className="text-green-400"/>
+          <CheckCircle className="text-green-400" />
 
 
           <h2 className="mt-3 text-2xl font-bold text-white">
 
-          {
-            followups.filter(
-              f=>f.status==="Completed"
-            ).length
-          }
+            {
+              followups.filter(
+                f => f.status === "Completed"
+              ).length
+            }
 
           </h2>
 
@@ -206,16 +206,16 @@ export default function Followups(){
 
         <div className="rounded-xl border border-slate-800 bg-slate-950 p-5">
 
-          <AlertCircle className="text-red-400"/>
+          <AlertCircle className="text-red-400" />
 
 
           <h2 className="mt-3 text-2xl font-bold text-white">
 
-          {
-            followups.filter(
-              f=>f.priority==="High"
-            ).length
-          }
+            {
+              followups.filter(
+                f => f.priority === "High"
+              ).length
+            }
 
           </h2>
 
@@ -292,117 +292,117 @@ export default function Followups(){
           <tbody>
 
 
-          {
-            loading ? (
+            {
+              loading ? (
 
-              <tr>
+                <tr>
 
-                <td className="p-5 text-slate-400">
+                  <td className="p-5 text-slate-400">
 
-                  Loading follow-ups...
-
-                </td>
-
-              </tr>
-
-
-            ) : followups.length===0 ? (
-
-
-              <tr>
-
-                <td className="p-5 text-slate-400">
-
-                  No follow-ups created yet
-
-                </td>
-
-              </tr>
-
-
-
-            ) : (
-
-
-              followups.map((followup)=>(
-
-
-                <tr
-
-                  key={followup.followUpId}
-
-                  className="border-b border-slate-800 text-white hover:bg-slate-900"
-
-                >
-
-
-                  <td className="p-4">
-
-                    {followup.title}
+                    Loading follow-ups...
 
                   </td>
-
-
-
-                  <td className="p-4 text-slate-300">
-
-                    {followup.companyName}
-
-                  </td>
-
-
-
-                  <td className="p-4">
-
-                    {followup.employeeName}
-
-                  </td>
-
-
-
-
-                  <td className="p-4">
-
-                    {followup.followupDate}
-
-                  </td>
-
-
-
-
-                  <td className="p-4">
-
-                    <span className="rounded-full bg-yellow-500/10 px-3 py-1 text-xs text-yellow-300">
-
-                      {followup.priority}
-
-                    </span>
-
-                  </td>
-
-
-
-
-                  <td className="p-4">
-
-                    <span className="rounded-full bg-cyan-500/10 px-3 py-1 text-xs text-cyan-300">
-
-                      {followup.status}
-
-                    </span>
-
-                  </td>
-
-
 
                 </tr>
 
 
-              ))
+              ) : followups.length === 0 ? (
 
 
-            )
-          }
+                <tr>
+
+                  <td className="p-5 text-slate-400">
+
+                    No follow-ups created yet
+
+                  </td>
+
+                </tr>
+
+
+
+              ) : (
+
+
+                followups.map((followup) => (
+
+
+                  <tr
+
+                    key={followup.followUpId}
+
+                    className="border-b border-slate-800 text-white hover:bg-slate-900"
+
+                  >
+
+
+                    <td className="p-4">
+
+                      {followup.title}
+
+                    </td>
+
+
+
+                    <td className="p-4 text-slate-300">
+
+                      {followup.companyName}
+
+                    </td>
+
+
+
+                    <td className="p-4">
+
+                      {followup.employeeName}
+
+                    </td>
+
+
+
+
+                    <td className="p-4">
+
+                      {followup.followupDate}
+
+                    </td>
+
+
+
+
+                    <td className="p-4">
+
+                      <span className="rounded-full bg-yellow-500/10 px-3 py-1 text-xs text-yellow-300">
+
+                        {followup.priority}
+
+                      </span>
+
+                    </td>
+
+
+
+
+                    <td className="p-4">
+
+                      <span className="rounded-full bg-cyan-500/10 px-3 py-1 text-xs text-cyan-300">
+
+                        {followup.status}
+
+                      </span>
+
+                    </td>
+
+
+
+                  </tr>
+
+
+                ))
+
+
+              )
+            }
 
 
           </tbody>
