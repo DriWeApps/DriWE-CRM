@@ -28,25 +28,50 @@ export default function CompanyDetailsPage({ params }: Props) {
 
   const { id } = React.use(params);
 
-  useEffect(() => {
-    async function fetchCompany() {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/companies/${id}`,
-          { cache: "no-store" }
-        );
-        const data = await res.json();
-        setCompany(data.company || data);
-        setEditedData(data.company || data);
-      } catch (error) {
-        console.error("Failed to fetch company", error);
-      } finally {
-        setLoading(false);
-      }
-    }
+  // useEffect(() => {
+  //   async function fetchCompany() {
+  //     try {
+  //       const res = await fetch(
+  //         `${process.env.NEXT_PUBLIC_BASE_URL}/api/companies/${id}`,
+  //         { cache: "no-store" }
+  //       );
+  //       const data = await res.json();
+  //       setCompany(data.company || data);
+  //       setEditedData(data.company || data);
+  //     } catch (error) {
+  //       console.error("Failed to fetch company", error);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   }
 
-    fetchCompany();
-  }, [id]);
+  //   fetchCompany();
+  // }, [id]);
+
+  useEffect(() => {
+  async function fetchCompany() {
+    try {
+      const res = await fetch(`/api/companies/${id}`, {
+        cache: "no-store",
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch company");
+      }
+
+      const data = await res.json();
+      setCompany(data.company || data);
+      setEditedData(data.company || data);
+    } catch (error) {
+      console.error("Failed to fetch company", error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  fetchCompany();
+}, [id]);
 
   const copyToClipboard = (text: string, field: string) => {
     if (!text) return;

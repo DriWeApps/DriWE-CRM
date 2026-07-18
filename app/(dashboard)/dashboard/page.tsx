@@ -4,14 +4,26 @@ import React, { useState, useEffect } from 'react';
 import DashboardCards from "@/components/dashboard/dashboard-cards";
 import { RefreshCw, TrendingUp, Users, Building2 } from 'lucide-react';
 
+// async function getStats() {
+//   const res = await fetch(
+//     `${process.env.NEXT_PUBLIC_BASE_URL}/api/dashboard`,
+//     { cache: "no-store" }
+//   );
+//   return res.json();
+// }
+
 async function getStats() {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/api/dashboard`,
-    { cache: "no-store" }
-  );
+  const res = await fetch("/api/dashboard", {
+    cache: "no-store",
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch dashboard");
+  }
+
   return res.json();
 }
-
 export default function DashboardPage() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
