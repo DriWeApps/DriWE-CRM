@@ -1,241 +1,3 @@
-// "use client";
-
-// import { useEffect, useState } from "react";
-// import { useRouter } from "next/navigation";
-
-// interface Company {
-//   companyId: string;
-//   companyName: string;
-// }
-
-// interface Employee {
-//   employeeId: string;
-//   fullName: string;
-//   email: string;
-// }
-
-// interface Participant {
-//   employeeId: string;
-//   employeeName: string;
-//   employeeEmail: string;
-//   joined?: boolean;
-//   joinedAt?: string;
-// }
-
-// interface Props {
-//   mode?: "create" | "edit";
-//   meetingId?: string;
-// }
-
-// export default function MeetingForm({
-//   mode = "create",
-//   meetingId,
-// }: Props) {
-//   const router = useRouter();
-
-//   const [loading, setLoading] = useState(false);
-
-//   const [companies, setCompanies] = useState<Company[]>([]);
-//   const [employees, setEmployees] = useState<Employee[]>([]);
-
-//   const [form, setForm] = useState({
-//     title: "",
-//     companyId: "",
-//     companyName: "",
-//     meetingLink: "",
-//     date: "",
-//     time: "",
-//     description: "",
-//     status: "Scheduled",
-//   });
-
-//   const [participants, setParticipants] = useState<Participant[]>([]);
-
-//   useEffect(() => {
-//     loadData();
-
-//     if (mode === "edit" && meetingId) {
-//       loadMeeting();
-//     }
-//   }, []);
-
-//   async function loadData() {
-//     try {
-//       const [companyRes, employeeRes] = await Promise.all([
-//         fetch("/api/companies"),
-//         fetch("/api/employees"),
-//       ]);
-
-//       const companyData = await companyRes.json();
-//       const employeeData = await employeeRes.json();
-
-//       setCompanies(companyData.companies || []);
-
-//       setEmployees(employeeData.employees || employeeData || []);
-//     } catch (err) {
-//       console.error(err);
-//     }
-//   }
-
-//   async function loadMeeting() {
-//     try {
-//       const res = await fetch(`/api/meetings/${meetingId}`);
-//       const data = await res.json();
-
-//       const meeting = data.meeting;
-
-//       setForm({
-//         title: meeting.title,
-//         companyId: meeting.companyId,
-//         companyName: meeting.companyName,
-//         meetingLink: meeting.meetingLink || "",
-//         date: meeting.date,
-//         time: meeting.time,
-//         description: meeting.description,
-//         status: meeting.status,
-//       });
-
-//       setParticipants(meeting.participants || []);
-//     } catch (err) {
-//       console.error(err);
-//     }
-//   }
-
-//   function updateField(
-//     field: string,
-//     value: string
-//   ) {
-//     setForm((prev) => ({
-//       ...prev,
-//       [field]: value,
-//     }));
-//   }
-
-//   function handleCompany(id: string) {
-//     const company = companies.find(
-//       (c) => c.companyId === id
-//     );
-
-//     if (!company) return;
-
-//     setForm((prev) => ({
-//       ...prev,
-//       companyId: company.companyId,
-//       companyName: company.companyName,
-//     }));
-//   }
-
-//   function toggleEmployee(employee: Employee) {
-//     const exists = participants.find(
-//       (p) => p.employeeId === employee.employeeId
-//     );
-
-//     if (exists) {
-//       setParticipants((prev) =>
-//         prev.filter(
-//           (p) => p.employeeId !== employee.employeeId
-//         )
-//       );
-
-//       return;
-//     }
-
-//     setParticipants((prev) => [
-//       ...prev,
-//       {
-//         employeeId: employee.employeeId,
-//         employeeName: employee.fullName,
-//         employeeEmail: employee.email,
-//       },
-//     ]);
-//   } return (
-//     <div className="rounded-3xl border border-slate-800 bg-slate-900 p-8">
-
-//       <div className="grid gap-6 md:grid-cols-2">
-
-//         <div>
-//           <label className="mb-2 block text-sm text-slate-300">
-//             Meeting Title
-//           </label>
-
-//           <input
-//             value={form.title}
-//             onChange={(e) =>
-//               updateField("title", e.target.value)
-//             }
-//             className="w-full rounded-xl border border-slate-700 bg-slate-950 p-3"
-//           />
-//         </div>
-
-//              <div className="mt-8">
-//         <label className="mb-2 block text-sm text-slate-300">
-//           Description
-//         </label>
-
-//         <textarea
-//           rows={4}
-//           value={form.description}
-//           onChange={(e) =>
-//             updateField("description", e.target.value)
-//           }
-//           className="w-full rounded-xl border border-slate-700 bg-slate-950 p-3"
-//           placeholder="Meeting agenda or notes..."
-//         />
-//       </div>
-
-//       <div className="mt-8 flex justify-end">
-//         <button
-//           onClick={async () => {
-//             try {
-//               setLoading(true);
-
-//               const payload = {
-//                 ...form,
-//                 participants,
-//               };
-
-//               const res = await fetch(
-//                 mode === "create"
-//                   ? "/api/meetings"
-//                   : `/api/meetings/${meetingId}`,
-//                 {
-//                   method: mode === "create" ? "POST" : "PUT",
-//                   headers: {
-//                     "Content-Type": "application/json",
-//                   },
-//                   body: JSON.stringify(payload),
-//                 }
-//               );
-
-//               const data = await res.json();
-
-//               if (data.success) {
-//                 router.push("/meetings");
-//                 router.refresh();
-//               } else {
-//                 alert(data.message);
-//               }
-//             } catch (err) {
-//               console.error(err);
-//               alert("Failed to save meeting");
-//             } finally {
-//               setLoading(false);
-//             }
-//           }}
-//           disabled={loading}
-//           className="rounded-xl bg-cyan-500 px-6 py-3 font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:opacity-50"
-//         >
-//           {loading
-//             ? "Saving..."
-//             : mode === "create"
-//             ? "Create Meeting"
-//             : "Update Meeting"}
-//         </button>
-//       </div>
-//     </div>
-//   );
-// }
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -258,6 +20,8 @@ interface Participant {
     employeeEmail: string;
     joined?: boolean;
     joinedAt?: string;
+    decision?: string;
+    actionTaken?: string;
 }
 
 interface Props {
@@ -285,11 +49,12 @@ export default function MeetingForm({
         meetingLink: "",
         agenda: "",
         description: "",
+        decision: "",
+        actionTaken: "",
         date: "",
         time: "",
         status: "Scheduled",
     });
-
     useEffect(() => {
         loadInitialData();
 
@@ -329,11 +94,12 @@ export default function MeetingForm({
                 meetingLink: meeting.meetingLink || "",
                 agenda: meeting.agenda || "",
                 description: meeting.description || "",
+                decision: meeting.decision || "",
+                actionTaken: meeting.actionTaken || "",
                 date: meeting.date || "",
                 time: meeting.time || "",
                 status: meeting.status || "Scheduled",
             });
-
             setParticipants(meeting.participants || []);
         } catch (err) {
             console.error(err);
@@ -446,6 +212,39 @@ export default function MeetingForm({
                 />
             </div>
 
+
+            <div>
+                <label className="text-sm text-slate-300">
+                    Decision
+                </label>
+
+                <textarea
+                    rows={3}
+                    value={form.decision}
+                    onChange={(e) =>
+                        updateField("decision", e.target.value)
+                    }
+                    placeholder="Enter meeting decision..."
+                    className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-cyan-500"
+                />
+            </div>
+
+
+            <div>
+                <label className="text-sm text-slate-300">
+                    Action Taken
+                </label>
+
+                <textarea
+                    rows={3}
+                    value={form.actionTaken}
+                    onChange={(e) =>
+                        updateField("actionTaken", e.target.value)
+                    }
+                    placeholder="Enter action items..."
+                    className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-cyan-500"
+                />
+            </div>
             {/* Company */}
             <div>
                 <label className="mb-2 block text-sm font-medium text-slate-300">
@@ -537,11 +336,10 @@ export default function MeetingForm({
                         return (
                             <label
                                 key={employee.employeeId}
-                                className={`flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition ${
-                                    checked
-                                        ? "border-cyan-500 bg-cyan-500/10"
-                                        : "border-slate-700 bg-slate-950"
-                                }`}
+                                className={`flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition ${checked
+                                    ? "border-cyan-500 bg-cyan-500/10"
+                                    : "border-slate-700 bg-slate-950"
+                                    }`}
                             >
                                 <input
                                     type="checkbox"
@@ -621,8 +419,8 @@ export default function MeetingForm({
                     {loading
                         ? "Saving..."
                         : mode === "create"
-                        ? "Create Meeting"
-                        : "Update Meeting"}
+                            ? "Create Meeting"
+                            : "Update Meeting"}
                 </button>
             </div>
         </div>

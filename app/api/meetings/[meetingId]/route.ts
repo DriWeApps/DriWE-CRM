@@ -17,9 +17,8 @@ interface Params {
   }>;
 }
 
-/**
- * GET MEETING BY ID
- */
+/* ---------------- GET ---------------- */
+
 export async function GET(
   req: Request,
   { params }: Params
@@ -33,9 +32,7 @@ export async function GET(
           success: false,
           message: "Unauthorized",
         },
-        {
-          status: 401,
-        }
+        { status: 401 }
       );
     }
 
@@ -49,18 +46,20 @@ export async function GET(
           success: false,
           message: "Meeting not found",
         },
-        {
-          status: 404,
-        }
+        { status: 404 }
       );
     }
 
-    const isManager = user.role === "Manager";
+   const isManager = user.role === "Manager";
+const isMeetingCreator = meeting.createdBy === user.userId;
 
-    // Employees can only view meetings where they are participants
-    if (!isAdminUser(user) && !isManager) {
+    if (
+  !isAdminUser(user) &&
+  !isManager &&
+  !isMeetingCreator
+) {
       const allowed = meeting.participants?.some(
-        (participant) => participant.employeeEmail === user.email
+        (p: any) => p.employeeEmail === user.email
       );
 
       if (!allowed) {
@@ -69,9 +68,7 @@ export async function GET(
             success: false,
             message: "Forbidden",
           },
-          {
-            status: 403,
-          }
+          { status: 403 }
         );
       }
     }
@@ -80,7 +77,6 @@ export async function GET(
       success: true,
       meeting,
     });
-
   } catch (error) {
     console.error(error);
 
@@ -89,16 +85,13 @@ export async function GET(
         success: false,
         message: "Failed to fetch meeting",
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     );
   }
 }
 
-/**
- * UPDATE MEETING
- */
+/* ---------------- PUT ---------------- */
+
 export async function PUT(
   req: Request,
   { params }: Params
@@ -112,9 +105,7 @@ export async function PUT(
           success: false,
           message: "Unauthorized",
         },
-        {
-          status: 401,
-        }
+        { status: 401 }
       );
     }
 
@@ -128,9 +119,7 @@ export async function PUT(
           success: false,
           message: "Meeting not found",
         },
-        {
-          status: 404,
-        }
+        { status: 404 }
       );
     }
 
@@ -138,49 +127,78 @@ export async function PUT(
 
     const isManager = user.role === "Manager";
 
-    // Employee can update only their own attendance
+    /* ==========================================
+       EMPLOYEE UPDATE
+    ========================================== */
+
     if (!isAdminUser(user) && !isManager) {
+      const startTime = new Date(
+        `${meeting.date}T${meeting.time}`
+      );
 
-      const participants = meeting.participants.map((participant) => {
+      const joinDeadline = new Date(
+        startTime.getTime() + 10 * 60 * 1000
+      );
 
-        if (participant.employeeEmail !== user.email) {
-          return participant;
-        }
+      if (new Date() > joinDeadline) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Meeting joining time has expired. Please contact your manager.",
+          },
+          { status: 403 }
+        );
+      }
+
+      const participants = meeting.participants.map((p: any) => {
+        if (p.employeeEmail !== user.email) return p;
 
         return {
-          ...participant,
-          joined: body.joined,
-          joinedAt: body.joined
-            ? new Date().toISOString()
-            : "",
-          actionTaken: body.actionTaken,
-          decision: body.decision,
+          ...p,
+          joined: true,
+          joinedAt: new Date().toISOString(),
         };
-
       });
 
-      const updated = await updateMeeting(meetingId, {
+      await updateMeeting(meetingId, {
+        ...meeting,
         participants,
       });
 
       return NextResponse.json({
         success: true,
-        meeting: updated,
+        message: "Attendance updated",
       });
-
     }
 
-    // Admin & Manager can edit everything
-    const updated = await updateMeeting(meetingId, {
+    /* ==========================================
+       ADMIN / MANAGER UPDATE
+    ========================================== */
+
+    let status = body.status ?? meeting.status;
+
+    // Auto complete meeting if requested
+    if (status === "Completed") {
+      status = "Completed";
+    }
+
+    const updatedMeeting = {
       ...meeting,
       ...body,
-    });
+      status,
+      decision: body.decision ?? meeting.decision,
+      actionTaken:
+        body.actionTaken ?? meeting.actionTaken,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await updateMeeting(meetingId, updatedMeeting);
 
     return NextResponse.json({
       success: true,
-      meeting: updated,
+      meeting: updatedMeeting,
     });
-
   } catch (error) {
     console.error(error);
 
@@ -189,22 +207,18 @@ export async function PUT(
         success: false,
         message: "Failed to update meeting",
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     );
   }
 }
 
-/**
- * DELETE MEETING
- */
+/* ---------------- DELETE ---------------- */
+
 export async function DELETE(
   req: Request,
   { params }: Params
 ) {
   try {
-
     const user = await getUserFromRequest(req);
 
     if (!user) {
@@ -213,9 +227,7 @@ export async function DELETE(
           success: false,
           message: "Unauthorized",
         },
-        {
-          status: 401,
-        }
+        { status: 401 }
       );
     }
 
@@ -229,9 +241,7 @@ export async function DELETE(
           success: false,
           message: "Meeting not found",
         },
-        {
-          status: 404,
-        }
+        { status: 404 }
       );
     }
 
@@ -239,27 +249,23 @@ export async function DELETE(
 
     // Admin can delete any meeting
     if (isAdminUser(user)) {
-
       await deleteMeeting(meetingId);
 
       return NextResponse.json({
         success: true,
       });
-
     }
 
-    // Manager can delete only meetings they created
+    // Manager can delete only meetings created by them
     if (
       isManager &&
       meeting.createdBy === user.userId
     ) {
-
       await deleteMeeting(meetingId);
 
       return NextResponse.json({
         success: true,
       });
-
     }
 
     return NextResponse.json(
@@ -267,11 +273,8 @@ export async function DELETE(
         success: false,
         message: "Permission denied",
       },
-      {
-        status: 403,
-      }
+      { status: 403 }
     );
-
   } catch (error) {
     console.error(error);
 
@@ -280,9 +283,7 @@ export async function DELETE(
         success: false,
         message: "Delete failed",
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     );
   }
 }

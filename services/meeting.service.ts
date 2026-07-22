@@ -38,6 +38,10 @@ export interface Meeting {
 
   status: string;
 
+  // ADD THESE TWO
+  decision?: string;
+  actionTaken?: string;
+
   createdBy: string;
   createdByName: string;
 

@@ -30,6 +30,11 @@ interface Meeting {
   description?: string;
   decision?: string;
   actionTaken?: string;
+//   decision: string;
+// actionTaken: string;
+createdBy: string;
+createdByName: string;
+updatedAt?: string;
   participants: Participant[];
 }
 
