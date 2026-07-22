@@ -6,6 +6,7 @@ import { Edit2, Eye, Loader2, Trash2 } from "lucide-react";
 import type { Company } from "@/types/company";
 
 export default function CompanyTable() {
+  const [role, setRole] = useState("");
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,6 +24,21 @@ export default function CompanyTable() {
 
   useEffect(() => {
     fetchCompanies();
+
+    async function getCurrentUser() {
+      try {
+        const res = await fetch("/api/auth/me");
+        const data = await res.json();
+
+        if (data?.authenticated) {
+          setRole(data.user.role);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    getCurrentUser();
   }, []);
 
   const handleDelete = async (companyId: string) => {
@@ -96,11 +112,10 @@ export default function CompanyTable() {
 
                   <td className="px-4 py-3">
                     <span
-                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                        company.status === "Active"
+                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${company.status === "Active"
                           ? "bg-emerald-500/15 text-emerald-400"
                           : "bg-amber-500/15 text-amber-400"
-                      }`}
+                        }`}
                     >
                       {company.status}
                     </span>
@@ -122,12 +137,14 @@ export default function CompanyTable() {
                         <Edit2 className="h-4 w-4" />
                       </Link>
 
-                      <button
-                        onClick={() => handleDelete(companyId)}
-                        className="rounded-lg border border-slate-700 p-2 text-slate-300 transition hover:border-rose-400 hover:text-rose-300"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {role === "ADMIN" && (
+                        <button
+                          onClick={() => handleDelete(companyId)}
+                          className="rounded-lg border border-slate-700 p-2 text-slate-300 transition hover:border-rose-400 hover:text-rose-300"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

@@ -66,3 +66,10 @@ export async function getUserFromRequest(req: Request | NextRequest) {
 export function isAdminUser(user: { role?: string } | null | undefined) {
   return user?.role?.toLowerCase() === "admin";
 }
+
+export function canAssignTask(user: any) {
+  return (
+    user?.role === "ADMIN" ||
+    user?.role === "Manager"
+  );
+}

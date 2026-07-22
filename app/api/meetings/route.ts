@@ -31,11 +31,11 @@ export async function GET() {
 
     return NextResponse.json(
       {
-        success:false,
-        message:"Failed to fetch meetings"
+        success: false,
+        message: "Failed to fetch meetings"
       },
       {
-        status:500
+        status: 500
       }
     );
 
@@ -43,54 +43,52 @@ export async function GET() {
 }
 
 
-
-
 // CREATE MEETING
-export async function POST(req:Request){
-
-  try{
-
+// CREATE MEETING
+export async function POST(req: Request) {
+  try {
     const body = await req.json();
-
 
     const {
       title,
+
       companyId,
       companyName,
-      employeeId,
-      employeeName,
+
+      participants,
+
+      meetingLink,
+
+      agenda,
+
       date,
       time,
+
       status,
-      description
+
+      description,
     } = body;
 
-
-
-    if(
+    if (
       !title ||
       !companyId ||
-      !employeeId ||
+      !participants ||
+      participants.length === 0 ||
       !date ||
       !time
-    ){
-
+    ) {
       return NextResponse.json(
         {
-          success:false,
-          message:"Required fields missing"
+          success: false,
+          message: "Required fields missing",
         },
         {
-          status:400
+          status: 400,
         }
       );
-
     }
 
-
-
     const meeting = {
-
       meetingId: crypto.randomUUID(),
 
       title,
@@ -98,8 +96,11 @@ export async function POST(req:Request){
       companyId,
       companyName,
 
-      employeeId,
-      employeeName,
+      participants,
+
+      meetingLink: meetingLink || "",
+
+      agenda: agenda || "",
 
       date,
       time,
@@ -108,48 +109,38 @@ export async function POST(req:Request){
 
       description: description || "",
 
-      createdAt:new Date().toISOString()
+      decision: "",
 
+      actionTaken: "",
+
+      createdAt: new Date().toISOString(),
+
+      updatedAt: new Date().toISOString(),
     };
-
-
 
     await db.send(
       new PutCommand({
-        TableName:TABLE_NAME,
-        Item:meeting
+        TableName: TABLE_NAME,
+        Item: meeting,
       })
     );
 
-
-
     return NextResponse.json({
-
-      success:true,
-
-      message:"Meeting created successfully",
-
-      meeting
-
+      success: true,
+      message: "Meeting created successfully",
+      meeting,
     });
-
-
-
-  }catch(error){
-
-    console.error("CREATE Meeting Error:",error);
-
+  } catch (error) {
+    console.error("CREATE Meeting Error:", error);
 
     return NextResponse.json(
       {
-        success:false,
-        message:"Failed to create meeting"
+        success: false,
+        message: "Failed to create meeting",
       },
       {
-        status:500
+        status: 500,
       }
     );
-
   }
-
 }

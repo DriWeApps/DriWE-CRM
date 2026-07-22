@@ -3,6 +3,7 @@ import {
   createCompany,
   getCompanies,
 } from "@/services/company.service";
+import { getUserFromRequest } from "@/lib/auth";
 
 // GET ALL COMPANIES
 export async function GET() {
@@ -29,6 +30,20 @@ export async function GET() {
 // CREATE COMPANY
 export async function POST(req: Request) {
   try {
+    const user = await getUserFromRequest(req);
+
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Unauthorized",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
+
     const body = await req.json();
 
     if (!body?.companyName?.trim()) {
@@ -50,7 +65,7 @@ export async function POST(req: Request) {
       company,
     });
   } catch (error) {
-    console.error("Create company error:", error);
+    console.error(error);
 
     return NextResponse.json(
       {

@@ -75,7 +75,7 @@ export default function ReportsPage() {
         Reports
       </h1>
 
-      {role === "ADMIN" ? (
+      {role === "ADMIN" || role === "Manager" ? (
 
         <>
           <h2 className="text-xl font-semibold text-white mb-6">

@@ -101,18 +101,36 @@ export async function PUT(
     console.log("Request body:", body);
 
     // Employee can only update status & remarks
-    if (!isAdminUser(user)) {
-      await updateTask(taskId, {
-        ...oldTask,
-        status: body.status,
-        remarks: body.remarks,
-      });
+   // Employee can only update before deadline
+if (!isAdminUser(user)) {
 
-      return NextResponse.json({
-        success: true,
-      });
-    }
+  const now = new Date();
+  const dueDate = new Date(oldTask.dueDate);
 
+  if (now > dueDate) {
+    return NextResponse.json(
+      {
+        success: false,
+        message:
+          "Task deadline has passed. Please contact your administrator for further changes.",
+      },
+      {
+        status: 403,
+      }
+    );
+  }
+
+  await updateTask(taskId, {
+    ...oldTask,
+    status: body.status,
+    remarks: body.remarks,
+    updatedAt: new Date().toISOString(),
+  });
+
+  return NextResponse.json({
+    success: true,
+  });
+}
     // Admin can update everything
     await updateTask(taskId, {
       ...oldTask,
