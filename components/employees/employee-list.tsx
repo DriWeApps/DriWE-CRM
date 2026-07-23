@@ -24,6 +24,11 @@ export default function EmployeeList({ searchTerm = "" }: EmployeeListProps) {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -117,6 +122,54 @@ export default function EmployeeList({ searchTerm = "" }: EmployeeListProps) {
     }
   }
 
+  async function handleResetPassword() {
+    if (newPassword.trim().length < 6) {
+      alert("Password must be at least 6 characters.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      alert("Passwords do not match.");
+      return;
+    }
+
+    try {
+      setChangingPassword(true);
+
+      const res = await fetch(
+        `/api/employees/${selectedEmployeeId}/password`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            password: newPassword,
+          }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (!data.success) {
+        alert(data.message);
+        return;
+      }
+
+      alert("Password updated successfully.");
+
+      setShowPasswordModal(false);
+      setSelectedEmployeeId("");
+      setNewPassword("");
+      setConfirmPassword("");
+
+    } catch (error) {
+      console.error(error);
+      alert("Unable to update password.");
+    } finally {
+      setChangingPassword(false);
+    }
+  }
   // Filter employees based on search term
   const filteredEmployees = employees.filter((emp) =>
     `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -178,22 +231,35 @@ export default function EmployeeList({ searchTerm = "" }: EmployeeListProps) {
 
               <div className="flex items-center gap-3">
                 <span
-                  className={`rounded-full px-4 py-1 text-xs font-medium ${
-                    employee.status === "Active"
+                  className={`rounded-full px-4 py-1 text-xs font-medium ${employee.status === "Active"
                       ? "bg-emerald-500/10 text-emerald-400"
                       : "bg-red-500/10 text-red-400"
-                  }`}
+                    }`}
                 >
                   {employee.status}
                 </span>
 
                 {isAdmin && (
-                  <button
-                    onClick={() => handleDelete(employee.employeeId)}
-                    className="rounded-xl p-3 opacity-0 group-hover:opacity-100 hover:bg-red-500/10 text-red-400 transition-all"
-                  >
-                    <Trash2 className="h-5 w-5" />
-                  </button>
+                  <>
+                    <button
+                      onClick={() => {
+                        setSelectedEmployeeId(employee.employeeId);
+                        setShowPasswordModal(true);
+                      }}
+                      className="rounded-xl p-3 opacity-0 group-hover:opacity-100 hover:bg-cyan-500/10 text-cyan-400 transition-all"
+                      title="Reset Password"
+                    >
+                      🔑
+                    </button>
+
+                    <button
+                      onClick={() => handleDelete(employee.employeeId)}
+                      className="rounded-xl p-3 opacity-0 group-hover:opacity-100 hover:bg-red-500/10 text-red-400 transition-all"
+                      title="Delete Employee"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </button>
+                  </>
                 )}
               </div>
             </div>
@@ -334,6 +400,57 @@ export default function EmployeeList({ searchTerm = "" }: EmployeeListProps) {
           {isAdmin ? "Add New Employee" : "Admin Access Required"}
         </button>
       </form>
+
+      {/* Password Reset Modal */}
+{showPasswordModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+    <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-zinc-900 p-6">
+      <h2 className="mb-5 text-xl font-semibold text-white">
+        Reset Employee Password
+      </h2>
+
+      <div className="space-y-4">
+        <input
+          type="password"
+          placeholder="New Password"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          className="w-full rounded-xl border border-slate-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-cyan-500"
+        />
+
+        <input
+          type="password"
+          placeholder="Confirm Password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          className="w-full rounded-xl border border-slate-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-cyan-500"
+        />
+      </div>
+
+      <div className="mt-6 flex justify-end gap-3">
+        <button
+          onClick={() => {
+            setShowPasswordModal(false);
+            setNewPassword("");
+            setConfirmPassword("");
+            setSelectedEmployeeId("");
+          }}
+          className="rounded-xl border border-slate-600 px-5 py-2 text-slate-300 hover:bg-slate-800"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={handleResetPassword}
+          disabled={changingPassword}
+          className="rounded-xl bg-cyan-500 px-5 py-2 font-semibold text-black hover:bg-cyan-400 disabled:opacity-50"
+        >
+          {changingPassword ? "Updating..." : "Update Password"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }

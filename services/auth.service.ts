@@ -1,6 +1,7 @@
 // services/auth.service.ts
-import { PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { PutCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { db } from "@/lib/dynamodb";
+
 
 const USERS_TABLE = process.env.USERS_TABLE!;
 
@@ -72,4 +73,28 @@ export async function createUser(userData: {
   );
 
   return user;
+}
+
+export async function updateUserPassword(
+  userId: string,
+  hashedPassword: string
+) {
+  await db.send(
+    new UpdateCommand({
+      TableName: USERS_TABLE,
+      Key: {
+        userId,
+      },
+      UpdateExpression: `
+        SET password = :password,
+            updatedAt = :updatedAt
+      `,
+      ExpressionAttributeValues: {
+        ":password": hashedPassword,
+        ":updatedAt": new Date().toISOString(),
+      },
+    })
+  );
+
+  return true;
 }

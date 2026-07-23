@@ -7,6 +7,7 @@ import {
   PhoneCall,
   BarChart3,
   Settings,
+  Bell,
 } from "lucide-react";
 
 export const sidebarItems = [
@@ -50,4 +51,9 @@ export const sidebarItems = [
     href: "/settings",
     icon: Settings,
   },
+  {
+  title: "Notifications",
+  href: "/notifications",
+  icon: Bell,
+},
 ];
