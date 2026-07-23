@@ -12,7 +12,9 @@ interface Notification {
   notificationId: string;
   title: string;
   message: string;
-  isRead: boolean;
+   isRead: boolean;
+//   status: "Sent" | "Seen";
+// seenAt?: string;
   createdAt: string;
 }
 

@@ -17,6 +17,7 @@ export interface Notification {
 
   sentBy: string;
   sentByName: string;
+  sentByEmail: string;
 
   recipientEmail: string;
 
@@ -71,6 +72,29 @@ export async function getNotificationsByEmail(
       (item: any) =>
         item.recipientEmail?.toLowerCase() ===
         email.toLowerCase()
+    )
+    .sort(
+      (a: any, b: any) =>
+        new Date(b.createdAt).getTime() -
+        new Date(a.createdAt).getTime()
+    );
+}
+
+/**
+ * Get Notifications Sent By Admin
+ */
+export async function getNotificationsSentByAdmin(
+  adminId: string
+) {
+  const result = await db.send(
+    new ScanCommand({
+      TableName: TABLE,
+    })
+  );
+
+  return (result.Items ?? [])
+    .filter(
+      (item: any) => item.sentBy === adminId
     )
     .sort(
       (a: any, b: any) =>

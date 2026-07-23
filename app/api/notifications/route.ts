@@ -51,11 +51,6 @@ export async function GET(req: Request) {
   }
 }
 
-/* ---------------------------------------
-   POST
-   Admin sends notification
---------------------------------------- */
-
 export async function POST(req: Request) {
   try {
     const user = await getUserFromRequest(req);
@@ -75,42 +70,48 @@ export async function POST(req: Request) {
     if (
       !body.title ||
       !body.message ||
-      !body.recipientEmail
+      !Array.isArray(body.recipientEmails) ||
+      body.recipientEmails.length === 0
     ) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "Title, message and recipient email are required.",
+            "Title, message and at least one recipient are required.",
         },
         { status: 400 }
       );
     }
 
-    const notification = {
-      notificationId: randomUUID(),
+    const notifications = [];
 
-      title: body.title.trim(),
-      message: body.message.trim(),
+    for (const email of body.recipientEmails) {
+      const notification = {
+        notificationId: randomUUID(),
 
-      sentBy: user.userId,
-      sentByName: user.email ?? "Administrator",
+        title: body.title.trim(),
+        message: body.message.trim(),
 
-      recipientEmail: body.recipientEmail
-        .trim()
-        .toLowerCase(),
+        sentBy: user.userId,
+        sentByName: user.email ?? "Administrator",
+        sentByEmail: user.email,
 
-      isRead: false,
+        recipientEmail: email.trim().toLowerCase(),
 
-      createdAt: new Date().toISOString(),
-    };
+        isRead: false,
 
-    await createNotification(notification);
+        createdAt: new Date().toISOString(),
+      };
+
+      await createNotification(notification);
+
+      notifications.push(notification);
+    }
 
     return NextResponse.json({
       success: true,
-      notification,
-      message: "Notification sent successfully.",
+      notifications,
+      message: `Notification sent to ${notifications.length} employee(s).`,
     });
   } catch (error) {
     console.error(error);
