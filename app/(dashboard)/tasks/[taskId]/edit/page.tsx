@@ -31,49 +31,60 @@ export default function EditTaskPage() {
     }
   }
 
- async function save(e: React.FormEvent<HTMLFormElement>) {
-  e.preventDefault();
+  async function save(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
 
-  setLoading(true);
+    setLoading(true);
+
+    if (
+      task.status === "Completed" &&
+      !task.completionDescription?.trim()
+    ) {
+      alert("Please enter completion description.");
+      setLoading(false);
+      return;
+    }
+
 
   const body = {
-    title: task.title,
-    description: task.description,
-    priority: task.priority,
-    status: task.status,
-    dueDate: task.dueDate,
-    remarks: task.remarks,
+  title: task.title,
+  description: task.description,
+  priority: task.priority,
+  status: task.status,
+  dueDate: task.dueDate,
+  remarks: task.remarks,
 
-    companyId: task.companyId,
-    companyName: task.companyName,
+  completionDescription: task.completionDescription,
+  completionLink: task.completionLink,
 
-    assignedTo: task.assignedTo,
-    assignedToName: task.assignedToName,
-    assignedToEmail: task.assignedToEmail,
+  companyId: task.companyId,
+  companyName: task.companyName,
+  assignedTo: task.assignedTo,
+  assignedToName: task.assignedToName,
+  assignedToEmail: task.assignedToEmail,
+  assignedBy: task.assignedBy,
+  assignedByName: task.assignedByName,
+};
 
-    assignedBy: task.assignedBy,
-    assignedByName: task.assignedByName,
-  };
+    const res = await fetch(`/api/tasks/${taskId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
 
-  const res = await fetch(`/api/tasks/${taskId}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
+    const data = await res.json();
 
-  const data = await res.json();
+    setLoading(false);
 
-  setLoading(false);
-
-  if (data.success) {
-    alert("Task updated successfully");
-    router.push("/tasks");
-  } else {
-    alert(data.message);
+    if (data.success) {
+      alert("Task updated successfully");
+      router.push("/tasks");
+    } else {
+      alert(data.message);
+    }
   }
-}
 
   return (
     <div className="mx-auto max-w-3xl p-8">
@@ -201,6 +212,46 @@ export default function EditTaskPage() {
           />
         </div>
 
+        {task.status === "Completed" && (
+          <>
+            <div>
+              <label className="text-white">
+                Completion Description
+              </label>
+
+              <textarea
+                rows={4}
+                value={task.completionDescription || ""}
+                onChange={(e) =>
+                  setTask({
+                    ...task,
+                    completionDescription: e.target.value,
+                  })
+                }
+                className="mt-2 w-full rounded-lg bg-zinc-800 p-3 text-white"
+              />
+            </div>
+
+            <div>
+              <label className="text-white">
+                Work Link
+              </label>
+
+              <input
+                value={task.completionLink || ""}
+                onChange={(e) =>
+                  setTask({
+                    ...task,
+                    completionLink: e.target.value,
+                  })
+                }
+                placeholder="https://drive.google.com/..."
+                className="mt-2 w-full rounded-lg bg-zinc-800 p-3 text-white"
+              />
+            </div>
+          </>
+        )}
+
         <button
           disabled={loading}
           className="rounded-xl bg-emerald-500 px-6 py-3 font-semibold text-black"
@@ -210,5 +261,7 @@ export default function EditTaskPage() {
 
       </form>
     </div>
+
+
   );
 }

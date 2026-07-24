@@ -68,7 +68,7 @@ export default function TaskTable() {
                 <thead className="bg-zinc-900">
                     <tr>
                         <th className="p-4 text-left">Title</th>
-                        <th className="p-4 text-left">Company</th>
+                        <th className="p-4 text-left">Assigned By</th>
                         <th className="p-4 text-left">Assigned To</th>
                         <th className="p-4 text-left">Priority</th>
                         <th className="p-4 text-left">Status</th>
@@ -81,7 +81,9 @@ export default function TaskTable() {
                     {tasks.map((task) => (
                         <tr key={task.taskId} className="border-t border-zinc-800">
                             <td className="p-4">{task.title}</td>
-                            <td className="p-4">{task.companyName}</td>
+                            <td className="p-4">
+  {task.assignedByName || "-"}
+</td>
                             <td className="p-4">{task.assignedToName}</td>
                             <td className="p-4">{task.priority}</td>
                             <td className="p-4">{task.status}</td>

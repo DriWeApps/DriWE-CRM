@@ -74,6 +74,41 @@ export default function TaskDetailsPage() {
         <Item label="Due Date" value={task.dueDate} />
         <Item label="Remarks" value={task.remarks} />
 
+        <Item
+          label="Completion Description"
+          value={task.completionDescription}
+        />
+
+        <div>
+          <p className="text-sm text-zinc-400">
+            Work Link
+          </p>
+
+          {task.completionLink ? (
+            <a
+              href={task.completionLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 inline-block text-lg text-blue-400 underline hover:text-blue-300"
+            >
+              Open Submitted Work
+            </a>
+          ) : (
+            <p className="mt-1 text-lg text-white">
+              -
+            </p>
+          )}
+        </div>
+
+        <Item
+          label="Completed At"
+          value={
+            task.completedAt
+              ? new Date(task.completedAt).toLocaleString()
+              : "-"
+          }
+        />
+
       </div>
     </div>
   );
@@ -90,9 +125,9 @@ function Item({
     <div>
       <p className="text-sm text-zinc-400">{label}</p>
 
-      <p className="mt-1 text-lg text-white">
-        {value || "-"}
-      </p>
+     <div className="mt-1 text-lg text-white">
+  {value || "-"}
+</div>
     </div>
   );
 }

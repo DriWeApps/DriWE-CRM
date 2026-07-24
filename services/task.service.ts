@@ -82,37 +82,58 @@ export async function updateTask(
           priority = :priority,
           #status = :status,
           dueDate = :dueDate,
-          remarks = :remarks,
-          updatedAt = :updatedAt
+         remarks = :remarks,
+completionDescription = :completionDescription,
+completionLink = :completionLink,
+completedAt = :completedAt,
+updatedAt = :updatedAt
       `,
       ExpressionAttributeNames: {
         "#status": "status",
       },
+      // ExpressionAttributeValues: {
+      //   ":title": data.title,
+      //   ":description": data.description,
+      //   ":companyId": data.companyId ?? "",
+      //   ":companyName": data.companyName ?? "",
+      //   ":completionDescription": data.completionDescription ?? "",
+      //   ":completionLink": data.completionLink ?? "",
+      //   ":completedAt": data.completedAt ?? "",
+      //   ":assignedBy": data.assignedBy ?? "",
+      //   ":assignedByName": data.assignedByName ?? "",
+      //   ":assignedTo": data.assignedTo ?? "",
+      //   ":assignedToName": data.assignedToName ?? "",
+      //   ":assignedToEmail": data.assignedToEmail ?? "",
+      //   ":remarks": data.remarks ?? "",
+      //   ":priority": data.priority,
+      //   ":status": data.status,
+      //   ":dueDate": data.dueDate,
+      //   ":updatedAt": new Date().toISOString(),
+      // },
+
       ExpressionAttributeValues: {
         ":title": data.title,
         ":description": data.description,
-        // ":companyId": data.companyId,
-        // ":companyName": data.companyName,
+
         ":companyId": data.companyId ?? "",
-":companyName": data.companyName ?? "",
-        // ":assignedTo": data.assignedTo,
-        // ":assignedToName": data.assignedToName,
-        // ":assignedToEmail": data.assignedToEmail,
-        // ":assignedBy": data.assignedBy,
-        // ":assignedByName": data.assignedByName,
+        ":companyName": data.companyName ?? "",
 
         ":assignedBy": data.assignedBy ?? "",
-":assignedByName": data.assignedByName ?? "",
-":assignedTo": data.assignedTo ?? "",
-":assignedToName": data.assignedToName ?? "",
-":assignedToEmail": data.assignedToEmail ?? "",
-":remarks": data.remarks ?? "",
+        ":assignedByName": data.assignedByName ?? "",
+        ":assignedTo": data.assignedTo ?? "",
+        ":assignedToName": data.assignedToName ?? "",
+        ":assignedToEmail": data.assignedToEmail ?? "",
+
         ":priority": data.priority,
         ":status": data.status,
         ":dueDate": data.dueDate,
-        // ":remarks": data.remarks ?? "",
+
+        ":remarks": data.remarks ?? "",
+        ":completionDescription": data.completionDescription ?? "",
+        ":completionLink": data.completionLink ?? "",
+        ":completedAt": data.completedAt ?? "",
         ":updatedAt": new Date().toISOString(),
-      },
+      }
     })
   );
 

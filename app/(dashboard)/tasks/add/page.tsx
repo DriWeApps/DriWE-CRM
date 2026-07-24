@@ -36,62 +36,62 @@ export default function AddTaskPage() {
 
         loadEmployees();
     }, []);
-   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-  e.preventDefault();
+    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault();
 
-  setLoading(true);
+        setLoading(true);
 
-  const formData = new FormData(e.currentTarget);
+        const formData = new FormData(e.currentTarget);
 
-  try {
-    // Get logged-in admin
-    const meRes = await fetch("/api/auth/me");
-    const me = await meRes.json();
+        try {
+            // Get logged-in admin
+            const meRes = await fetch("/api/auth/me");
+            const me = await meRes.json();
 
-    const body = {
-      title: formData.get("title"),
-      description: formData.get("description"),
+            const body = {
+                title: formData.get("title"),
+                description: formData.get("description"),
 
-      assignedTo: formData.get("assignedTo"),
-      assignedToName: formData.get("assignedToName"),
-      assignedToEmail: formData.get("assignedToEmail"),
+                assignedTo: formData.get("assignedTo"),
+                assignedToName: formData.get("assignedToName"),
+                assignedToEmail: formData.get("assignedToEmail"),
 
-      assignedBy: me.user.userId,
-      assignedByName: me.user.name,
+                assignedBy: me.user.userId,
+                assignedByName: me.user.name,
 
-      priority: formData.get("priority"),
+                priority: formData.get("priority"),
 
-      // Every new task starts as Pending
-      status: "Pending",
+                // Every new task starts as Pending
+                status: "Pending",
 
-      dueDate: formData.get("dueDate"),
+                dueDate: formData.get("dueDate"),
 
-      remarks: "",
-    };
+                remarks: "",
+            };
 
-    const res = await fetch("/api/tasks", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
+            const res = await fetch("/api/tasks", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(body),
+            });
 
-    const data = await res.json();
+            const data = await res.json();
 
-    if (data.success) {
-      alert("Task created successfully.");
-      window.location.href = "/tasks";
-    } else {
-      alert(data.message || "Failed to create task.");
+            if (data.success) {
+                alert("Task created successfully.");
+                window.location.href = "/tasks";
+            } else {
+                alert(data.message || "Failed to create task.");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Something went wrong.");
+        } finally {
+            setLoading(false);
+        }
     }
-  } catch (error) {
-    console.error(error);
-    alert("Something went wrong.");
-  } finally {
-    setLoading(false);
-  }
-}
     return (
         <div className="min-h-screen bg-zinc-950">
             {/* Header */}
