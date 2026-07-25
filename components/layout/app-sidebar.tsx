@@ -35,12 +35,12 @@ export default function AppSidebar() {
   }
 
   return (
-    <aside
-      className={cn(
-        "hidden h-screen shrink-0 border-r border-slate-800 bg-slate-950 transition-all duration-300 md:flex md:flex-col",
-        collapsed ? "w-20" : "w-72"
-      )}
-    >
+   <aside
+  className={cn(
+    "fixed left-0 top-0 z-40 hidden h-screen border-r border-slate-800 bg-slate-950 transition-all duration-300 md:flex md:flex-col",
+    collapsed ? "w-20" : "w-72"
+  )}
+>
       {/* Logo */}
 
       <div className="flex h-20 items-center justify-between border-b border-slate-800 px-5">

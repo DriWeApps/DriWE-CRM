@@ -78,27 +78,27 @@ export async function POST(req: Request) {
   }
 }
 
-export async function DELETE(req: Request) {
-  console.log("DELETE handler called"); // ← Add this for debugging
+// export async function DELETE(req: Request) {
+//   console.log("DELETE handler called"); // ← Add this for debugging
 
-  try {
-    const admin = await getUserFromRequest(req);
-    if (!admin || !isAdminUser(admin)) {
-      return NextResponse.json({ success: false, message: "Only admins can delete employees" }, { status: 403 });
-    }
+//   try {
+//     const admin = await getUserFromRequest(req);
+//     if (!admin || !isAdminUser(admin)) {
+//       return NextResponse.json({ success: false, message: "Only admins can delete employees" }, { status: 403 });
+//     }
 
-    const url = new URL(req.url);
-    const employeeId = url.pathname.split("/").pop();
+//     const url = new URL(req.url);
+//     const employeeId = url.pathname.split("/").pop();
 
-    if (!employeeId) {
-      return NextResponse.json({ success: false, message: "Employee ID is required" }, { status: 400 });
-    }
+//     if (!employeeId) {
+//       return NextResponse.json({ success: false, message: "Employee ID is required" }, { status: 400 });
+//     }
 
-    await deleteEmployee(employeeId);
+//     await deleteEmployee(employeeId);
 
-    return NextResponse.json({ success: true, message: "Employee deleted successfully" });
-  } catch (error) {
-    console.error("Delete error:", error);
-    return NextResponse.json({ success: false, message: "Failed to delete employee" }, { status: 500 });
-  }
-}
+//     return NextResponse.json({ success: true, message: "Employee deleted successfully" });
+//   } catch (error) {
+//     console.error("Delete error:", error);
+//     return NextResponse.json({ success: false, message: "Failed to delete employee" }, { status: 500 });
+//   }
+// }

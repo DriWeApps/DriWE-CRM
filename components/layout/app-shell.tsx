@@ -13,7 +13,11 @@ export default function AppShell({ children }: AppShellProps) {
     <div className="flex min-h-screen flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_transparent_40%),#020617] text-slate-100 md:flex-row">
       <AppSidebar />
 
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+     <div
+  className={`flex min-w-0 flex-1 flex-col overflow-hidden transition-all duration-300 ${
+    false ? "md:ml-20" : "md:ml-72"
+  }`}
+>
         <div className="shrink-0">
   <AppHeader />
 </div>

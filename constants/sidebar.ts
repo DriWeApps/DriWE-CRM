@@ -8,6 +8,7 @@ import {
   BarChart3,
   Settings,
   Bell,
+  Bug,
 } from "lucide-react";
 
 export const sidebarItems = [
@@ -55,5 +56,11 @@ export const sidebarItems = [
   title: "Notifications",
   href: "/notifications",
   icon: Bell,
+},
+
+{
+  title: "App Errors",
+  href: "/app-errors",
+  icon: Bug,
 },
 ];

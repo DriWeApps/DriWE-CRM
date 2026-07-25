@@ -82,8 +82,8 @@ export default function TaskTable() {
                         <tr key={task.taskId} className="border-t border-zinc-800">
                             <td className="p-4">{task.title}</td>
                             <td className="p-4">
-  {task.assignedByName || "-"}
-</td>
+                                {task.assignedByName || "-"}
+                            </td>
                             <td className="p-4">{task.assignedToName}</td>
                             <td className="p-4">{task.priority}</td>
                             <td className="p-4">{task.status}</td>
