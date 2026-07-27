@@ -43,15 +43,15 @@ export default function AppSidebar() {
 >
       {/* Logo */}
 
-      <div className="flex h-20 items-center justify-between border-b border-slate-800 px-5">
+      {/* <div className="flex h-20 items-center justify-between border-b border-slate-800 px-5">
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3"> */}
 
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 text-xl font-bold text-black shadow-lg shadow-cyan-500/30 transition-transform duration-300 hover:rotate-6 hover:scale-110">
+          {/* <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 text-xl font-bold text-black shadow-lg shadow-cyan-500/30 transition-transform duration-300 hover:rotate-6 hover:scale-110">
             D
-          </div>
+          </div> */}
 
-          {!collapsed && (
+          {/* {!collapsed && (
             <div>
               <h1 className="text-xl font-bold text-white">
                 DriWE CRM
@@ -61,11 +61,11 @@ export default function AppSidebar() {
                 Company Management
               </p>
             </div>
-          )}
+          )} */}
 
-        </div>
+        {/* </div> */}
 
-        <button
+        {/* <button
           onClick={() => setCollapsed(!collapsed)}
           className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-800 hover:text-white"
         >
@@ -74,9 +74,9 @@ export default function AppSidebar() {
           ) : (
             <ChevronLeft size={18} />
           )}
-        </button>
+        </button> */}
 
-      </div>
+      {/* </div> */}
 
       {/* Navigation */}
 
