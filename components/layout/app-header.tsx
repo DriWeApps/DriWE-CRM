@@ -119,21 +119,21 @@ export default function AppHeader() {
     (n) => !n.isRead
   ).length;
   return (
-    <header className="sticky top-0 z-[100] border-b border-slate-800/70 bg-zinc-950/80 backdrop-blur-xl">
+    // <header className="sticky top-0 z-[100] border-b border-slate-800/70 bg-zinc-950/80 backdrop-blur-xl">
       <div className="relative z-[100] flex h-16 items-center justify-between px-6">
 
         {/* Search */}
         <div className="relative w-full max-w-md">
-          <Search
+          {/* <Search
             className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
             size={18}
-          />
+          /> */}
 
-          <input
+          {/* <input
             type="text"
             placeholder="Search employees, companies, tasks..."
             className="w-full rounded-2xl border border-slate-800 bg-slate-900/70 py-3 pl-11 pr-4 text-sm text-white placeholder:text-slate-500 outline-none transition-all focus:border-cyan-500"
-          />
+          /> */}
         </div>
 
         <div className="ml-6 flex items-center gap-4">
@@ -332,6 +332,6 @@ export default function AppHeader() {
 
         </div>
       </div>
-    </header>
+    // </header>
   );
 }

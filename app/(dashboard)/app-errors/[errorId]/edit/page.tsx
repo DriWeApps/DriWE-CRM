@@ -127,35 +127,35 @@ export default function EditAppErrorPage() {
 
                 {/* Application */}
 
-              {/* Application */}
+                {/* Application */}
 
-<div>
+                <div>
 
-    <label className="mb-2 block text-sm text-slate-300">
-        Application
-    </label>
+                    <label className="mb-2 block text-sm text-slate-300">
+                        Application
+                    </label>
 
-    <select
-        value={form.module}
-        onChange={(e) =>
-            setForm({
-                ...form,
-                module: e.target.value,
-            })
-        }
-        className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white"
-    >
-        <option value="DriWE">
-            DriWE
-        </option>
+                    <select
+                        value={form.module}
+                        onChange={(e) =>
+                            setForm({
+                                ...form,
+                                module: e.target.value,
+                            })
+                        }
+                        className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white"
+                    >
+                        <option value="DriWE">
+                            DriWE
+                        </option>
 
-        <option value="DriWE Partners">
-            DriWE Partners
-        </option>
+                        <option value="DriWE Partners">
+                            DriWE Partners
+                        </option>
 
-    </select>
+                    </select>
 
-</div>
+                </div>
                 {/* Error Title */}
 
                 <div>
@@ -239,9 +239,12 @@ export default function EditAppErrorPage() {
                         }
                         className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white"
                     >
+                        <option>Solved</option>
+                        <option>Unsolved</option>
                         <option>In Progress</option>
-                        <option>Pass</option>
-                        <option>Fail</option>
+                        <option>Reoccurred</option>
+                        <option>Pending</option>
+                        <option>Rejected</option>
                     </select>
 
                 </div>

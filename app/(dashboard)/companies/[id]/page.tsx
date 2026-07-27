@@ -49,29 +49,29 @@ export default function CompanyDetailsPage({ params }: Props) {
   // }, [id]);
 
   useEffect(() => {
-  async function fetchCompany() {
-    try {
-      const res = await fetch(`/api/companies/${id}`, {
-        cache: "no-store",
-        credentials: "include",
-      });
+    async function fetchCompany() {
+      try {
+        const res = await fetch(`/api/companies/${id}`, {
+          cache: "no-store",
+          credentials: "include",
+        });
 
-      if (!res.ok) {
-        throw new Error("Failed to fetch company");
+        if (!res.ok) {
+          throw new Error("Failed to fetch company");
+        }
+
+        const data = await res.json();
+        setCompany(data.company || data);
+        setEditedData(data.company || data);
+      } catch (error) {
+        console.error("Failed to fetch company", error);
+      } finally {
+        setLoading(false);
       }
-
-      const data = await res.json();
-      setCompany(data.company || data);
-      setEditedData(data.company || data);
-    } catch (error) {
-      console.error("Failed to fetch company", error);
-    } finally {
-      setLoading(false);
     }
-  }
 
-  fetchCompany();
-}, [id]);
+    fetchCompany();
+  }, [id]);
 
   const copyToClipboard = (text: string, field: string) => {
     if (!text) return;

@@ -141,18 +141,6 @@ export default function AppSidebar() {
           )}
         </button>
 
-        {!collapsed && (
-          <div className="mt-6 rounded-xl border border-slate-800 bg-slate-900 p-3 text-center">
-            <p className="text-xs text-slate-500">
-              DriWE CRM
-            </p>
-
-            <p className="mt-1 text-xs text-slate-600">
-              © {new Date().getFullYear()}
-            </p>
-          </div>
-        )}
-
       </div>
 
     </aside>
