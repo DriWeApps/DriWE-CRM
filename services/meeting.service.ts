@@ -43,7 +43,8 @@ export interface Meeting {
   actionTaken?: string;
 
   createdBy: string;
-  createdByName: string;
+createdByEmail: string;
+createdByName: string;
 
   participants: MeetingParticipant[];
 
