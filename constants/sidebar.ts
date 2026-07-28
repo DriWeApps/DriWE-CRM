@@ -9,6 +9,7 @@ import {
   Settings,
   Bell,
   Bug,
+  Car,
 } from "lucide-react";
 
 export const sidebarItems = [
@@ -62,5 +63,11 @@ export const sidebarItems = [
   title: "App Errors",
   href: "/app-errors",
   icon: Bug,
+},
+
+{
+  title: "Customer Management (Driver)",
+  href: "/customer-management-driver",
+  icon: Car,
 },
 ];

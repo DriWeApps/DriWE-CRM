@@ -346,6 +346,10 @@ export default function EmployeeList({ searchTerm = "" }: EmployeeListProps) {
             <option value="Executive">Executive</option>
             <option value="Manager">Manager</option>
             <option value="Admin">Admin</option>
+            {/* <option value="Admin">Document Verification</option>
+            <option value="Admin">Intern Part-Time</option>
+            <option value="Admin">Sales Intern</option>
+            <option value="Admin">Admin desk</option> */}
           </select>
 
           <select
