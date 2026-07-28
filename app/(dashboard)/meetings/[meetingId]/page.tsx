@@ -23,6 +23,7 @@ interface Participant {
 
     decision?: string;
     actionTaken?: string;
+    employeeNotes?: string;
 }
 
 interface Meeting {
@@ -45,10 +46,16 @@ export default function MeetingDetailsPage() {
     const { meetingId } = useParams();
 
     const [meeting, setMeeting] = useState<Meeting | null>(null);
+    const [currentUser, setCurrentUser] = useState<{
+        userId: string;
+        email: string;
+        role: string;
+    } | null>(null);
     const [loading, setLoading] = useState(true);
 
     const [decision, setDecision] = useState("");
     const [actionTaken, setActionTaken] = useState("");
+    const [employeeNotes, setEmployeeNotes] = useState("");
     const [saving, setSaving] = useState(false);
     const [status, setStatus] = useState("Scheduled");
 
@@ -60,44 +67,93 @@ export default function MeetingDetailsPage() {
         try {
             setSaving(true);
 
-            const res = await fetch(`/api/meetings/${meetingId}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    status,
-                    decision,
-                    actionTaken,
-                }),
-            });
+            const res = await fetch(
+                `/api/meetings/${meetingId}`,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        status,
+                        decision,
+                        actionTaken,
+                        employeeNotes,
+                    }),
+                }
+            );
 
             const data = await res.json();
 
-            if (data.success) {
-                alert("Meeting notes updated");
-                loadMeeting();
+            if (!res.ok || !data.success) {
+                alert(
+                    data.message ||
+                    "Failed to update meeting"
+                );
+                return;
             }
+
+            alert("Meeting information updated successfully");
+
+            await loadMeeting();
 
         } catch (error) {
             console.error(error);
-            alert("Failed to update");
+            alert("Failed to update meeting");
         } finally {
             setSaving(false);
         }
     }
 
+
+
     async function loadMeeting() {
         try {
-            const res = await fetch(`/api/meetings/${meetingId}`);
+            const res = await fetch(
+                `/api/meetings/${meetingId}`,
+                {
+                    credentials: "include",
+                }
+            );
+
             const data = await res.json();
 
             if (data.success) {
                 setMeeting(data.meeting);
 
+                setCurrentUser(data.currentUser);
+
                 setDecision(data.meeting.decision || "");
                 setActionTaken(data.meeting.actionTaken || "");
                 setStatus(data.meeting.status || "Scheduled");
+
+                // Load current employee's own response
+                if (
+                    data.currentUser?.role !== "Admin" &&
+                    data.currentUser?.role !== "Manager"
+                ) {
+                    const currentParticipant =
+                        data.meeting.participants?.find(
+                            (participant: Participant) =>
+                                participant.employeeEmail ===
+                                data.currentUser.email
+                        );
+
+                    if (currentParticipant) {
+                        setDecision(
+                            currentParticipant.decision || ""
+                        );
+
+                        setActionTaken(
+                            currentParticipant.actionTaken || ""
+                        );
+
+                        setEmployeeNotes(
+                            currentParticipant.employeeNotes || ""
+                        );
+                    }
+                }
             }
         } catch (err) {
             console.error(err);
@@ -105,6 +161,7 @@ export default function MeetingDetailsPage() {
             setLoading(false);
         }
     }
+
 
     if (loading) {
         return (
@@ -280,6 +337,13 @@ export default function MeetingDetailsPage() {
                                         Action: {participant.actionTaken}
                                     </p>
                                 )}
+
+
+                                {participant.employeeNotes && (
+                                    <p className="mt-1 text-sm text-purple-300">
+                                        Notes: {participant.employeeNotes}
+                                    </p>
+                                )}
                             </div>
 
                             <div className="text-right">
@@ -314,6 +378,7 @@ export default function MeetingDetailsPage() {
 
             <div className="grid gap-6 lg:grid-cols-2">
 
+                {/* Decision */}
                 <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
 
                     <h2 className="mb-4 text-xl font-semibold text-white">
@@ -322,7 +387,9 @@ export default function MeetingDetailsPage() {
 
                     <textarea
                         value={decision}
-                        onChange={(e) => setDecision(e.target.value)}
+                        onChange={(e) =>
+                            setDecision(e.target.value)
+                        }
                         placeholder="Enter final decision..."
                         rows={5}
                         className="w-full rounded-xl border border-slate-700 bg-slate-950 p-4 text-white outline-none focus:border-cyan-500"
@@ -330,7 +397,7 @@ export default function MeetingDetailsPage() {
 
                 </div>
 
-
+                {/* Action Taken */}
                 <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
 
                     <h2 className="mb-4 text-xl font-semibold text-white">
@@ -339,23 +406,46 @@ export default function MeetingDetailsPage() {
 
                     <textarea
                         value={actionTaken}
-                        onChange={(e) => setActionTaken(e.target.value)}
-                        placeholder="Enter action items..."
+                        onChange={(e) =>
+                            setActionTaken(e.target.value)
+                        }
+                        placeholder="What action needs to be taken?"
                         rows={5}
                         className="w-full rounded-xl border border-slate-700 bg-slate-950 p-4 text-white outline-none focus:border-cyan-500"
                     />
 
                 </div>
 
+                {/* Employee Notes */}
+                <div className="rounded-xl border border-slate-800 bg-slate-900 p-6 lg:col-span-2">
 
-                <div className="lg:col-span-2 flex justify-end">
+                    <h2 className="mb-4 text-xl font-semibold text-white">
+                        Employee Notes
+                    </h2>
+
+                    <textarea
+                        value={employeeNotes}
+                        onChange={(e) =>
+                            setEmployeeNotes(e.target.value)
+                        }
+                        placeholder="Add your meeting notes..."
+                        rows={5}
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 p-4 text-white outline-none focus:border-cyan-500"
+                    />
+
+                </div>
+
+                {/* Save */}
+                <div className="flex justify-end lg:col-span-2">
 
                     <button
                         onClick={saveMeetingNotes}
                         disabled={saving}
                         className="rounded-xl bg-cyan-500 px-8 py-3 font-semibold text-slate-950 hover:bg-cyan-400 disabled:opacity-50"
                     >
-                        {saving ? "Saving..." : "Save Meeting Notes"}
+                        {saving
+                            ? "Saving..."
+                            : "Save Meeting Notes"}
                     </button>
 
                 </div>

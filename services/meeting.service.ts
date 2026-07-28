@@ -19,6 +19,7 @@ export interface MeetingParticipant {
 
   actionTaken?: string;
   decision?: string;
+  employeeNotes?: string;
 }
 
 export interface Meeting {
@@ -129,8 +130,9 @@ export async function markAttendance(
   employeeEmail: string,
   joined: boolean,
   actionTaken: string,
-  decision: string
-) {
+  decision: string,
+  employeeNotes: string
+){
   const meeting = await getMeetingById(meetingId);
 
   if (!meeting) {
@@ -143,13 +145,14 @@ export async function markAttendance(
         return participant;
       }
 
-      return {
-        ...participant,
-        joined,
-        joinedAt: joined ? new Date().toISOString() : "",
-        actionTaken,
-        decision,
-      };
+     return {
+  ...participant,
+  joined,
+  joinedAt: joined ? new Date().toISOString() : "",
+  actionTaken,
+  decision,
+  employeeNotes,
+};
     }) ?? [];
 
   return updateMeeting(meetingId, {
