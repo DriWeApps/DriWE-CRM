@@ -41,24 +41,58 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, message: "A user with this email already exists" }, { status: 409 });
     }
 
+    // const employee = {
+    //   employeeId: randomUUID(),
+    //   firstName: body.firstName,
+    //   lastName: body.lastName,
+    //   email: body.email,
+    //   mobile: body.mobile,
+    //   designation: body.designation,
+    //   department: body.department,
+    //   role: body.role ?? "Executive",
+    //   status: body.status ?? "Active",
+    //   joiningDate: body.joiningDate ?? new Date().toISOString().split("T")[0],
+    //   dateOfBirth: body.dateOfBirth || "",
+    //   address: body.address,
+    //   city: body.city,
+    //   state: body.state,
+    //   pincode: body.pincode,
+    //   createdAt: new Date().toISOString(),
+    //   updatedAt: new Date().toISOString(),
+    // };
+
     const employee = {
-      employeeId: randomUUID(),
-      firstName: body.firstName,
-      lastName: body.lastName,
-      email: body.email,
-      mobile: body.mobile,
-      designation: body.designation,
-      department: body.department,
-      role: body.role ?? "Executive",
-      status: body.status ?? "Active",
-      joiningDate: body.joiningDate ?? new Date().toISOString().split("T")[0],
-      address: body.address,
-      city: body.city,
-      state: body.state,
-      pincode: body.pincode,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+  employeeId: randomUUID(),
+
+  firstName: body.firstName || "",
+  lastName: body.lastName || "",
+
+  email: body.email || "",
+  mobile: body.mobile || "",
+
+  designation: body.designation || "",
+  department: body.department || "",
+
+  role: body.role ?? "Executive",
+  status: body.status ?? "Active",
+
+  joiningDate:
+    body.joiningDate ||
+    new Date().toISOString().split("T")[0],
+
+  // IMPORTANT
+  dateOfBirth: body.dateOfBirth || "",
+  gender: body.gender || "",
+
+  address: body.address || "",
+  city: body.city || "",
+  state: body.state || "",
+  pincode: body.pincode || "",
+  country: body.country || "",
+
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
 
     const hashedPassword = await hashPassword(loginPassword);
 
@@ -78,27 +112,3 @@ export async function POST(req: Request) {
   }
 }
 
-// export async function DELETE(req: Request) {
-//   console.log("DELETE handler called"); // ← Add this for debugging
-
-//   try {
-//     const admin = await getUserFromRequest(req);
-//     if (!admin || !isAdminUser(admin)) {
-//       return NextResponse.json({ success: false, message: "Only admins can delete employees" }, { status: 403 });
-//     }
-
-//     const url = new URL(req.url);
-//     const employeeId = url.pathname.split("/").pop();
-
-//     if (!employeeId) {
-//       return NextResponse.json({ success: false, message: "Employee ID is required" }, { status: 400 });
-//     }
-
-//     await deleteEmployee(employeeId);
-
-//     return NextResponse.json({ success: true, message: "Employee deleted successfully" });
-//   } catch (error) {
-//     console.error("Delete error:", error);
-//     return NextResponse.json({ success: false, message: "Failed to delete employee" }, { status: 500 });
-//   }
-// }

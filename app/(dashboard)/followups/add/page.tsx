@@ -471,40 +471,22 @@ export default function AddFollowupPage() {
             className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 p-3 text-white cursor-pointer"
 
             required
-
           />
-
-
         </div>
-
-
-
-
-
-
 
         <div className="grid md:grid-cols-2 gap-4">
 
-
           <div>
-
             <label className="text-sm text-slate-300">
               Priority
             </label>
 
-
             <select
-
               name="priority"
-
               value={form.priority}
-
               onChange={handleChange}
-
               className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 p-3 text-white"
-
             >
-
               <option>
                 Low
               </option>
@@ -517,104 +499,60 @@ export default function AddFollowupPage() {
                 High
               </option>
 
-
             </select>
-
           </div>
 
-
-
-
-
           <div>
-
             <label className="text-sm text-slate-300">
               Status
             </label>
 
-
             <select
-
               name="status"
-
               value={form.status}
-
               onChange={handleChange}
-
               className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 p-3 text-white"
-
             >
-
-
               <option>
                 Pending
               </option>
-
 
               <option>
                 Completed
               </option>
 
-
               <option>
                 Cancelled
               </option>
 
-
             </select>
-
 
           </div>
 
-
         </div>
 
-
-
-
-
-
-
         <div>
-
           <label className="text-sm text-slate-300">
             Notes
           </label>
 
-
           <textarea
-
             name="notes"
-
             value={form.notes}
-
             onChange={handleChange}
-
             rows={4}
-
             placeholder="Follow-up details..."
-
             className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 p-3 text-white"
-
           />
-
 
         </div>
 
-
-
-
-
-
-
         <button
-
           disabled={loading}
 
           className="flex items-center gap-2 rounded-xl bg-cyan-500 px-6 py-3 font-medium text-slate-950 hover:bg-cyan-400"
 
         >
-
           <Save size={18} />
 
           {
@@ -624,20 +562,8 @@ export default function AddFollowupPage() {
               :
               "Create Follow-up"
           }
-
-
         </button>
-
-
-
-
-
       </form>
-
-
     </div>
-
   );
-
-
 }

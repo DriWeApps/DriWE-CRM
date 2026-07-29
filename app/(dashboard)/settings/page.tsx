@@ -47,10 +47,10 @@ export default function SettingsPage() {
 
           {/* Profile */}
 
-         <Link
-  href="/settings/profile"
-  className="group flex w-full items-center justify-between rounded-3xl border border-slate-800 bg-zinc-900/70 p-8 transition-all duration-300 hover:border-cyan-500 hover:bg-zinc-900 hover:shadow-2xl hover:shadow-cyan-500/10"
->
+          <Link
+            href="/settings/profile"
+            className="group flex w-full items-center justify-between rounded-3xl border border-slate-800 bg-zinc-900/70 p-8 transition-all duration-300 hover:border-cyan-500 hover:bg-zinc-900 hover:shadow-2xl hover:shadow-cyan-500/10"
+          >
             <div className="flex items-center justify-between">
 
               <div className="flex items-center gap-4">
@@ -109,37 +109,6 @@ export default function SettingsPage() {
             </Link>
           )}
 
-          {/* Security */}
-
-          <Link
-            href="/settings/security"
-            className="group rounded-3xl border border-slate-800 bg-slate-900/60 p-6 transition-all hover:-translate-y-1 hover:border-yellow-500 hover:shadow-xl hover:shadow-yellow-500/10"
-          >
-            <div className="flex items-center justify-between">
-
-              <div className="flex items-center gap-4">
-
-                <div className="rounded-2xl bg-yellow-500/10 p-4">
-                  <Shield className="h-7 w-7 text-yellow-400" />
-                </div>
-
-                <div>
-                  <h2 className="text-xl font-semibold text-white">
-                    Security
-                  </h2>
-
-                  <p className="mt-1 text-sm text-slate-400">
-                    Change your account password.
-                  </p>
-                </div>
-
-              </div>
-
-              <ArrowRight className="text-slate-500 transition group-hover:text-yellow-400 group-hover:translate-x-1" />
-
-            </div>
-          </Link>
-
           {/* Notifications */}
 
           <Link
@@ -183,8 +152,8 @@ export default function SettingsPage() {
 
           <div className="mt-8 grid gap-6 md:grid-cols-3">
 
-<div className="mt-10 w-full rounded-3xl border border-slate-800 bg-zinc-900/70 p-8">
-            {/* <div className="rounded-2xl border border-slate-800 bg-slate-950 p-6"> */}
+            <div className="mt-10 w-full rounded-3xl border border-slate-800 bg-zinc-900/70 p-8">
+              {/* <div className="rounded-2xl border border-slate-800 bg-slate-950 p-6"> */}
               <p className="text-sm text-slate-400">
                 CRM Version
               </p>

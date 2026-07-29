@@ -78,9 +78,9 @@ export default function EmployeesPage() {
 
         {/* Employee List */}
         <div className="rounded-3xl border border-slate-800 bg-zinc-900/50 shadow-xl overflow-hidden">
-          <EmployeeList 
-            key={refreshKey} 
-            searchTerm={searchTerm} 
+          <EmployeeList
+            key={refreshKey}
+            searchTerm={searchTerm}
           />
         </div>
       </div>

@@ -74,10 +74,10 @@ export async function PUT(
 
     const hashedPassword = await hashPassword(password);
 
-   await updateUserPassword(
-  user.userId,
-  hashedPassword
-);
+    await updateUserPassword(
+      user.userId,
+      hashedPassword
+    );
 
     return NextResponse.json({
       success: true,

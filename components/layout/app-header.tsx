@@ -125,18 +125,9 @@ export default function AppHeader() {
       <span className="whitespace-nowrap text-6xl font-bold tracking-wide text-White-400 drop-shadow-[0_0_12px_rgba(250,204,21,0.15)]">
         DriWE CRM
       </span>
-      {/* Search */}
-      <div className="relative w-full max-w-md">
-        {/* <Search
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
-            size={18}
-          /> */}
 
-        {/* <input
-            type="text"
-            placeholder="Search employees, companies, tasks..."
-            className="w-full rounded-2xl border border-slate-800 bg-slate-900/70 py-3 pl-11 pr-4 text-sm text-white placeholder:text-slate-500 outline-none transition-all focus:border-cyan-500"
-          /> */}
+      <div className="relative w-full max-w-md">
+
       </div>
 
       <div className="ml-6 flex items-center gap-4">
@@ -220,7 +211,7 @@ export default function AppHeader() {
         </div>
 
         {/* Profile */}
-        <div className="relative" ref={profileRef}>
+        {/* <div className="relative" ref={profileRef}>
 
           <button
             onClick={() => setProfileOpen(!profileOpen)}
@@ -331,7 +322,10 @@ export default function AppHeader() {
             </div>
           )}
 
-        </div>
+        </div> */}
+
+
+
 
       </div>
     </div>
