@@ -23,6 +23,8 @@ interface Driver {
   email: string;
   contactNo: string;
 
+type: "Cab" | "Courier"; // ADD THIS
+
   status: "Accept" | "Reject" | "Hold";
   reason: string;
 
@@ -612,11 +614,19 @@ export default function CustomerManagementDriverPage() {
               <tr className="text-left text-xs uppercase tracking-wider text-slate-500">
 
                 <th className="px-5 py-4">
+                    Sr. No.
+                </th>
+
+                <th className="px-5 py-4">
                   Driver
                 </th>
 
                 <th className="px-5 py-4">
                   Contact
+                </th>
+
+                <th className="px-5 py-4">
+                    Type
                 </th>
 
                 <th className="px-5 py-4">
@@ -649,7 +659,7 @@ export default function CustomerManagementDriverPage() {
 
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={9}
                     className="px-5 py-12 text-center text-slate-400"
                   >
                     <div className="flex items-center justify-center gap-3">
@@ -703,12 +713,32 @@ export default function CustomerManagementDriverPage() {
 
               ) : (
 
-                drivers.map((driver) => (
+                drivers.map((driver, index) => (
+
+                    
+
+
+
+
+
+
+                    
 
                   <tr
+
+                    
+
+
                     key={driver.customerId}
                     className="border-b border-slate-800 text-white transition hover:bg-slate-800/40"
                   >
+
+                    {/* Sr. No. */}
+                     <td className="px-5 py-5">
+                    <span className="font-semibold text-cyan-400">
+                    {index + 1}
+                    </span>
+                    </td>
 
                     {/* Driver */}
 
@@ -754,6 +784,27 @@ export default function CustomerManagementDriverPage() {
                       </div>
 
                     </td>
+
+
+   {/* Type */}
+
+<td className="px-5 py-5">
+
+  <span
+    className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${
+      driver.type === "Cab"
+        ? "border-cyan-500/20 bg-cyan-500/10 text-cyan-400"
+        : "border-purple-500/20 bg-purple-500/10 text-purple-400"
+    }`}
+  >
+    {driver.type || "-"}
+  </span>
+
+</td>
+
+
+
+
 
                     {/* Status */}
 

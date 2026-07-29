@@ -768,11 +768,10 @@ export default function EmployeeList({ searchTerm = "" }: EmployeeListProps) {
                     {employee.firstName} {employee.lastName}
                   </h3>
                   <span
-                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      employee.status === "Active"
+                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${employee.status === "Active"
                         ? "bg-emerald-500/15 text-emerald-400"
                         : "bg-red-500/15 text-red-400"
-                    }`}
+                      }`}
                   >
                     {employee.status}
                   </span>
@@ -871,35 +870,6 @@ export default function EmployeeList({ searchTerm = "" }: EmployeeListProps) {
             <p className="text-xs text-slate-400">Preview updates live below</p>
           </div>
         </div>
-
-        {/* LIVE PREVIEW CARD */}
-        {/* <div className="mb-6 rounded-2xl border border-slate-700/80 bg-zinc-950 p-4">
-          <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-slate-500">
-            Live Preview
-          </p>
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-sm font-bold text-white">
-              {form.firstName ? form.firstName.charAt(0).toUpperCase() : "?"}
-              {form.lastName ? form.lastName.charAt(0).toUpperCase() : ""}
-            </div>
-            <div className="min-w-0">
-              <h3 className="truncate font-semibold text-white">{fullName}</h3>
-              <p className="truncate text-sm text-emerald-400">
-                {form.designation || "Designation"}
-                {form.department ? ` • ${form.department}` : ""}
-              </p>
-            </div>
-            <span
-              className={`ml-auto shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                form.status === "Active"
-                  ? "bg-emerald-500/15 text-emerald-400"
-                  : "bg-red-500/15 text-red-400"
-              }`}
-            >
-              {form.status}
-            </span>
-          </div>
-        </div> */}
 
         {/* FORM FIELDS */}
         <div className="grid gap-4 sm:grid-cols-2">

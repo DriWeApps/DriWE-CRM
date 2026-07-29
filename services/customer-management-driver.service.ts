@@ -23,9 +23,14 @@ export type CustomerManagementDriverStatus =
 export interface CustomerManagementDriver {
   customerId: string;
 
+  srNo: number;
+
+
   name: string;
   email: string;
   contactNo: string;
+
+  type: "Cab" | "Courier";
 
   status: CustomerManagementDriverStatus;
   reason: string;
