@@ -15,13 +15,18 @@ export async function createCompany(company: Company) {
   const id = crypto.randomUUID();
 
   const item = {
-    id,
-    companyId: id,
-    ...company,
-    phone: company.phone ?? company.mobile ?? "",
-    createdAt: now,
-    updatedAt: now,
-  };
+  id,
+  companyId: id,
+  ...company,
+
+  phone: company.phone ?? company.mobile ?? "",
+
+  leadedBy: company.leadedBy ?? "",
+  leadedByEmployeeId: company.leadedByEmployeeId ?? "",
+
+  createdAt: now,
+  updatedAt: now,
+};
 
   await db.send(
     new PutCommand({
@@ -77,6 +82,8 @@ export async function updateCompany(id: string, data: Partial<Company>) {
     { field: "notes", value: data.notes ?? "" },
     { field: "phone", value: data.phone ?? data.mobile ?? "" },
     { field: "updatedAt", value: new Date().toISOString() },
+   { field: "leadedBy", value: data.leadedBy ?? "" },
+  { field: "leadedByEmployeeId", value: data.leadedByEmployeeId ?? "" },
   ];
 
   const updateExpression = updates

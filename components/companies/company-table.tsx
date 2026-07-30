@@ -81,10 +81,24 @@ export default function CompanyTable() {
       <div className="overflow-hidden rounded-2xl border border-slate-800">
         <table className="min-w-full divide-y divide-slate-800 text-sm">
           <thead className="bg-slate-950/80 text-left text-slate-400">
-            <tr>
+            {/* <tr>
               <th className="px-4 py-3 font-medium">Company</th>
               <th className="px-4 py-3 font-medium">Contact</th>
               <th className="px-4 py-3 font-medium">Location</th>
+              <th className="px-4 py-3 font-medium">Status</th>
+              <th className="px-4 py-3 font-medium">Actions</th>
+            </tr> */}
+
+
+            <tr>
+              <th className="px-4 py-3 font-medium">Company</th>
+              <th className="px-4 py-3 font-medium">Contact</th>
+
+              <th className="px-4 py-3 font-medium">
+                Leaded By
+              </th>
+
+              <th className="px-4 py-3 font-medium">Address</th>
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Actions</th>
             </tr>
@@ -96,20 +110,42 @@ export default function CompanyTable() {
 
               return (
                 <tr key={companyId} className="hover:bg-slate-800/40">
+
+                  {/* Company */}
                   <td className="px-4 py-3">
-                    <div className="font-medium text-white">{company.companyName}</div>
-                    <div className="text-xs text-slate-400">{company.companyType || "Client"}</div>
+                    <div className="font-medium text-white">
+                      {company.companyName}
+                    </div>
+
+                    <div className="text-xs text-slate-400">
+                      {company.companyType || "Client"}
+                    </div>
                   </td>
 
+                  {/* Contact */}
                   <td className="px-4 py-3">
-                    <div className="text-slate-200">{company.contactPerson || "—"}</div>
-                    <div className="text-xs text-slate-400">{company.email || "—"}</div>
+                    <div className="text-slate-200">
+                      {company.contactPerson || "—"}
+                    </div>
+
+                    <div className="text-xs text-slate-400">
+                      {company.email || "—"}
+                    </div>
                   </td>
 
+                  {/* Leaded By */}
+                  <td className="px-4 py-3">
+                    <div className="text-slate-200">
+                      {company.leadedBy || "Not Assigned"}
+                    </div>
+                  </td>
+
+                  {/* Location */}
                   <td className="px-4 py-3 text-slate-300">
-                    {company.city ? `${company.city}, ${company.state}` : "—"}
+                    {company.address || "—"}
                   </td>
 
+                  {/* Status */}
                   <td className="px-4 py-3">
                     <span
                       className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${company.status === "Active"
@@ -121,6 +157,7 @@ export default function CompanyTable() {
                     </span>
                   </td>
 
+                  {/* Actions */}
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <Link
@@ -147,6 +184,7 @@ export default function CompanyTable() {
                       )}
                     </div>
                   </td>
+
                 </tr>
               );
             })}

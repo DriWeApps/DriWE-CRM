@@ -11,6 +11,16 @@ interface CompanyFormProps {
   companyId?: string;
 }
 
+// const defaultForm: Company = {
+//   companyName: "",
+//   companyType: "",
+//   contactPerson: "",
+//   mobile: "",
+//   email: "",
+//   address: "",
+//   status: "Active",
+// };
+
 const defaultForm: Company = {
   companyName: "",
   companyType: "",
@@ -18,8 +28,11 @@ const defaultForm: Company = {
   mobile: "",
   email: "",
   address: "",
+  leadedBy: "",
   status: "Active",
 };
+
+
 const inputClass =
   "w-full rounded-xl border border-slate-700/80 bg-slate-950/70 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20";
 
@@ -30,12 +43,24 @@ export default function CompanyForm({
 }: CompanyFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [employees, setEmployees] = useState([]);
   const [loadingCompany, setLoadingCompany] = useState(mode === "edit" && !company);
   const [form, setForm] = useState<Company>({
     ...defaultForm,
+    
     ...(company ?? {}),
     status: company?.status ?? "Active",
   });
+
+
+useEffect(() => {
+  fetch("/api/employees")
+    .then(res => res.json())
+    .then(data => {
+      setEmployees(Array.isArray(data) ? data : data.employees || []);
+    });
+}, []);
+
 
   useEffect(() => {
     if (company) {
@@ -158,6 +183,45 @@ export default function CompanyForm({
       onChange={handleChange}
     />
   </div>
+
+{/* Leaded By */}
+
+<div className="space-y-2">
+  <label className="text-sm font-medium text-slate-300">
+    Leaded By
+  </label>
+
+  <select
+    name="leadedBy"
+    value={form.leadedBy || ""}
+    onChange={handleChange}
+    className={inputClass}
+  >
+    <option value="">Select Employee</option>
+
+    {/* {employees.map((employee: any) => (
+      <option
+        key={employee.employeeId}
+        value={employee.name}
+      >
+        {employee.name}
+      </option>
+    ))} */}
+
+
+{employees.map((employee: any) => (
+  <option
+    key={employee.employeeId}
+    value={`${employee.firstName} ${employee.lastName}`}
+  >
+    {employee.firstName} {employee.lastName}
+  </option>
+))}
+
+
+  </select>
+</div>
+
 
   {/* Mobile */}
   <div className="space-y-2">

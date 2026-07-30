@@ -1,3 +1,4 @@
+
 // import { NextResponse } from "next/server";
 
 // import {
@@ -5,6 +6,8 @@
 //   getCompany,
 //   updateCompany,
 // } from "@/services/company.service";
+
+// import { getUserFromRequest } from "@/lib/auth";
 
 // interface RouteContext {
 //   params: Promise<{
@@ -33,7 +36,36 @@
 //   });
 // }
 
-// export async function DELETE(req: Request, { params }: RouteContext) {
+// export async function DELETE(
+//   req: Request,
+//   { params }: RouteContext
+// ) {
+//   const user = await getUserFromRequest(req);
+
+//   if (!user) {
+//     return NextResponse.json(
+//       {
+//         success: false,
+//         message: "Unauthorized",
+//       },
+//       {
+//         status: 401,
+//       }
+//     );
+//   }
+
+//   if (user.role !== "ADMIN") {
+//     return NextResponse.json(
+//       {
+//         success: false,
+//         message: "Only admin can delete companies",
+//       },
+//       {
+//         status: 403,
+//       }
+//     );
+//   }
+
 //   const { id } = await params;
 
 //   await deleteCompany(id);
@@ -60,8 +92,13 @@ interface RouteContext {
   }>;
 }
 
+/* =========================================================
+   GET COMPANY
+========================================================= */
+
 export async function GET(req: Request, { params }: RouteContext) {
   const { id } = await params;
+
   const company = await getCompany(id);
 
   return NextResponse.json({
@@ -70,8 +107,51 @@ export async function GET(req: Request, { params }: RouteContext) {
   });
 }
 
+/* =========================================================
+   UPDATE COMPANY
+========================================================= */
+
 export async function PUT(req: Request, { params }: RouteContext) {
+  const user = await getUserFromRequest(req);
+
+  if (!user) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Unauthorized",
+      },
+      { status: 401 }
+    );
+  }
+
   const { id } = await params;
+
+  const company = await getCompany(id);
+
+  if (!company) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Company not found",
+      },
+      { status: 404 }
+    );
+  }
+
+  const isAdmin = user.role === "ADMIN";
+  const isManager = user.role === "Manager";
+  const isOwner = company.createdBy === user.userId;
+
+  if (!isAdmin && !isManager && !isOwner) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "You are not allowed to edit this company.",
+      },
+      { status: 403 }
+    );
+  }
+
   const body = await req.json();
 
   await updateCompany(id, body);
@@ -80,6 +160,10 @@ export async function PUT(req: Request, { params }: RouteContext) {
     success: true,
   });
 }
+
+/* =========================================================
+   DELETE COMPANY
+========================================================= */
 
 export async function DELETE(
   req: Request,
@@ -93,25 +177,37 @@ export async function DELETE(
         success: false,
         message: "Unauthorized",
       },
-      {
-        status: 401,
-      }
-    );
-  }
-
-  if (user.role !== "ADMIN") {
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Only admin can delete companies",
-      },
-      {
-        status: 403,
-      }
+      { status: 401 }
     );
   }
 
   const { id } = await params;
+
+  const company = await getCompany(id);
+
+  if (!company) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Company not found",
+      },
+      { status: 404 }
+    );
+  }
+
+  const isAdmin = user.role === "ADMIN";
+  const isManager = user.role === "Manager";
+  const isOwner = company.createdBy === user.userId;
+
+  if (!isAdmin && !isManager && !isOwner) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "You are not allowed to delete this company.",
+      },
+      { status: 403 }
+    );
+  }
 
   await deleteCompany(id);
 

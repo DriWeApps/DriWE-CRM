@@ -58,7 +58,14 @@ export async function POST(req: Request) {
       );
     }
 
-    const company = await createCompany(body);
+    // const company = await createCompany(body);
+
+    const company = await createCompany({
+  ...body,
+  createdBy: user.userId,
+  createdByName:  user.email,
+  createdByEmail: user.email,
+});
 
     return NextResponse.json({
       success: true,
