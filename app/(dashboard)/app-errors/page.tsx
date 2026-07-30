@@ -8,6 +8,10 @@ import {
     Pencil,
     Trash2,
 } from "lucide-react";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+import { Download } from "lucide-react";
+
 
 interface AppError {
     errorId: string;
@@ -70,6 +74,47 @@ export default function AppErrorsPage() {
         }
     }
 
+
+    function downloadExcel() {
+    const sheetData = errors.map((item, index) => ({
+        "Sr. No": index + 1,
+        Module: item.module,
+        "Error Title": item.errorTitle,
+        "Occurred Error": item.occurredError,
+        "Expected Error": item.expectedError,
+        Status: item.status,
+        "Reported By": item.reportedByName,
+        Email: item.reportedByEmail,
+        Date: new Date(item.createdAt).toLocaleString(),
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(sheetData);
+
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(
+        workbook,
+        worksheet,
+        "App Errors"
+    );
+
+    const excelBuffer = XLSX.write(workbook, {
+        bookType: "xlsx",
+        type: "array",
+    });
+
+    const file = new Blob([excelBuffer], {
+        type:
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+
+    saveAs(
+        file,
+        `AppErrors_${new Date().toISOString().split("T")[0]}.xlsx`
+    );
+}
+
+
     function statusColor(status: string) {
         switch (status) {
             case "Pass":
@@ -92,7 +137,7 @@ export default function AppErrorsPage() {
     return (
         <div className="space-y-6">
 
-            <div className="flex items-center justify-between">
+           <div className="flex items-center justify-between">
 
                 <div>
 
@@ -106,13 +151,25 @@ export default function AppErrorsPage() {
 
                 </div>
 
-                <Link
-                    href="/app-errors/add"
-                    className="flex items-center gap-2 rounded-xl bg-cyan-600 px-5 py-3 text-white hover:bg-cyan-700"
-                >
-                    <Plus size={18} />
-                    Report Error
-                </Link>
+               <div className="flex items-center gap-3">
+
+    <button
+        onClick={downloadExcel}
+        className="flex items-center gap-2 rounded-xl bg-green-600 px-5 py-3 text-white hover:bg-green-700"
+    >
+        <Download size={18} />
+        Download Sheet
+    </button>
+
+    <Link
+        href="/app-errors/add"
+        className="flex items-center gap-2 rounded-xl bg-cyan-600 px-5 py-3 text-white hover:bg-cyan-700"
+    >
+        <Plus size={18} />
+        Report Error
+    </Link>
+
+</div>
 
             </div>
 
