@@ -103,9 +103,11 @@ export async function PUT(
     if (!isAdminUser(user)) {
 
       const now = new Date();
-      const dueDate = new Date(oldTask.dueDate);
 
-      if (now > dueDate) {
+const dueDate = new Date(oldTask.dueDate);
+dueDate.setHours(23, 59, 59, 999);
+
+if (now > dueDate) {
         return NextResponse.json(
           {
             success: false,
