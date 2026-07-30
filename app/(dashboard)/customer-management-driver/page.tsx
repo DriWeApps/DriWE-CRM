@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import * as XLSX from "xlsx";
+import { Download } from "lucide-react";
 
 interface Driver {
     customerId: string;
@@ -207,6 +209,59 @@ export default function CustomerManagementDriverPage() {
         }
     }
 
+
+
+    function downloadExcel() {
+    const sheetData = drivers.map((driver, index) => ({
+        "Sr. No": index + 1,
+        Name: driver.name,
+        Email: driver.email,
+        "Contact No": driver.contactNo,
+        Type: driver.type,
+        Status: driver.status,
+        Reason: driver.reason,
+        Date: driver.date,
+        "Added By": driver.createdByName,
+        "Added By Email": driver.createdByEmail,
+        "Created At": new Date(driver.createdAt).toLocaleString(),
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(sheetData);
+
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(
+        workbook,
+        worksheet,
+        "Drivers"
+    );
+
+    const excelBuffer = XLSX.write(workbook, {
+        bookType: "xlsx",
+        type: "array",
+    });
+
+    const file = new Blob([excelBuffer], {
+        type:
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+
+    const url = URL.createObjectURL(file);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Drivers_${new Date()
+        .toISOString()
+        .split("T")[0]}.xlsx`;
+
+    document.body.appendChild(a);
+    a.click();
+
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+
     /* =====================================================
        STATUS BADGE
     ===================================================== */
@@ -291,6 +346,16 @@ export default function CustomerManagementDriverPage() {
 
                         Refresh
                     </button>
+
+                    <button
+    type="button"
+    onClick={downloadExcel}
+    className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-green-700"
+>
+    <Download size={18} />
+    Download Sheet
+</button>
+
 
                     <Link
                         href="/customer-management-driver/add"
