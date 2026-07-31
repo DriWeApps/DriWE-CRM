@@ -41,12 +41,19 @@ interface Driver {
 }
 
 export default function CustomerManagementDriverPage() {
+    const [statusFilter, setStatusFilter] = useState<
+        "ALL" | "Accept" | "Reject" | "Hold"
+    >("ALL");
+
+    
     const [drivers, setDrivers] = useState<Driver[]>([]);
     const [loading, setLoading] = useState(true);
     const [deletingId, setDeletingId] = useState<string | null>(
         null
     );
 
+
+    
     /* =====================================================
        FILTERS
     ===================================================== */
@@ -212,54 +219,61 @@ export default function CustomerManagementDriverPage() {
 
 
     function downloadExcel() {
-    const sheetData = drivers.map((driver, index) => ({
-        "Sr. No": index + 1,
-        Name: driver.name,
-        Email: driver.email,
-        "Contact No": driver.contactNo,
-        Type: driver.type,
-        Status: driver.status,
-        Reason: driver.reason,
-        Date: driver.date,
-        "Added By": driver.createdByName,
-        "Added By Email": driver.createdByEmail,
-        "Created At": new Date(driver.createdAt).toLocaleString(),
-    }));
+        const sheetData = filteredDrivers.map((driver, index) => ({
+            "Sr. No": index + 1,
+            Name: driver.name,
+            Email: driver.email,
+            "Contact No": driver.contactNo,
+            Type: driver.type,
+            Status: driver.status,
+            Reason: driver.reason,
+            Date: driver.date,
+            "Added By": driver.createdByName,
+            "Added By Email": driver.createdByEmail,
+            "Created At": new Date(driver.createdAt).toLocaleString(),
+        }));
 
-    const worksheet = XLSX.utils.json_to_sheet(sheetData);
+        const worksheet = XLSX.utils.json_to_sheet(sheetData);
 
-    const workbook = XLSX.utils.book_new();
+        const workbook = XLSX.utils.book_new();
 
-    XLSX.utils.book_append_sheet(
-        workbook,
-        worksheet,
-        "Drivers"
-    );
+       XLSX.utils.book_append_sheet(
+    workbook,
+    worksheet,
+    statusFilter === "ALL"
+        ? "All Drivers"
+        : `${statusFilter} Drivers`
+);
 
-    const excelBuffer = XLSX.write(workbook, {
-        bookType: "xlsx",
-        type: "array",
-    });
+        const excelBuffer = XLSX.write(workbook, {
+            bookType: "xlsx",
+            type: "array",
+        });
 
-    const file = new Blob([excelBuffer], {
-        type:
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
+        const file = new Blob([excelBuffer], {
+            type:
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
 
-    const url = URL.createObjectURL(file);
+        const url = URL.createObjectURL(file);
 
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Drivers_${new Date()
-        .toISOString()
-        .split("T")[0]}.xlsx`;
+        const a = document.createElement("a");
+        a.href = url;
+      const fileName =
+    statusFilter === "ALL"
+        ? "All_Drivers"
+        : `${statusFilter}_Drivers`;
 
-    document.body.appendChild(a);
-    a.click();
+a.download = `${fileName}_${new Date()
+    .toISOString()
+    .split("T")[0]}.xlsx`;
 
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
+        document.body.appendChild(a);
+        a.click();
+
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
 
 
     /* =====================================================
@@ -281,6 +295,14 @@ export default function CustomerManagementDriverPage() {
     /* =====================================================
        STATS
     ===================================================== */
+
+
+    const filteredDrivers =
+        statusFilter === "ALL"
+            ? drivers
+            : drivers.filter(
+                (driver) => driver.status === statusFilter
+            );
 
     const totalDrivers = drivers.length;
 
@@ -348,13 +370,13 @@ export default function CustomerManagementDriverPage() {
                     </button>
 
                     <button
-    type="button"
-    onClick={downloadExcel}
-    className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-green-700"
->
-    <Download size={18} />
-    Download Sheet
-</button>
+                        type="button"
+                        onClick={downloadExcel}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-green-700"
+                    >
+                        <Download size={18} />
+                        Download Sheet
+                    </button>
 
 
                     <Link
@@ -376,8 +398,22 @@ export default function CustomerManagementDriverPage() {
 
                 {/* Total */}
 
-                <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-                    <div className="flex items-center justify-between">
+                <div
+                    onClick={() => setStatusFilter("ALL")}
+                    className={`cursor-pointer rounded-2xl border p-5 transition ${statusFilter === "ALL"
+                            ? "border-cyan-500 bg-cyan-500/10"
+                            : "border-slate-800 bg-slate-900 hover:border-cyan-500"
+                        }`}
+                >
+                    {/* <div className="flex items-center justify-between"> */}
+
+                    <div
+                        onClick={() => setStatusFilter("ALL")}
+                        className={`cursor-pointer rounded-2xl border p-5 transition ${statusFilter === "ALL"
+                                ? "border-cyan-500 bg-cyan-500/10"
+                                : "border-slate-800 bg-slate-900 hover:border-cyan-500"
+                            }`}
+                    >
 
                         <div>
                             <p className="text-sm text-slate-400">
@@ -401,7 +437,13 @@ export default function CustomerManagementDriverPage() {
 
                 {/* Accepted */}
 
-                <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                <div
+                    onClick={() => setStatusFilter("Accept")}
+                    className={`cursor-pointer rounded-2xl border p-5 transition ${statusFilter === "Accept"
+                            ? "border-green-500 bg-green-500/10"
+                            : "border-slate-800 bg-slate-900 hover:border-green-500"
+                        }`}
+                >
                     <div className="flex items-center justify-between">
 
                         <div>
@@ -425,7 +467,13 @@ export default function CustomerManagementDriverPage() {
 
                 {/* Rejected */}
 
-                <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                <div
+                    onClick={() => setStatusFilter("Reject")}
+                    className={`cursor-pointer rounded-2xl border p-5 transition ${statusFilter === "Reject"
+                            ? "border-red-500 bg-red-500/10"
+                            : "border-slate-800 bg-slate-900 hover:border-red-500"
+                        }`}
+                >
                     <div className="flex items-center justify-between">
 
                         <div>
@@ -450,7 +498,13 @@ export default function CustomerManagementDriverPage() {
 
                 {/* Hold */}
 
-                <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                <div
+                    onClick={() => setStatusFilter("Hold")}
+                    className={`cursor-pointer rounded-2xl border p-5 transition ${statusFilter === "Hold"
+                            ? "border-yellow-500 bg-yellow-500/10"
+                            : "border-slate-800 bg-slate-900 hover:border-yellow-500"
+                        }`}
+                >
                     <div className="flex items-center justify-between">
 
                         <div>
@@ -658,9 +712,7 @@ export default function CustomerManagementDriverPage() {
                         <p className="mt-1 text-sm text-slate-500">
                             {loading
                                 ? "Loading..."
-                                : `${drivers.length} record${drivers.length === 1
-                                    ? ""
-                                    : "s"
+                                : `${filteredDrivers.length} record${filteredDrivers.length === 1 ? "" : "s"
                                 } found`}
                         </p>
                     </div>
@@ -737,7 +789,7 @@ export default function CustomerManagementDriverPage() {
                                     </td>
                                 </tr>
 
-                            ) : drivers.length === 0 ? (
+                            ) : filteredDrivers.length === 0 ? (
 
                                 <tr>
                                     <td
@@ -777,7 +829,7 @@ export default function CustomerManagementDriverPage() {
 
                             ) : (
 
-                                drivers.map((driver, index) => (
+                                filteredDrivers.map((driver, index) => (
 
 
 
@@ -856,8 +908,8 @@ export default function CustomerManagementDriverPage() {
 
                                             <span
                                                 className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${driver.type === "Cab"
-                                                        ? "border-cyan-500/20 bg-cyan-500/10 text-cyan-400"
-                                                        : "border-purple-500/20 bg-purple-500/10 text-purple-400"
+                                                    ? "border-cyan-500/20 bg-cyan-500/10 text-cyan-400"
+                                                    : "border-purple-500/20 bg-purple-500/10 text-purple-400"
                                                     }`}
                                             >
                                                 {driver.type || "-"}
