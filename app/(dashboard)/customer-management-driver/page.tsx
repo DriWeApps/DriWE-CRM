@@ -45,7 +45,7 @@ export default function CustomerManagementDriverPage() {
         "ALL" | "Accept" | "Reject" | "Hold"
     >("ALL");
 
-    
+
     const [drivers, setDrivers] = useState<Driver[]>([]);
     const [loading, setLoading] = useState(true);
     const [deletingId, setDeletingId] = useState<string | null>(
@@ -53,7 +53,7 @@ export default function CustomerManagementDriverPage() {
     );
 
 
-    
+
     /* =====================================================
        FILTERS
     ===================================================== */
@@ -216,8 +216,6 @@ export default function CustomerManagementDriverPage() {
         }
     }
 
-
-
     function downloadExcel() {
         const sheetData = filteredDrivers.map((driver, index) => ({
             "Sr. No": index + 1,
@@ -237,13 +235,13 @@ export default function CustomerManagementDriverPage() {
 
         const workbook = XLSX.utils.book_new();
 
-       XLSX.utils.book_append_sheet(
-    workbook,
-    worksheet,
-    statusFilter === "ALL"
-        ? "All Drivers"
-        : `${statusFilter} Drivers`
-);
+        XLSX.utils.book_append_sheet(
+            workbook,
+            worksheet,
+            statusFilter === "ALL"
+                ? "All Drivers"
+                : `${statusFilter} Drivers`
+        );
 
         const excelBuffer = XLSX.write(workbook, {
             bookType: "xlsx",
@@ -259,14 +257,14 @@ export default function CustomerManagementDriverPage() {
 
         const a = document.createElement("a");
         a.href = url;
-      const fileName =
-    statusFilter === "ALL"
-        ? "All_Drivers"
-        : `${statusFilter}_Drivers`;
+        const fileName =
+            statusFilter === "ALL"
+                ? "All_Drivers"
+                : `${statusFilter}_Drivers`;
 
-a.download = `${fileName}_${new Date()
-    .toISOString()
-    .split("T")[0]}.xlsx`;
+        a.download = `${fileName}_${new Date()
+            .toISOString()
+            .split("T")[0]}.xlsx`;
 
         document.body.appendChild(a);
         a.click();
@@ -401,8 +399,8 @@ a.download = `${fileName}_${new Date()
                 <div
                     onClick={() => setStatusFilter("ALL")}
                     className={`cursor-pointer rounded-2xl border p-5 transition ${statusFilter === "ALL"
-                            ? "border-cyan-500 bg-cyan-500/10"
-                            : "border-slate-800 bg-slate-900 hover:border-cyan-500"
+                        ? "border-cyan-500 bg-cyan-500/10"
+                        : "border-slate-800 bg-slate-900 hover:border-cyan-500"
                         }`}
                 >
                     {/* <div className="flex items-center justify-between"> */}
@@ -410,8 +408,8 @@ a.download = `${fileName}_${new Date()
                     <div
                         onClick={() => setStatusFilter("ALL")}
                         className={`cursor-pointer rounded-2xl border p-5 transition ${statusFilter === "ALL"
-                                ? "border-cyan-500 bg-cyan-500/10"
-                                : "border-slate-800 bg-slate-900 hover:border-cyan-500"
+                            ? "border-cyan-500 bg-cyan-500/10"
+                            : "border-slate-800 bg-slate-900 hover:border-cyan-500"
                             }`}
                     >
 
@@ -440,8 +438,8 @@ a.download = `${fileName}_${new Date()
                 <div
                     onClick={() => setStatusFilter("Accept")}
                     className={`cursor-pointer rounded-2xl border p-5 transition ${statusFilter === "Accept"
-                            ? "border-green-500 bg-green-500/10"
-                            : "border-slate-800 bg-slate-900 hover:border-green-500"
+                        ? "border-green-500 bg-green-500/10"
+                        : "border-slate-800 bg-slate-900 hover:border-green-500"
                         }`}
                 >
                     <div className="flex items-center justify-between">
@@ -470,8 +468,8 @@ a.download = `${fileName}_${new Date()
                 <div
                     onClick={() => setStatusFilter("Reject")}
                     className={`cursor-pointer rounded-2xl border p-5 transition ${statusFilter === "Reject"
-                            ? "border-red-500 bg-red-500/10"
-                            : "border-slate-800 bg-slate-900 hover:border-red-500"
+                        ? "border-red-500 bg-red-500/10"
+                        : "border-slate-800 bg-slate-900 hover:border-red-500"
                         }`}
                 >
                     <div className="flex items-center justify-between">
@@ -501,8 +499,8 @@ a.download = `${fileName}_${new Date()
                 <div
                     onClick={() => setStatusFilter("Hold")}
                     className={`cursor-pointer rounded-2xl border p-5 transition ${statusFilter === "Hold"
-                            ? "border-yellow-500 bg-yellow-500/10"
-                            : "border-slate-800 bg-slate-900 hover:border-yellow-500"
+                        ? "border-yellow-500 bg-yellow-500/10"
+                        : "border-slate-800 bg-slate-900 hover:border-yellow-500"
                         }`}
                 >
                     <div className="flex items-center justify-between">
@@ -831,19 +829,7 @@ a.download = `${fileName}_${new Date()
 
                                 filteredDrivers.map((driver, index) => (
 
-
-
-
-
-
-
-
-
-
                                     <tr
-
-
-
 
                                         key={driver.customerId}
                                         className="border-b border-slate-800 text-white transition hover:bg-slate-800/40"
