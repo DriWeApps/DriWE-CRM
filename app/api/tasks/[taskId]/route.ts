@@ -45,15 +45,22 @@ export async function GET(
       );
     }
 
-    if (
-      !isAdminUser(user) &&
-      task.assignedToEmail !== user.email
-    ) {
-      return NextResponse.json(
-        { success: false, message: "Forbidden" },
-        { status: 403 }
-      );
+    const canView =
+  user.role === "ADMIN" ||
+  user.role === "Manager" ||
+  task.assignedToEmail === user.email;
+
+if (!canView) {
+  return NextResponse.json(
+    {
+      success: false,
+      message: "Forbidden",
+    },
+    {
+      status: 403,
     }
+  );
+}
 
     return NextResponse.json({
       success: true,

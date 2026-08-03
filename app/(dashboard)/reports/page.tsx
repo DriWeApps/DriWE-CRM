@@ -38,7 +38,6 @@ export default function ReportsPage() {
 
       setRole(reportData.role);
 
-      // Everyone except ADMIN goes directly to their own report
       if (reportData.role !== "ADMIN") {
         router.replace(`/reports/employee/${reportData.employeeId}`);
         return;
