@@ -42,16 +42,16 @@ export async function GET(req: Request) {
         // Employee can see only own data
         if (!isAdmin) {
 
-            employeeTasks =
-                employeeTasks.filter(
-                    (task: any) =>
-                        task.employeeId === user.employeeId
-                );
-            employeeMeetings =
-                employeeMeetings.filter(
-                    (meeting: any) =>
-                        meeting.employeeId === user.employeeId
-                );
+            employeeTasks = employeeTasks.filter(
+                (task: any) => task.assignedTo === user.employeeId
+            );
+            employeeMeetings = employeeMeetings.filter(
+                (meeting: any) =>
+                    meeting.participants?.some(
+                        (participant: any) =>
+                            participant.employeeId === user.employeeId
+                    )
+            );
             employeeFollowups =
                 employeeFollowups.filter(
                     (follow: any) =>
@@ -59,11 +59,20 @@ export async function GET(req: Request) {
                 );
         }
 
-        return NextResponse.json({
+        const completedTasks = employeeTasks.filter(
+            (task: any) => task.status === "Completed"
+        ).length;
 
+        const pendingTasks = employeeTasks.filter(
+            (task: any) => task.status !== "Completed"
+        ).length;
+
+
+        return NextResponse.json({
             success: true,
 
             role: user.role,
+            employeeId: user.employeeId,
 
             reports: {
                 tasks: employeeTasks,
@@ -71,20 +80,20 @@ export async function GET(req: Request) {
                 followups: employeeFollowups,
 
                 summary: {
-                    totalTasks:
-                        employeeTasks.length,
-
-                    totalMeetings:
-                        employeeMeetings.length,
-
-                    totalFollowups:
-                        employeeFollowups.length
+                    totalTasks: employeeTasks.length,
+                    completedTasks,
+                    pendingTasks,
+                    totalMeetings: employeeMeetings.length,
+                    totalFollowups: employeeFollowups.length,
                 }
             }
         });
 
     } catch (error) {
         console.error(error);
+
+
+
 
         return NextResponse.json(
             {
