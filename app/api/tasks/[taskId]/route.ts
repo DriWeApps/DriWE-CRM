@@ -104,10 +104,10 @@ export async function PUT(
 
       const now = new Date();
 
-const dueDate = new Date(oldTask.dueDate);
-dueDate.setHours(23, 59, 59, 999);
+      const dueDate = new Date(oldTask.dueDate);
+      dueDate.setHours(23, 59, 59, 999);
 
-if (now > dueDate) {
+      if (now > dueDate) {
         return NextResponse.json(
           {
             success: false,
@@ -120,24 +120,24 @@ if (now > dueDate) {
         );
       }
 
-   await updateTask(taskId, {
-  ...oldTask,
-  status: body.status,
-  remarks: body.remarks,
+      await updateTask(taskId, {
+        ...oldTask,
+        status: body.status,
+        remarks: body.remarks,
 
-  completionDescription:
-    body.completionDescription,
+        completionDescription:
+          body.completionDescription,
 
-  completionLink:
-    body.completionLink,
+        completionLink:
+          body.completionLink,
 
-  completedAt:
-    body.status === "Completed"
-      ? new Date().toISOString()
-      : oldTask.completedAt,
+        completedAt:
+          body.status === "Completed"
+            ? new Date().toISOString()
+            : oldTask.completedAt,
 
-  updatedAt: new Date().toISOString(),
-});
+        updatedAt: new Date().toISOString(),
+      });
 
       return NextResponse.json({
         success: true,

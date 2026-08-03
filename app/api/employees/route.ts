@@ -40,71 +40,50 @@ export async function POST(req: Request) {
     if (existingUser) {
       return NextResponse.json({ success: false, message: "A user with this email already exists" }, { status: 409 });
     }
-
-    // const employee = {
-    //   employeeId: randomUUID(),
-    //   firstName: body.firstName,
-    //   lastName: body.lastName,
-    //   email: body.email,
-    //   mobile: body.mobile,
-    //   designation: body.designation,
-    //   department: body.department,
-    //   role: body.role ?? "Executive",
-    //   status: body.status ?? "Active",
-    //   joiningDate: body.joiningDate ?? new Date().toISOString().split("T")[0],
-    //   dateOfBirth: body.dateOfBirth || "",
-    //   address: body.address,
-    //   city: body.city,
-    //   state: body.state,
-    //   pincode: body.pincode,
-    //   createdAt: new Date().toISOString(),
-    //   updatedAt: new Date().toISOString(),
-    // };
-
     const employee = {
-  employeeId: randomUUID(),
+      employeeId: randomUUID(),
 
-  firstName: body.firstName || "",
-  lastName: body.lastName || "",
+      firstName: body.firstName || "",
+      lastName: body.lastName || "",
 
-  email: body.email || "",
-  mobile: body.mobile || "",
+      email: body.email || "",
+      mobile: body.mobile || "",
 
-  designation: body.designation || "",
-  department: body.department || "",
+      designation: body.designation || "",
+      department: body.department || "",
 
-  role: body.role ?? "Executive",
-  status: body.status ?? "Active",
+      role: body.role ?? "Executive",
+      status: body.status ?? "Active",
 
-  joiningDate:
-    body.joiningDate ||
-    new Date().toISOString().split("T")[0],
+      joiningDate:
+        body.joiningDate ||
+        new Date().toISOString().split("T")[0],
 
-  // IMPORTANT
-  dateOfBirth: body.dateOfBirth || "",
-  gender: body.gender || "",
+      // IMPORTANT
+      dateOfBirth: body.dateOfBirth || "",
+      gender: body.gender || "",
 
-  address: body.address || "",
-  city: body.city || "",
-  state: body.state || "",
-  pincode: body.pincode || "",
-  country: body.country || "",
+      address: body.address || "",
+      city: body.city || "",
+      state: body.state || "",
+      pincode: body.pincode || "",
+      country: body.country || "",
 
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-};
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
 
     const hashedPassword = await hashPassword(loginPassword);
 
     await createEmployee(employee);
     await createUser({
-  userId: randomUUID(),
-  employeeId: employee.employeeId,   // <-- ADD THIS
-  name: `${body.firstName} ${body.lastName}`.trim(),
-  email: loginEmail,
-  password: hashedPassword,
-  role: (body.role ?? "Executive").toString(),
-});
+      userId: randomUUID(),
+      employeeId: employee.employeeId,   // <-- ADD THIS
+      name: `${body.firstName} ${body.lastName}`.trim(),
+      email: loginEmail,
+      password: hashedPassword,
+      role: (body.role ?? "Executive").toString(),
+    });
     return NextResponse.json({ success: true, employee });
   } catch (error) {
     console.error(error);

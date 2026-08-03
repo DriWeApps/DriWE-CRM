@@ -14,9 +14,8 @@ export default function AppShell({ children }: AppShellProps) {
       <AppSidebar />
 
       <div
-        className={`flex min-w-0 flex-1 flex-col overflow-hidden bg-[#020617] transition-all duration-300 ${
-          false ? "md:ml-20" : "md:ml-72"
-        }`}
+        className={`flex min-w-0 flex-1 flex-col overflow-hidden bg-[#020617] transition-all duration-300 ${false ? "md:ml-20" : "md:ml-72"
+          }`}
       >
         <div className="shrink-0">
           <AppHeader />

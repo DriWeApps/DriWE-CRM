@@ -24,25 +24,25 @@ export async function GET() {
 
     return NextResponse.json({
 
-      success:true,
+      success: true,
 
       followups: result.Items || []
 
     });
 
 
-  } catch(error) {
+  } catch (error) {
 
-    console.error("GET Followups Error:",error);
+    console.error("GET Followups Error:", error);
 
 
     return NextResponse.json(
       {
-        success:false,
-        message:"Failed to fetch followups"
+        success: false,
+        message: "Failed to fetch followups"
       },
       {
-        status:500
+        status: 500
       }
     );
 
@@ -55,9 +55,9 @@ export async function GET() {
 
 // CREATE FOLLOWUP
 
-export async function POST(req:Request){
+export async function POST(req: Request) {
 
-  try{
+  try {
 
 
     const body = await req.json();
@@ -87,20 +87,20 @@ export async function POST(req:Request){
 
 
 
-    if(
+    if (
       !title ||
       !companyId ||
       !employeeId ||
       !followupDate
-    ){
+    ) {
 
       return NextResponse.json(
         {
-          success:false,
-          message:"Required fields missing"
+          success: false,
+          message: "Required fields missing"
         },
         {
-          status:400
+          status: 400
         }
       );
 
@@ -110,11 +110,11 @@ export async function POST(req:Request){
 
 
 
-   const followup = {
+    const followup = {
 
-  followUpId: crypto.randomUUID(),
+      followUpId: crypto.randomUUID(),
 
-  title,
+      title,
 
 
       companyId,
@@ -139,7 +139,7 @@ export async function POST(req:Request){
       notes: notes || "",
 
 
-      createdAt:new Date().toISOString()
+      createdAt: new Date().toISOString()
 
 
     };
@@ -151,9 +151,9 @@ export async function POST(req:Request){
 
       new PutCommand({
 
-        TableName:TABLE_NAME,
+        TableName: TABLE_NAME,
 
-        Item:followup
+        Item: followup
 
       })
 
@@ -164,9 +164,9 @@ export async function POST(req:Request){
 
     return NextResponse.json({
 
-      success:true,
+      success: true,
 
-      message:"Follow-up created successfully",
+      message: "Follow-up created successfully",
 
       followup
 
@@ -174,24 +174,21 @@ export async function POST(req:Request){
 
 
 
-  }catch(error){
+  } catch (error) {
 
 
-    console.error("CREATE Followup Error:",error);
+    console.error("CREATE Followup Error:", error);
 
 
 
     return NextResponse.json(
       {
-        success:false,
-        message:"Failed to create followup"
+        success: false,
+        message: "Failed to create followup"
       },
       {
-        status:500
+        status: 500
       }
     );
-
-
   }
-
 }

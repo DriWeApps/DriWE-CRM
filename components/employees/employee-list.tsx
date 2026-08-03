@@ -769,8 +769,8 @@ export default function EmployeeList({ searchTerm = "" }: EmployeeListProps) {
                   </h3>
                   <span
                     className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${employee.status === "Active"
-                        ? "bg-emerald-500/15 text-emerald-400"
-                        : "bg-red-500/15 text-red-400"
+                      ? "bg-emerald-500/15 text-emerald-400"
+                      : "bg-red-500/15 text-red-400"
                       }`}
                   >
                     {employee.status}

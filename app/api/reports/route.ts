@@ -1,156 +1,99 @@
 import { NextResponse } from "next/server";
-
 import { ScanCommand } from "@aws-sdk/lib-dynamodb";
-
 import { db } from "@/lib/dynamodb";
-
 import { getUserFromRequest } from "@/lib/auth";
 
+export async function GET(req: Request) {
 
-export async function GET(req:Request){
-
-    try{
-
+    try {
         const user = await getUserFromRequest(req);
 
-
-        if(!user){
-
+        if (!user) {
             return NextResponse.json(
                 {
-                    success:false,
-                    message:"Unauthorized"
+                    success: false,
+                    message: "Unauthorized"
                 },
                 {
-                    status:401
+                    status: 401
                 }
             );
-
         }
-
-
-
         const isAdmin =
             user.role === "ADMIN";
-
-
-
-
         const tasks = await db.send(
             new ScanCommand({
-                TableName:"CRM_Tasks"
+                TableName: "CRM_Tasks"
             })
         );
-
-
-
         const meetings = await db.send(
             new ScanCommand({
-                TableName:"CRM_Meetings"
+                TableName: "CRM_Meetings"
             })
         );
-
-
-
         const followups = await db.send(
             new ScanCommand({
-                TableName:"CRM_FollowUps"
+                TableName: "CRM_FollowUps"
             })
         );
-
-
-
-
         let employeeTasks = tasks.Items || [];
         let employeeMeetings = meetings.Items || [];
         let employeeFollowups = followups.Items || [];
-
-
-
-
         // Employee can see only own data
-
-        if(!isAdmin){
-
+        if (!isAdmin) {
 
             employeeTasks =
-            employeeTasks.filter(
-                (task:any)=>
-                task.employeeId === user.employeeId
-            );
-
-
-
+                employeeTasks.filter(
+                    (task: any) =>
+                        task.employeeId === user.employeeId
+                );
             employeeMeetings =
-            employeeMeetings.filter(
-                (meeting:any)=>
-                meeting.employeeId === user.employeeId
-            );
-
-
-
+                employeeMeetings.filter(
+                    (meeting: any) =>
+                        meeting.employeeId === user.employeeId
+                );
             employeeFollowups =
-            employeeFollowups.filter(
-                (follow:any)=>
-                follow.employeeId === user.employeeId
-            );
-
-
+                employeeFollowups.filter(
+                    (follow: any) =>
+                        follow.employeeId === user.employeeId
+                );
         }
-
-
-
-
 
         return NextResponse.json({
 
-            success:true,
+            success: true,
 
-            role:user.role,
+            role: user.role,
 
-            reports:{
+            reports: {
+                tasks: employeeTasks,
+                meetings: employeeMeetings,
+                followups: employeeFollowups,
 
-                tasks:employeeTasks,
-
-                meetings:employeeMeetings,
-
-                followups:employeeFollowups,
-
-                summary:{
-
+                summary: {
                     totalTasks:
-                    employeeTasks.length,
+                        employeeTasks.length,
 
                     totalMeetings:
-                    employeeMeetings.length,
+                        employeeMeetings.length,
 
                     totalFollowups:
-                    employeeFollowups.length
-
+                        employeeFollowups.length
                 }
-
             }
-
-
         });
 
-
-
-    }catch(error){
-
+    } catch (error) {
         console.error(error);
-
 
         return NextResponse.json(
             {
-                success:false,
-                message:"Failed to load reports"
+                success: false,
+                message: "Failed to load reports"
             },
             {
-                status:500
+                status: 500
             }
         );
-
     }
-
 }

@@ -122,9 +122,11 @@
     @apply border-border outline-ring/50;
     box-sizing: border-box;
   }
+
   body {
     @apply min-h-screen overflow-x-hidden bg-background text-foreground;
   }
+
   html {
     @apply font-sans;
   }

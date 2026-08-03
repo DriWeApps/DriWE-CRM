@@ -91,25 +91,6 @@ updatedAt = :updatedAt
       ExpressionAttributeNames: {
         "#status": "status",
       },
-      // ExpressionAttributeValues: {
-      //   ":title": data.title,
-      //   ":description": data.description,
-      //   ":companyId": data.companyId ?? "",
-      //   ":companyName": data.companyName ?? "",
-      //   ":completionDescription": data.completionDescription ?? "",
-      //   ":completionLink": data.completionLink ?? "",
-      //   ":completedAt": data.completedAt ?? "",
-      //   ":assignedBy": data.assignedBy ?? "",
-      //   ":assignedByName": data.assignedByName ?? "",
-      //   ":assignedTo": data.assignedTo ?? "",
-      //   ":assignedToName": data.assignedToName ?? "",
-      //   ":assignedToEmail": data.assignedToEmail ?? "",
-      //   ":remarks": data.remarks ?? "",
-      //   ":priority": data.priority,
-      //   ":status": data.status,
-      //   ":dueDate": data.dueDate,
-      //   ":updatedAt": new Date().toISOString(),
-      // },
 
       ExpressionAttributeValues: {
         ":title": data.title,

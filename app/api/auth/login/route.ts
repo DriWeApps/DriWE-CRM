@@ -36,13 +36,6 @@ export async function POST(req: Request) {
       );
     }
 
-//    const token = await createToken({
-//   userId: user.userId,
-//   employeeId: user.employeeId,
-//   email: user.email,
-//   role: user.role,
-// });
-
 console.log("User from DB:", user);
 
 const token = await createToken({

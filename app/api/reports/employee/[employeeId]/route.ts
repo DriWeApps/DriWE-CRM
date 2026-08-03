@@ -39,26 +39,30 @@ export async function GET(
     }
 
     // Tasks
-    const tasks = await db.send(
-      new ScanCommand({
-        TableName: TASK_TABLE,
-        FilterExpression: "employeeId = :id",
-        ExpressionAttributeValues: {
-          ":id": employeeId,
-        },
-      })
-    );
+  const tasks = await db.send(
+  new ScanCommand({
+    TableName: TASK_TABLE,
+    FilterExpression: "assignedTo = :id",
+    ExpressionAttributeValues: {
+      ":id": employeeId,
+    },
+  })
+);
 
     // Meetings
-    const meetings = await db.send(
-      new ScanCommand({
-        TableName: MEETING_TABLE,
-        FilterExpression: "employeeId = :id",
-        ExpressionAttributeValues: {
-          ":id": employeeId,
-        },
-      })
-    );
+   const meetings = await db.send(
+  new ScanCommand({
+    TableName: MEETING_TABLE,
+  })
+);
+
+const meetingItems =
+  (meetings.Items || []).filter((meeting: any) =>
+    meeting.participants?.some(
+      (participant: any) =>
+        participant.employeeId === employeeId
+    )
+  );
 
     // Follow-ups
     const followups = await db.send(
@@ -72,7 +76,7 @@ export async function GET(
     );
 
     const taskItems = tasks.Items || [];
-    const meetingItems = meetings.Items || [];
+    // const meetingItems = meetings.Items || [];
     const followupItems = followups.Items || [];
 
     const completedTasks = taskItems.filter(

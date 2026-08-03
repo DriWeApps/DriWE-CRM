@@ -9,7 +9,7 @@ import {
 import {
   getUserFromRequest,
   isAdminUser,
-   canAssignTask,
+  canAssignTask,
 } from "@/lib/auth";
 
 export async function GET(req: Request) {
@@ -39,15 +39,15 @@ export async function GET(req: Request) {
         assignedTo: t.assignedTo,
       }))
     );
-    
-// Admin and Manager can see all tasks
-const isManager = user.role === "Manager"; // use "MANAGER" if that's your role value
 
-if (!isAdminUser(user) && !isManager) {
-  tasks = tasks.filter(
-    (task: any) => task.assignedToEmail === user.email
-  );
-}
+    // Admin and Manager can see all tasks
+    const isManager = user.role === "Manager"; // use "MANAGER" if that's your role value
+
+    if (!isAdminUser(user) && !isManager) {
+      tasks = tasks.filter(
+        (task: any) => task.assignedToEmail === user.email
+      );
+    }
 
     return NextResponse.json(tasks);
   } catch (error) {
@@ -69,17 +69,17 @@ export async function POST(req: Request) {
   try {
     const user = await getUserFromRequest(req);
 
-   if (!user || !canAssignTask(user)) {
-  return NextResponse.json(
-    {
-      success: false,
-      message: "Only Admins and Managers can assign tasks.",
-    },
-    {
-      status: 403,
+    if (!user || !canAssignTask(user)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Only Admins and Managers can assign tasks.",
+        },
+        {
+          status: 403,
+        }
+      );
     }
-  );
-}
 
     const body = await req.json();
 
@@ -100,7 +100,7 @@ export async function POST(req: Request) {
 
       // Always store the logged-in admin as the creator
       assignedBy: user.userId,
-   assignedByName: user.email,
+      assignedByName: user.email,
 
       priority: body.priority ?? "Medium",
       status: body.status ?? "Pending",

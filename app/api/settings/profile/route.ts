@@ -176,93 +176,93 @@ export async function GET(req: Request) {
     // COMPLETE PROFILE
     // -----------------------------------------
 
-  const profile = {
-  firstName,
+    const profile = {
+      firstName,
 
-  lastName,
+      lastName,
 
-  email:
-    employee?.email ||
-    dbUser?.email ||
-    session.email ||
-    "",
+      email:
+        employee?.email ||
+        dbUser?.email ||
+        session.email ||
+        "",
 
-  mobile:
-    employee?.mobile ||
-    employee?.phone ||
-    "",
+      mobile:
+        employee?.mobile ||
+        employee?.phone ||
+        "",
 
-  designation:
-    employee?.designation ||
-    "",
+      designation:
+        employee?.designation ||
+        "",
 
-  department:
-    employee?.department ||
-    "",
+      department:
+        employee?.department ||
+        "",
 
-  role:
-    employee?.role ||
-    dbUser?.role ||
-    session.role ||
-    "",
+      role:
+        employee?.role ||
+        dbUser?.role ||
+        session.role ||
+        "",
 
-  employeeId:
-    employee?.employeeId ||
-    dbUser?.employeeId ||
-    session.employeeId ||
-    "",
+      employeeId:
+        employee?.employeeId ||
+        dbUser?.employeeId ||
+        session.employeeId ||
+        "",
 
-  userId:
-    dbUser?.userId ||
-    session.userId ||
-    "",
+      userId:
+        dbUser?.userId ||
+        session.userId ||
+        "",
 
-  status:
-    employee?.status ||
-    "",
+      status:
+        employee?.status ||
+        "",
 
-  joiningDate:
-    employee?.joiningDate ||
-    "",
+      joiningDate:
+        employee?.joiningDate ||
+        "",
 
-  dateOfBirth:
-    employee?.dateOfBirth ||
-    "",
+      dateOfBirth:
+        employee?.dateOfBirth ||
+        "",
 
-  gender:
-    employee?.gender ||
-    "",
+      gender:
+        employee?.gender ||
+        "",
 
-  address:
-    employee?.address ||
-    "",
+      address:
+        employee?.address ||
+        "",
 
-  city:
-    employee?.city ||
-    "",
+      city:
+        employee?.city ||
+        "",
 
-  state:
-    employee?.state ||
-    "",
+      state:
+        employee?.state ||
+        "",
 
-  pincode:
-    employee?.pincode ||
-    "",
+      pincode:
+        employee?.pincode ||
+        "",
 
-  country:
-    employee?.country ||
-    "",
+      country:
+        employee?.country ||
+        "",
 
-  createdAt:
-    employee?.createdAt ||
-    dbUser?.createdAt ||
-    "",
+      createdAt:
+        employee?.createdAt ||
+        dbUser?.createdAt ||
+        "",
 
-  updatedAt:
-    employee?.updatedAt ||
-    dbUser?.updatedAt ||
-    "",
-};
+      updatedAt:
+        employee?.updatedAt ||
+        dbUser?.updatedAt ||
+        "",
+    };
     console.log("Complete Profile:", profile);
 
     return NextResponse.json({
