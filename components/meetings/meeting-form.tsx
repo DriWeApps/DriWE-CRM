@@ -10,7 +10,8 @@ interface Company {
 
 interface Employee {
     employeeId: string;
-    fullName: string;
+    firstName: string;
+    lastName: string;
     email: string;
 }
 
@@ -72,9 +73,11 @@ export default function MeetingForm({
 
             const companyData = await companyRes.json();
             const employeeData = await employeeRes.json();
+            console.log("Employees API:", employeeData);
 
             setCompanies(companyData.companies || []);
             setEmployees(employeeData.employees || employeeData || []);
+            console.log("Employees received:", employeeData);
         } catch (err) {
             console.error(err);
         }
@@ -128,6 +131,7 @@ export default function MeetingForm({
     }
 
     function toggleEmployee(employee: Employee) {
+        console.log("Clicked employee:", employee);
         const exists = participants.find(
             (p) => p.employeeId === employee.employeeId
         );
@@ -144,12 +148,12 @@ export default function MeetingForm({
         setParticipants((prev) => [
             ...prev,
             {
-                employeeId: employee.employeeId,
-                employeeName: employee.fullName,
-                employeeEmail: employee.email,
-                joined: false,
-                joinedAt: "",
-            },
+    employeeId: employee.employeeId,
+    employeeName: `${employee.firstName} ${employee.lastName}`,
+    employeeEmail: employee.email,
+    joined: false,
+    joinedAt: "",
+}
         ]);
     }
 
@@ -347,9 +351,7 @@ export default function MeetingForm({
                                     onChange={() => toggleEmployee(employee)}
                                 />
                                 <div>
-                                    <p className="font-medium text-white">
-                                        {employee.fullName}
-                                    </p>
+                                  <p>{employee.firstName} {employee.lastName}</p>
                                     <p className="text-xs text-slate-400">
                                         {employee.email}
                                     </p>

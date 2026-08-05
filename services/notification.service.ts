@@ -24,20 +24,42 @@ export interface Notification {
   isRead: boolean;
 
   createdAt: string;
+
+  meetingId?: string;
 }
 
 /**
  * Create Notification
  */
+// export async function createNotification(
+//   notification: Notification
+// ) {
+//   await db.send(
+//     new PutCommand({
+//       TableName: TABLE,
+//       Item: notification,
+//     })
+//   );
+
+//   return notification;
+// }
+
+
+
 export async function createNotification(
   notification: Notification
 ) {
+  console.log("Saving Notification...");
+  console.log(notification);
+
   await db.send(
     new PutCommand({
       TableName: TABLE,
       Item: notification,
     })
   );
+
+  console.log("Notification Saved!");
 
   return notification;
 }

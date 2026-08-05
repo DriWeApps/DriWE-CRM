@@ -13,6 +13,7 @@ interface Employee {
     employeeId: string;
     firstName: string;
     lastName: string;
+    email: string;
     designation?: string;
 }
 export default function AddMeetingPage() {
@@ -95,6 +96,7 @@ export default function AddMeetingPage() {
         setLoading(true);
 
         try {
+            console.log(form.participants);
             const res = await fetch("/api/meetings", {
                 method: "POST",
                 headers: {
@@ -276,16 +278,16 @@ export default function AddMeetingPage() {
                                                             emp.employeeId,
                                                         ],
 
-                                                        participants: [
-                                                            ...form.participants,
-                                                            {
-                                                                employeeId: emp.employeeId,
-                                                                employeeName:
-                                                                    `${emp.firstName} ${emp.lastName}`,
-                                                                joined: false,
-                                                                joinedAt: "",
-                                                            },
-                                                        ],
+                                                      participants: [
+    ...form.participants,
+    {
+        employeeId: emp.employeeId,
+        employeeName: `${emp.firstName} ${emp.lastName}`,
+        employeeEmail: emp.email,
+        joined: false,
+        joinedAt: "",
+    },
+],
                                                     });
 
                                                 } else {

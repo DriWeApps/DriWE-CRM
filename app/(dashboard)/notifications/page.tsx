@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
+import { useRouter } from "next/navigation";
 
 interface Employee {
     employeeId: string;
@@ -9,6 +9,7 @@ interface Employee {
     email: string;
     role: string;
 }
+
 
 export default function NotificationsPage() {
     const [employees, setEmployees] = useState<Employee[]>([]);
@@ -23,6 +24,7 @@ export default function NotificationsPage() {
     const [replyMessage, setReplyMessage] = useState("");
     const [replyingTo, setReplyingTo] = useState<string | null>(null);
     const [sendingReply, setSendingReply] = useState(false);
+    const router = useRouter();
 
     const [me, setMe] = useState<any>(null);
     useEffect(() => {
@@ -253,9 +255,22 @@ export default function NotificationsPage() {
                     <div className="space-y-4">
                         {notifications.map((notification: any) => (
                             <div
-                                key={notification.notificationId}
-                                className="rounded-xl border border-slate-800 bg-slate-900 p-5"
-                            >
+    key={notification.notificationId}
+    onClick={async () => {
+        if (notification.meetingId) {
+
+            await fetch(
+                `/api/notifications/${notification.notificationId}/read`,
+                {
+                    method: "PUT",
+                }
+            );
+
+            router.push(`/meetings/${notification.meetingId}`);
+        }
+    }}
+    className="cursor-pointer rounded-xl border border-slate-800 bg-slate-900 p-5 hover:border-cyan-500 hover:bg-slate-800 transition"
+>
                                 <h2 className="text-lg font-semibold text-white">
                                     {notification.title}
                                 </h2>
