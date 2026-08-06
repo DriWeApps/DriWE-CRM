@@ -148,12 +148,12 @@ export default function MeetingForm({
         setParticipants((prev) => [
             ...prev,
             {
-    employeeId: employee.employeeId,
-    employeeName: `${employee.firstName} ${employee.lastName}`,
-    employeeEmail: employee.email,
-    joined: false,
-    joinedAt: "",
-}
+                employeeId: employee.employeeId,
+                employeeName: `${employee.firstName} ${employee.lastName}`,
+                employeeEmail: employee.email,
+                joined: false,
+                joinedAt: "",
+            }
         ]);
     }
 
@@ -351,7 +351,7 @@ export default function MeetingForm({
                                     onChange={() => toggleEmployee(employee)}
                                 />
                                 <div>
-                                  <p>{employee.firstName} {employee.lastName}</p>
+                                    <p>{employee.firstName} {employee.lastName}</p>
                                     <p className="text-xs text-slate-400">
                                         {employee.email}
                                     </p>

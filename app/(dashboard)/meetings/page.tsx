@@ -316,10 +316,10 @@ export default function Meetings() {
                     <td className="p-4">
                       <span
                         className={`rounded-full px-3 py-1 text-xs ${meeting.status === "Completed"
-                            ? "bg-green-500/20 text-green-400"
-                            : meeting.status === "Scheduled"
-                              ? "bg-yellow-500/20 text-yellow-400"
-                              : "bg-cyan-500/20 text-cyan-300"
+                          ? "bg-green-500/20 text-green-400"
+                          : meeting.status === "Scheduled"
+                            ? "bg-yellow-500/20 text-yellow-400"
+                            : "bg-cyan-500/20 text-cyan-300"
                           }`}
                       >
                         {meeting.status}

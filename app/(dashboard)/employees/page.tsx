@@ -1,16 +1,70 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import EmployeeList from "@/components/employees/employee-list";
 import { Users, Plus, RefreshCw, Search } from 'lucide-react';
 
 export default function EmployeesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
+  const router = useRouter();
+
+  const [, setRole] = useState("");
+  const [loadingRole, setLoadingRole] = useState(true);
 
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
   };
+
+
+  useEffect(() => {
+    async function getCurrentUser() {
+      try {
+        const res = await fetch("/api/auth/me", {
+          credentials: "include",
+        });
+
+        const data = await res.json();
+
+        if (data.authenticated && data.user) {
+          const userRole = data.user.role?.toUpperCase();
+
+          if (
+            userRole !== "ADMIN" &&
+            userRole !== "MANAGER"
+          ) {
+            router.replace("/dashboard");
+            return;
+          }
+
+          setRole(userRole);
+        } else {
+          router.replace("/login");
+        }
+      } catch (error) {
+        console.error(error);
+        router.replace("/dashboard");
+      } finally {
+        setLoadingRole(false);
+      }
+    }
+
+    getCurrentUser();
+  }, [router]);
+
+
+  if (loadingRole) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-zinc-950">
+      <div className="text-center">
+        <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-slate-700 border-t-violet-500"></div>
+        <p className="text-slate-400">Checking permissions...</p>
+      </div>
+    </div>
+  );
+}
 
   return (
     <div className="min-h-screen bg-zinc-950 pb-12">

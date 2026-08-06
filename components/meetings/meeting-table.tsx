@@ -30,11 +30,11 @@ interface Meeting {
   description?: string;
   decision?: string;
   actionTaken?: string;
-//   decision: string;
-// actionTaken: string;
-createdBy: string;
-createdByName: string;
-updatedAt?: string;
+  //   decision: string;
+  // actionTaken: string;
+  createdBy: string;
+  createdByName: string;
+  updatedAt?: string;
   participants: Participant[];
 }
 
@@ -163,7 +163,7 @@ export default function MeetingTable() {
 
 
 
-                      
+
                     </div>
                   </td>
 

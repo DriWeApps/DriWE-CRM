@@ -278,16 +278,16 @@ export default function AddMeetingPage() {
                                                             emp.employeeId,
                                                         ],
 
-                                                      participants: [
-    ...form.participants,
-    {
-        employeeId: emp.employeeId,
-        employeeName: `${emp.firstName} ${emp.lastName}`,
-        employeeEmail: emp.email,
-        joined: false,
-        joinedAt: "",
-    },
-],
+                                                        participants: [
+                                                            ...form.participants,
+                                                            {
+                                                                employeeId: emp.employeeId,
+                                                                employeeName: `${emp.firstName} ${emp.lastName}`,
+                                                                employeeEmail: emp.email,
+                                                                joined: false,
+                                                                joinedAt: "",
+                                                            },
+                                                        ],
                                                     });
 
                                                 } else {

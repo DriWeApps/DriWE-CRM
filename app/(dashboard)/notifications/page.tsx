@@ -255,22 +255,22 @@ export default function NotificationsPage() {
                     <div className="space-y-4">
                         {notifications.map((notification: any) => (
                             <div
-    key={notification.notificationId}
-    onClick={async () => {
-        if (notification.meetingId) {
+                                key={notification.notificationId}
+                                onClick={async () => {
+                                    if (notification.meetingId) {
 
-            await fetch(
-                `/api/notifications/${notification.notificationId}/read`,
-                {
-                    method: "PUT",
-                }
-            );
+                                        await fetch(
+                                            `/api/notifications/${notification.notificationId}/read`,
+                                            {
+                                                method: "PUT",
+                                            }
+                                        );
 
-            router.push(`/meetings/${notification.meetingId}`);
-        }
-    }}
-    className="cursor-pointer rounded-xl border border-slate-800 bg-slate-900 p-5 hover:border-cyan-500 hover:bg-slate-800 transition"
->
+                                        router.push(`/meetings/${notification.meetingId}`);
+                                    }
+                                }}
+                                className="cursor-pointer rounded-xl border border-slate-800 bg-slate-900 p-5 hover:border-cyan-500 hover:bg-slate-800 transition"
+                            >
                                 <h2 className="text-lg font-semibold text-white">
                                     {notification.title}
                                 </h2>

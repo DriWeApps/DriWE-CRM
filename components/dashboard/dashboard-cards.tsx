@@ -26,53 +26,56 @@ export default function DashboardCards({ stats }: Props) {
     role === "ADMIN" || role === "MANAGER";
 
   const cards = [
-    {
-      title: "Companies",
-      value: stats.companies,
-      subtitle: "Total companies",
-      icon: Building2,
-      href: "/companies",
-      color: "from-cyan-500 to-blue-500",
-      bg: "bg-cyan-500/10",
-      text: "text-cyan-400",
-    },
+  {
+    title: "Companies",
+    value: stats.companies,
+    subtitle: "Total companies",
+    icon: Building2,
+    href: "/companies",
+    color: "from-cyan-500 to-blue-500",
+    bg: "bg-cyan-500/10",
+    text: "text-cyan-400",
+  },
 
-    {
-      title: "Employees",
-      value: stats.employees,
-      subtitle: "Total employees",
-      icon: Users,
-      href: "/employees",
-      color: "from-emerald-500 to-green-500",
-      bg: "bg-emerald-500/10",
-      text: "text-emerald-400",
-    },
+  ...(isAdminOrManager
+    ? [
+        {
+          title: "Employees",
+          value: stats.employees,
+          subtitle: "Total employees",
+          icon: Users,
+          href: "/employees",
+          color: "from-emerald-500 to-green-500",
+          bg: "bg-emerald-500/10",
+          text: "text-emerald-400",
+        },
+      ]
+    : []),
 
-    {
-      title: isAdminOrManager ? "Tasks" : "My Tasks",
-      value: stats.tasks,
-      subtitle: isAdminOrManager
-        ? "Total tasks"
-        : "Tasks assigned to you",
-      icon: CheckSquare,
-      href: "/tasks",
-      color: "from-orange-500 to-yellow-500",
-      bg: "bg-orange-500/10",
-      text: "text-orange-400",
-    },
+  {
+    title: isAdminOrManager ? "Tasks" : "My Tasks",
+    value: stats.tasks,
+    subtitle: isAdminOrManager
+      ? "Total tasks"
+      : "Tasks assigned to you",
+    icon: CheckSquare,
+    href: "/tasks",
+    color: "from-orange-500 to-yellow-500",
+    bg: "bg-orange-500/10",
+    text: "text-orange-400",
+  },
 
-    {
-      title: "Meetings",
-      value: stats.meetings,
-      subtitle: "Total meetings",
-      icon: CalendarDays,
-      href: "/meetings",
-      color: "from-violet-500 to-fuchsia-500",
-      bg: "bg-violet-500/10",
-      text: "text-violet-400",
-    },
-  ];
-
+  {
+    title: "Meetings",
+    value: stats.meetings,
+    subtitle: "Total meetings",
+    icon: CalendarDays,
+    href: "/meetings",
+    color: "from-violet-500 to-fuchsia-500",
+    bg: "bg-violet-500/10",
+    text: "text-violet-400",
+  },
+];
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
       {cards.map((card) => {

@@ -82,8 +82,8 @@ export async function POST(req: Request) {
 
 
     console.log("========== NEW MEETING ==========");
-console.log("User:", user);
-console.log("Participants:", JSON.stringify(participants, null, 2));
+    console.log("User:", user);
+    console.log("Participants:", JSON.stringify(participants, null, 2));
 
     if (
       !title ||
@@ -136,94 +136,54 @@ console.log("Participants:", JSON.stringify(participants, null, 2));
       updatedAt: now,
     };
 
-//     await db.send(
-//       new PutCommand({
-//         TableName: TABLE_NAME,
-//         Item: meeting,
-//       })
-//     );
+    await db.send(
+      new PutCommand({
+        TableName: TABLE_NAME,
+        Item: meeting,
+      })
+    );
 
-//     console.log("Meeting saved successfully");
-// console.log("Meeting ID:", meeting.meetingId);
+    console.log("=================================");
+    console.log("Meeting Saved Successfully");
+    console.log("Participants Count:", participants.length);
+    console.log("Participants:", participants);
+    console.log("=================================");
 
     // ===============================
     // SEND NOTIFICATION TO PARTICIPANTS
     // ===============================
 
-//    for (const participant of participants) {
-//   if (!participant.employeeEmail) continue;
+    for (const participant of participants) {
 
-//   await createNotification({
-//     notificationId: crypto.randomUUID(),
+      console.log("Sending notification to:", participant.employeeEmail);
 
-//     title: "New Meeting Scheduled",
+      if (!participant.employeeEmail) {
+        console.log("Employee email missing.");
+        continue;
+      }
 
-//     message: `${user.email} scheduled "${title}" on ${date} at ${time}.`,
+      await createNotification({
+        notificationId: crypto.randomUUID(),
 
-//     sentBy: user.userId,
-//     sentByName: user.email,
-//     sentByEmail: user.email,
+        title: "New Meeting Scheduled",
 
-//     recipientEmail: participant.employeeEmail,
+        message: `${user.email} scheduled "${title}" on ${date} at ${time}.`,
 
-//     meetingId: meeting.meetingId,
+        sentBy: user.userId,
+        sentByName: user.email,
+        sentByEmail: user.email,
 
-//     isRead: false,
+        recipientEmail: participant.employeeEmail,
 
-//     createdAt: new Date().toISOString(),
-//   });
-// }
+        meetingId: meeting.meetingId,
 
+        isRead: false,
 
+        createdAt: new Date().toISOString(),
+      });
 
-await db.send(
-  new PutCommand({
-    TableName: TABLE_NAME,
-    Item: meeting,
-  })
-);
-
-console.log("=================================");
-console.log("Meeting Saved Successfully");
-console.log("Participants Count:", participants.length);
-console.log("Participants:", participants);
-console.log("=================================");
-
-// ===============================
-// SEND NOTIFICATION TO PARTICIPANTS
-// ===============================
-
-for (const participant of participants) {
-
-  console.log("Sending notification to:", participant.employeeEmail);
-
-  if (!participant.employeeEmail) {
-    console.log("Employee email missing.");
-    continue;
-  }
-
-  await createNotification({
-    notificationId: crypto.randomUUID(),
-
-    title: "New Meeting Scheduled",
-
-    message: `${user.email} scheduled "${title}" on ${date} at ${time}.`,
-
-    sentBy: user.userId,
-    sentByName: user.email,
-    sentByEmail: user.email,
-
-    recipientEmail: participant.employeeEmail,
-
-    meetingId: meeting.meetingId,
-
-    isRead: false,
-
-    createdAt: new Date().toISOString(),
-  });
-
-  console.log("Notification Created Successfully");
-}
+      console.log("Notification Created Successfully");
+    }
     return NextResponse.json({
       success: true,
       message: "Meeting created successfully",
