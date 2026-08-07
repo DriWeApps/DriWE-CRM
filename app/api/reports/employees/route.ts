@@ -6,9 +6,21 @@ export async function GET(req: Request) {
   try {
     const user = await getUserFromRequest(req);
 
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Unauthorized",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
     const role = user.role?.toUpperCase();
 
-  if (!user || (role !== "ADMIN" && role !== "MANAGER")) {
+    if (role !== "ADMIN" && role !== "MANAGER") {
       return NextResponse.json(
         {
           success: false,
