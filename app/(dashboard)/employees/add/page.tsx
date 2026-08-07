@@ -105,6 +105,7 @@ export default function AddEmployeePage() {
         { id: "followups", label: "Follow Ups" },
         { id: "reports", label: "Reports" },
         { id: "notifications", label: "Notifications" },
+        { id: "customer-management-driver", label: "Customer Management (Driver)" },
         { id: "settings", label: "Settings" },
         { id: "app-errors", label: "App Errors" },
     ];

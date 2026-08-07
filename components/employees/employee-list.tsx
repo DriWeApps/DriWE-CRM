@@ -695,6 +695,7 @@
 'use client';
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   Loader2,
   Trash2,
@@ -806,6 +807,7 @@ export default function EmployeeList({ searchTerm = "" }: EmployeeListProps) {
       const res = await fetch(`/api/employees/${selectedEmployeeId}/password`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ password: newPassword }),
       });
 
@@ -943,6 +945,13 @@ export default function EmployeeList({ searchTerm = "" }: EmployeeListProps) {
 
               {isAdmin && (
                 <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <Link
+                    href={`/employees/edit/${employee.employeeId}`}
+                    className="rounded-xl p-2.5 text-cyan-400 transition hover:bg-cyan-500/10"
+                    title="Edit Employee"
+                  >
+                    <UserCog className="h-4 w-4" />
+                  </Link>
                   <button
                     onClick={() => {
                       setSelectedEmployeeId(employee.employeeId);
