@@ -19,8 +19,9 @@ export async function GET(req: Request) {
                 }
             );
         }
-        const isAdmin =
-            user.role === "ADMIN";
+        const role = user.role?.toUpperCase();
+        const isAdminOrManager =
+            role === "ADMIN" || role === "MANAGER";
         const tasks = await db.send(
             new ScanCommand({
                 TableName: "CRM_Tasks"
@@ -40,7 +41,7 @@ export async function GET(req: Request) {
         let employeeMeetings = meetings.Items || [];
         let employeeFollowups = followups.Items || [];
         // Employee can see only own data
-        if (!isAdmin) {
+        if (!isAdminOrManager) {
 
             employeeTasks = employeeTasks.filter(
                 (task: any) => task.assignedTo === user.employeeId

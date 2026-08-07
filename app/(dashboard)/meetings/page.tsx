@@ -74,8 +74,10 @@ export default function Meetings() {
       return;
     }
 
-    // Admin can access everything
-    if (data.user.role?.toLowerCase() !== "admin") {
+    const role = data.user.role?.toLowerCase();
+
+    // Admin and Manager can access everything
+    if (role !== "admin" && role !== "manager") {
       const pageAccess = data.user.pageAccess || [];
 
       if (!pageAccess.includes("meetings")) {

@@ -57,6 +57,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import CompanyTable from "@/components/companies/company-table";
 import { Building2, Plus } from "lucide-react";
+import { hasPageAccess } from "@/lib/auth";
 
 interface User {
   role: string;
@@ -86,15 +87,11 @@ export default function CompaniesPage() {
         const currentUser = data.user;
         const role = currentUser.role?.toUpperCase();
 
-        // ADMIN has access to everything
-        if (role !== "ADMIN") {
-          const pageAccess = currentUser.pageAccess || [];
-
-          if (!pageAccess.includes("companies")) {
-            alert("You don't have permission to access Companies.");
-            router.replace("/dashboard");
-            return;
-          }
+        // ADMIN and MANAGER have access to everything
+        if (!hasPageAccess(currentUser, "companies")) {
+          alert("You don't have permission to access Companies.");
+          router.replace("/dashboard");
+          return;
         }
 
         setUser(currentUser);

@@ -1,4 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
+import type { JWTPayload } from "jose";
 import { NextRequest } from "next/server";
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
@@ -8,6 +9,7 @@ export async function createToken(payload: {
   employeeId: string;
   email: string;
   role: string;
+  pageAccess?: string[];
 }) {
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
@@ -60,6 +62,7 @@ export async function getUserFromRequest(req: Request | NextRequest) {
   employeeId: string;
   email: string;
   role?: string;
+  pageAccess?: string[];
 };
 }
 
@@ -72,4 +75,38 @@ export function canAssignTask(user: any) {
     user?.role === "ADMIN" ||
     user?.role === "Manager"
   );
+}
+
+export function hasPageAccess(
+  user: {
+    role?: string;
+    pageAccess?: string[];
+  },
+  page: string
+): boolean {
+  const role = user.role?.trim().toUpperCase();
+
+  // ADMIN + MANAGER = full access
+  if (role === "ADMIN" || role === "MANAGER") {
+    return true;
+  }
+
+  if (!Array.isArray(user.pageAccess)) {
+    return false;
+  }
+
+  return user.pageAccess.some(
+    (item) =>
+      typeof item === "string" &&
+      item.trim().toLowerCase() === page.trim().toLowerCase()
+  );
+}
+
+
+interface UserTokenPayload extends JWTPayload {
+  userId: string;
+  employeeId: string;
+  email: string;
+  role: string;
+  pageAccess?: string[];
 }

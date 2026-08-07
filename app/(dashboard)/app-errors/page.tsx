@@ -51,8 +51,9 @@ export default function AppErrorsPage() {
                 return;
             }
 
-            // Admin can access everything
-            if (data.user.role?.toUpperCase() !== "ADMIN") {
+            // Admin and Manager can access everything
+            const role = data.user.role?.toUpperCase();
+            if (role !== "ADMIN" && role !== "MANAGER") {
                 const pageAccess = data.user.pageAccess || [];
 
                 if (!pageAccess.includes("app-errors")) {

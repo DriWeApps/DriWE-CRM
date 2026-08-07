@@ -43,8 +43,8 @@ const token = await createToken({
   employeeId: user.employeeId,
   email: user.email,
   role: user.role,
+  pageAccess: user.pageAccess ?? [],
 });
-
 console.log("Created token");
 
     const response = NextResponse.json({
@@ -55,8 +55,11 @@ console.log("Created token");
         name: user.name,
         email: user.email,
         role: user.role,
+        pageAccess: user.pageAccess ?? [],
       },
     });
+
+    
 
     response.cookies.set("token", token, {
       httpOnly: true,

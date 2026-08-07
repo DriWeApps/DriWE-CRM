@@ -38,12 +38,13 @@ export default function ReportsPage() {
 
       setRole(reportData.role);
 
-      if (reportData.role !== "ADMIN") {
+      const reportRole = reportData.role?.toUpperCase();
+
+      if (reportRole !== "ADMIN" && reportRole !== "MANAGER") {
         router.replace(`/reports/employee/${reportData.employeeId}`);
         return;
       }
 
-      // ADMIN ONLY
       const empRes = await fetch("/api/reports/employees");
       const empData = await empRes.json();
 
