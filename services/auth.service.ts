@@ -12,12 +12,15 @@ export interface User {
   email: string;
   password: string;
   role: string;
+
+  pageAccess: string[];
+
   createdAt: string;
   updatedAt: string;
 }
 
 export async function getUserByEmail(email: string) {
-    
+
   const result = await db.send(
     new QueryCommand({
       TableName: USERS_TABLE,
@@ -33,9 +36,9 @@ export async function getUserByEmail(email: string) {
 
   const user = result.Items?.[0] ?? null;
 
-console.log("User from DB:", user);
+  console.log("User from DB:", user);
 
-return user;
+  return user;
 
   return result.Items?.[0] ?? null;
 }
@@ -47,16 +50,21 @@ export async function createUser(userData: {
   email: string;
   password: string;
   role: string;
+
+  pageAccess: string[];
 }) {
   const now = new Date().toISOString();
 
   const user = {
   userId: userData.userId,
-  employeeId: userData.employeeId,   // <-- ADD THIS
+  employeeId: userData.employeeId,
   name: userData.name,
   email: userData.email.toLowerCase(),
   password: userData.password,
   role: userData.role,
+
+  pageAccess: userData.pageAccess,
+
   createdAt: now,
   updatedAt: now,
 };

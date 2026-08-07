@@ -11,15 +11,51 @@ import { createUser, getUserByEmail } from "@/services/auth.service";
 import { getUserFromRequest, isAdminUser } from "@/lib/auth";
 import { hashPassword } from "@/lib/password";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const user = await getUserFromRequest(req);
+
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Unauthorized",
+        },
+        { status: 401 }
+      );
+    }
+
+    const role = user.role?.toLowerCase();
+
+    if (role !== "admin" && role !== "manager") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Access denied",
+        },
+        { status: 403 }
+      );
+    }
+
     const employees = await getEmployees();
+
     return NextResponse.json(employees);
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ success: false, message: "Failed to fetch employees" }, { status: 500 });
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Failed to fetch employees",
+      },
+      { status: 500 }
+    );
   }
 }
+
+
+
+
 
 export async function POST(req: Request) {
   try {
@@ -69,6 +105,9 @@ export async function POST(req: Request) {
       pincode: body.pincode || "",
       country: body.country || "",
 
+      pageAccess: body.pageAccess ?? [],
+
+
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -76,14 +115,17 @@ export async function POST(req: Request) {
     const hashedPassword = await hashPassword(loginPassword);
 
     await createEmployee(employee);
-    await createUser({
-      userId: randomUUID(),
-      employeeId: employee.employeeId,   // <-- ADD THIS
-      name: `${body.firstName} ${body.lastName}`.trim(),
-      email: loginEmail,
-      password: hashedPassword,
-      role: (body.role ?? "Executive").toString(),
-    });
+   await createUser({
+  userId: randomUUID(),
+  employeeId: employee.employeeId,
+  name: `${body.firstName} ${body.lastName}`.trim(),
+  email: loginEmail,
+  password: hashedPassword,
+  role: (body.role ?? "Executive").toString(),
+
+  // ADD THIS
+  pageAccess: body.pageAccess ?? [],
+});
     return NextResponse.json({ success: true, employee });
   } catch (error) {
     console.error(error);

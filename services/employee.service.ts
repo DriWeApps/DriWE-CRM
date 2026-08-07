@@ -71,24 +71,26 @@ export async function updateEmployee(
       },
 
       UpdateExpression: `
-        SET firstName = :firstName,
-            lastName = :lastName,
-            email = :email,
-            mobile = :mobile,
-            designation = :designation,
-            department = :department,
-            // #role = :role,
-            #status = :status,
-            joiningDate = :joiningDate,
-            dateOfBirth = :dateOfBirth,
-            gender = :gender,
-            address = :address,
-            city = :city,
-            #state = :state,
-            pincode = :pincode,
-            // country = :country,
-            updatedAt = :updatedAt
-      `,
+  SET firstName = :firstName,
+      lastName = :lastName,
+      email = :email,
+      mobile = :mobile,
+      designation = :designation,
+      department = :department,
+      #role = :role,
+      #status = :status,
+      joiningDate = :joiningDate,
+      dateOfBirth = :dateOfBirth,
+      gender = :gender,
+      address = :address,
+      city = :city,
+      #state = :state,
+      pincode = :pincode,
+      country = :country,
+      pageAccess = :pageAccess,
+      updatedAt = :updatedAt
+`,
+
 
       ExpressionAttributeNames: {
         "#role": "role",
@@ -97,29 +99,37 @@ export async function updateEmployee(
       },
 
       ExpressionAttributeValues: {
-        ":firstName": data.firstName ?? "",
-        ":lastName": data.lastName ?? "",
-        ":email": data.email ?? "",
-        ":mobile": data.mobile ?? "",
-        ":designation": data.designation ?? "",
-        ":department": data.department ?? "",
-        // ":role": data.role ?? "",
-        ":status": data.status ?? "",
-        ":joiningDate": data.joiningDate ?? "",
-        ":dateOfBirth": data.dateOfBirth ?? "",
-        // ":gender": data.gender ?? "",
-        ":address": data.address ?? "",
-        ":city": data.city ?? "",
-        ":state": data.state ?? "",
-        ":pincode": data.pincode ?? "",
-        // ":country": data.country ?? "",
-        ":updatedAt": new Date().toISOString(),
-      },
+  ":firstName": data.firstName ?? "",
+  ":lastName": data.lastName ?? "",
+  ":email": data.email ?? "",
+  ":mobile": data.mobile ?? "",
+  ":designation": data.designation ?? "",
+  ":department": data.department ?? "",
+  ":role": data.role ?? "Executive",
+  ":status": data.status ?? "Active",
+  ":joiningDate": data.joiningDate ?? "",
+  ":dateOfBirth": data.dateOfBirth ?? "",
+  ":gender": data.gender ?? "",
+  ":address": data.address ?? "",
+  ":city": data.city ?? "",
+  ":state": data.state ?? "",
+  ":pincode": data.pincode ?? "",
+  ":country": data.country ?? "",
+  ":pageAccess": data.pageAccess ?? [],
+  ":updatedAt": new Date().toISOString(),
+},
     })
   );
 
   return true;
 }
+
+
+
+
+
+
+
 
 /**
  * Delete Employee

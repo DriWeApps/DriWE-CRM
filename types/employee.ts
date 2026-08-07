@@ -1,32 +1,3 @@
-// export interface Employee {
-//   employeeId: string;
-
-//   firstName: string;
-//   lastName: string;
-
-//   email: string;
-//   mobile: string;
-
-//   designation: string;
-//   department: string;
-//   dateOfBirth?: string;
-
-//   role: "Admin" | "Manager" | "Executive";
-
-//   status: "Active" | "Inactive";
-
-//   joiningDate: string;
-
-//   address: string;
-//   city: string;
-//   state: string;
-//   pincode: string;
-
-//   createdAt: string;
-//   updatedAt: string;
-// }
-
-
 export interface Employee {
   employeeId: string;
 
@@ -51,6 +22,7 @@ export interface Employee {
   state?: string;
   pincode?: string;
   country?: string;
+  pageAccess: string[];
 
   createdAt: string;
   updatedAt: string;

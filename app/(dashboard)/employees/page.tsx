@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import EmployeeList from "@/components/employees/employee-list";
@@ -90,10 +91,13 @@ export default function EmployeesPage() {
               Refresh
             </button>
 
-            <button className="flex items-center gap-2 rounded-2xl bg-white text-black hover:bg-white/90 transition-all px-6 py-2.5 text-sm font-semibold active:scale-95">
-              <Plus className="h-4 w-4" />
-              Add Employee
-            </button>
+           <Link
+  href="/employees/add"
+  className="flex items-center gap-2 rounded-2xl bg-white text-black hover:bg-white/90 transition-all px-6 py-2.5 text-sm font-semibold active:scale-95"
+>
+  <Plus className="h-4 w-4" />
+  Add Employee
+</Link>
           </div>
         </div>
       </div>

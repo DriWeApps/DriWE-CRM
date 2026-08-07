@@ -12,6 +12,8 @@ import {
   Trash2,
   Eye,
 } from "lucide-react";
+// import router from "next/dist/shared/lib/router/router";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -48,9 +50,11 @@ interface User {
   employeeId?: string;
   email: string;
   role: string;
+  pageAccess: string[];
 }
 
 export default function Meetings() {
+  const router = useRouter();
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -58,22 +62,40 @@ export default function Meetings() {
   const [userLoading, setUserLoading] = useState(true);
 
   async function fetchUser() {
-    try {
-      const res = await fetch("/api/auth/me", {
-        credentials: "include",
-      });
+  try {
+    const res = await fetch("/api/auth/me", {
+      credentials: "include",
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (data.authenticated && data.user) {
-        setUser(data.user);
-      }
-    } catch (error) {
-      console.error("Failed to fetch current user", error);
-    } finally {
-      setUserLoading(false);
+    if (!data.authenticated || !data.user) {
+      router.push("/login");
+      return;
     }
+
+    // Admin can access everything
+    if (data.user.role?.toLowerCase() !== "admin") {
+      const pageAccess = data.user.pageAccess || [];
+
+      if (!pageAccess.includes("meetings")) {
+        alert("You don't have permission to access Meetings.");
+        router.replace("/dashboard");
+        return;
+      }
+    }
+
+    setUser(data.user);
+  } catch (error) {
+    console.error("Failed to fetch current user", error);
+    router.replace("/dashboard");
+  } finally {
+    setUserLoading(false);
   }
+}
+
+
+
 
   async function fetchMeetings() {
     try {
@@ -153,13 +175,17 @@ export default function Meetings() {
           </p>
         </div>
 
-        <Link
-          href="/meetings/add"
-          className="flex items-center gap-2 rounded-xl bg-cyan-500 px-5 py-3 font-medium text-slate-950 transition hover:bg-cyan-400"
-        >
-          <Plus size={18} />
-          Add Meeting
-        </Link>
+       {user &&
+  (user.role?.toLowerCase() === "admin" ||
+    user.pageAccess?.includes("meetings")) && (
+    <Link
+      href="/meetings/add"
+      className="flex items-center gap-2 rounded-xl bg-cyan-500 px-5 py-3 font-medium text-slate-950 transition hover:bg-cyan-400"
+    >
+      <Plus size={18} />
+      Add Meeting
+    </Link>
+)}
       </div>
 
       {/* Stats */}

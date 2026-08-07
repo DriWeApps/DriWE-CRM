@@ -11,6 +11,7 @@ import {
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { Download } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 
 interface AppError {
@@ -26,6 +27,7 @@ interface AppError {
 }
 
 export default function AppErrorsPage() {
+    const router = useRouter();
     const [errors, setErrors] = useState<AppError[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -37,11 +39,33 @@ export default function AppErrorsPage() {
     }, []);
 
     async function loadUser() {
-        const res = await fetch("/api/auth/me");
-        const data = await res.json();
+        try {
+            const res = await fetch("/api/auth/me", {
+                credentials: "include",
+            });
 
-        if (data.user) {
+            const data = await res.json();
+
+            if (!data.authenticated || !data.user) {
+                router.replace("/login");
+                return;
+            }
+
+            // Admin can access everything
+            if (data.user.role?.toUpperCase() !== "ADMIN") {
+                const pageAccess = data.user.pageAccess || [];
+
+                if (!pageAccess.includes("app-errors")) {
+                    alert("You don't have permission to access App Errors.");
+                    router.replace("/dashboard");
+                    return;
+                }
+            }
+
             setUser(data.user);
+        } catch (error) {
+            console.error(error);
+            router.replace("/dashboard");
         }
     }
 
@@ -76,43 +100,43 @@ export default function AppErrorsPage() {
 
 
     function downloadExcel() {
-    const sheetData = errors.map((item, index) => ({
-        "Sr. No": index + 1,
-        Module: item.module,
-        "Error Title": item.errorTitle,
-        "Occurred Error": item.occurredError,
-        "Expected Error": item.expectedError,
-        Status: item.status,
-        "Reported By": item.reportedByName,
-        Email: item.reportedByEmail,
-        Date: new Date(item.createdAt).toLocaleString(),
-    }));
+        const sheetData = errors.map((item, index) => ({
+            "Sr. No": index + 1,
+            Module: item.module,
+            "Error Title": item.errorTitle,
+            "Occurred Error": item.occurredError,
+            "Expected Error": item.expectedError,
+            Status: item.status,
+            "Reported By": item.reportedByName,
+            Email: item.reportedByEmail,
+            Date: new Date(item.createdAt).toLocaleString(),
+        }));
 
-    const worksheet = XLSX.utils.json_to_sheet(sheetData);
+        const worksheet = XLSX.utils.json_to_sheet(sheetData);
 
-    const workbook = XLSX.utils.book_new();
+        const workbook = XLSX.utils.book_new();
 
-    XLSX.utils.book_append_sheet(
-        workbook,
-        worksheet,
-        "App Errors"
-    );
+        XLSX.utils.book_append_sheet(
+            workbook,
+            worksheet,
+            "App Errors"
+        );
 
-    const excelBuffer = XLSX.write(workbook, {
-        bookType: "xlsx",
-        type: "array",
-    });
+        const excelBuffer = XLSX.write(workbook, {
+            bookType: "xlsx",
+            type: "array",
+        });
 
-    const file = new Blob([excelBuffer], {
-        type:
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
+        const file = new Blob([excelBuffer], {
+            type:
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
 
-    saveAs(
-        file,
-        `AppErrors_${new Date().toISOString().split("T")[0]}.xlsx`
-    );
-}
+        saveAs(
+            file,
+            `AppErrors_${new Date().toISOString().split("T")[0]}.xlsx`
+        );
+    }
 
 
     function statusColor(status: string) {
@@ -137,7 +161,7 @@ export default function AppErrorsPage() {
     return (
         <div className="space-y-6">
 
-           <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between">
 
                 <div>
 
@@ -151,25 +175,29 @@ export default function AppErrorsPage() {
 
                 </div>
 
-               <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3">
 
-    <button
-        onClick={downloadExcel}
-        className="flex items-center gap-2 rounded-xl bg-green-600 px-5 py-3 text-white hover:bg-green-700"
-    >
-        <Download size={18} />
-        Download Sheet
-    </button>
+                    <button
+                        onClick={downloadExcel}
+                        className="flex items-center gap-2 rounded-xl bg-green-600 px-5 py-3 text-white hover:bg-green-700"
+                    >
+                        <Download size={18} />
+                        Download Sheet
+                    </button>
 
-    <Link
-        href="/app-errors/add"
-        className="flex items-center gap-2 rounded-xl bg-cyan-600 px-5 py-3 text-white hover:bg-cyan-700"
-    >
-        <Plus size={18} />
-        Report Error
-    </Link>
+                    {user &&
+                        (user.role?.toUpperCase() === "ADMIN" ||
+                            user.pageAccess?.includes("app-errors")) && (
+                            <Link
+                                href="/app-errors/add"
+                                className="flex items-center gap-2 rounded-xl bg-cyan-600 px-5 py-3 text-white hover:bg-cyan-700"
+                            >
+                                <Plus size={18} />
+                                Report Error
+                            </Link>
+                        )}
 
-</div>
+                </div>
 
             </div>
 
@@ -272,12 +300,16 @@ export default function AppErrorsPage() {
                                                 <Eye size={16} />
                                             </Link>
 
-                                            <Link
-                                                href={`/app-errors/${item.errorId}/edit`}
-                                                className="rounded-lg bg-amber-500 p-2 text-black hover:bg-amber-600"
-                                            >
-                                                <Pencil size={16} />
-                                            </Link>
+                                            {user &&
+                                                (user.role?.toUpperCase() === "ADMIN" ||
+                                                    user.pageAccess?.includes("app-errors")) && (
+                                                    <Link
+                                                        href={`/app-errors/${item.errorId}/edit`}
+                                                        className="rounded-lg bg-amber-500 p-2 text-black hover:bg-amber-600"
+                                                    >
+                                                        <Pencil size={16} />
+                                                    </Link>
+                                                )}
 
                                             {canDelete && (
                                                 <button
