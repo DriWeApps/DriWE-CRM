@@ -51,11 +51,7 @@ export default function EditTaskPage() {
   description: task.description,
   priority: task.priority,
   status: task.status,
-  dueDate: task.dueDate,
-  remarks: task.remarks,
-
-  completionDescription: task.completionDescription,
-  completionLink: task.completionLink,
+  assignmentDate: task.assignmentDate,
 
   companyId: task.companyId,
   companyName: task.companyName,

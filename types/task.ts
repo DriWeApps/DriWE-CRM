@@ -22,10 +22,14 @@ export interface Task {
   assignedBy: string;
   assignedByName: string;
 
+  assignmentDate: string;
+  dueDate: string;
+
   priority: TaskPriority;
   status: TaskStatus;
 
-  dueDate: string;
+  priority: TaskPriority;
+  status: TaskStatus;
 
   remarks?: string;
 

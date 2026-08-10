@@ -185,21 +185,8 @@ export async function PUT(
        start working/submitting the task.
     ===================================================== */
 
-    if (!oldTask.assignmentDate) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-           "This task is not currently available for submission. Please check the assignment and due dates.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
     const assignmentDate = new Date(
-      `${oldTask.assignmentDate}T00:00:00`
+      `${oldTask.assignmentDate || oldTask.dueDate}T00:00:00`
     );
 
     if (isNaN(assignmentDate.getTime())) {
@@ -313,15 +300,16 @@ export async function PUT(
     ===================================================== */
 
     if (now < assignmentDayStart) {
+      const rawAssignmentDate =
+        oldTask.assignmentDate ||
+        oldTask.createdAt?.split("T")[0] ||
+        oldTask.dueDate;
+
       const assignmentDateFormatted =
-        formatTaskDate(
-          oldTask.assignmentDate
-        );
+        formatTaskDate(rawAssignmentDate);
 
       const dueDateFormatted =
-        formatTaskDate(
-          oldTask.dueDate
-        );
+        formatTaskDate(oldTask.dueDate);
 
       return NextResponse.json(
         {
@@ -330,11 +318,8 @@ export async function PUT(
           message:
             `You can submit this task from ${assignmentDateFormatted} to ${dueDateFormatted}.`,
 
-          assignmentDate:
-            oldTask.assignmentDate,
-
-          dueDate:
-            oldTask.dueDate,
+          assignmentDate: rawAssignmentDate,
+          dueDate: oldTask.dueDate,
         },
         {
           status: 403,
@@ -352,36 +337,50 @@ export async function PUT(
        Today            = 21 Aug
     ===================================================== */
 
-    if (now > dueDayEnd) {
-      const assignmentDateFormatted =
-        formatTaskDate(
-          oldTask.assignmentDate
-        );
+    // if (now > dueDayEnd) {
+    //   const assignmentDateFormatted =
+    //     formatTaskDate(
+    //       oldTask.assignmentDate
+    //     );
 
-      const dueDateFormatted =
-        formatTaskDate(
-          oldTask.dueDate
-        );
+    //   const dueDateFormatted =
+    //     formatTaskDate(
+    //       oldTask.dueDate
+    //     );
 
-      return NextResponse.json(
+    //   return NextResponse.json(
+    //     {
+    //       success: false,
+
+    //       message:
+    //         `The submission period for this task was from ${assignmentDateFormatted} to ${dueDateFormatted}. The due date has passed. Please contact your administrator for further changes.`,
+
+    //       assignmentDate:
+    //         oldTask.assignmentDate,
+
+    //       dueDate:
+    //         oldTask.dueDate,
+    //     },
+    //     {
+    //       status: 403,
+    //     }
+    //   );
+    // }
+
+
+    if (now < assignmentDayStart) {
+    return NextResponse.json(
         {
-          success: false,
-
-          message:
-            `The submission period for this task was from ${assignmentDateFormatted} to ${dueDateFormatted}. The due date has passed. Please contact your administrator for further changes.`,
-
-          assignmentDate:
-            oldTask.assignmentDate,
-
-          dueDate:
-            oldTask.dueDate,
+            success: false,
+            message:
+                // `You can submit this task from ${oldTask.assignmentDate} to ${oldTask.dueDate}.`,
+                `You can't submit this task now.`,
         },
         {
-          status: 403,
+            status: 403,
         }
-      );
-    }
-
+    );
+}
     /* =====================================================
        ASSIGNMENT DATE <= TODAY <= DUE DATE
        
@@ -390,6 +389,12 @@ export async function PUT(
 
     await updateTask(taskId, {
       ...oldTask,
+      ...body,
+      assignmentDate:
+        body.assignmentDate ??
+        oldTask.assignmentDate ??
+        oldTask.createdAt?.split("T")[0] ??
+        oldTask.dueDate,
 
       status: body.status,
 

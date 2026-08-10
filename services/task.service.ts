@@ -81,6 +81,7 @@ export async function updateTask(
           assignedByName = :assignedByName,
           priority = :priority,
           #status = :status,
+          assignmentDate = :assignmentDate,
           dueDate = :dueDate,
          remarks = :remarks,
 completionDescription = :completionDescription,
@@ -107,6 +108,7 @@ updatedAt = :updatedAt
 
         ":priority": data.priority,
         ":status": data.status,
+        ":assignmentDate": data.assignmentDate ?? "",
         ":dueDate": data.dueDate,
 
         ":remarks": data.remarks ?? "",

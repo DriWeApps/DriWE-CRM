@@ -19,7 +19,7 @@ interface Employee {
 export default function AddTaskPage() {
     const [loading, setLoading] = useState(false);
     const [assignmentDate, setAssignmentDate] = useState("");
-    const [dueDate, setDueDate] = useState("");
+const [dueDate, setDueDate] = useState("");
 
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [selectedEmployee, setSelectedEmployee] =
@@ -138,29 +138,32 @@ export default function AddTaskPage() {
                CREATE TASK BODY
             ===================================================== */
 
-            const body = {
-                title: formData.get("title"),
-                description: formData.get("description"),
+           const body = {
+    title: formData.get("title"),
+    description: formData.get("description"),
 
-                assignedTo: formData.get("assignedTo"),
-                assignedToName: formData.get("assignedToName"),
-                assignedToEmail: formData.get("assignedToEmail"),
+    assignedTo: formData.get("assignedTo"),
+    assignedToName: formData.get("assignedToName"),
+    assignedToEmail: formData.get("assignedToEmail"),
 
-                assignedBy: me.user.userId,
-                assignedByName:
-                    me.user.name || me.user.email,
+    assignedBy: me.user.userId,
+    assignedByName:
+        me.user.name || me.user.email,
 
-                priority:
-                    formData.get("priority") || "Medium",
+    priority:
+        formData.get("priority") || "Medium",
 
-                // Every new task starts as Pending
-                status: "Pending",
+    status: "Pending",
 
-                // This is the task's due/assigned date
-                dueDate,
+    // IMPORTANT:
+    // Employee can start submitting from this date
+    assignmentDate,
 
-                remarks: "",
-            };
+    // Employee must finish submitting by this date
+    dueDate,
+
+    remarks: "",
+};
 
             /* =====================================================
                CREATE TASK
