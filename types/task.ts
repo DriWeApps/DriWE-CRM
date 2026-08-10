@@ -28,9 +28,6 @@ export interface Task {
   priority: TaskPriority;
   status: TaskStatus;
 
-  priority: TaskPriority;
-  status: TaskStatus;
-
   remarks?: string;
 
   createdAt: string;
