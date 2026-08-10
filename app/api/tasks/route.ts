@@ -41,17 +41,21 @@ export async function GET(req: Request) {
     );
 
     // Admin and Manager can see all tasks
-    const isManager = user.role === "Manager"; // use "MANAGER" if that's your role value
+    const isManager = user.role === "Manager";
 
     if (!isAdminUser(user) && !isManager) {
       tasks = tasks.filter(
-        (task: any) => task.assignedToEmail === user.email
+        (task: any) =>
+          task.assignedToEmail === user.email
       );
     }
 
     return NextResponse.json(tasks);
   } catch (error) {
-    console.error("Get Tasks Error:", error);
+    console.error(
+      "Get Tasks Error:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -73,7 +77,8 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: "Only Admins and Managers can assign tasks.",
+          message:
+            "Only Admins and Managers can assign tasks.",
         },
         {
           status: 403,
@@ -83,7 +88,68 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    const now = new Date().toISOString();
+    /* =====================================================
+       VALIDATE ASSIGNMENT DATE
+    ===================================================== */
+
+    if (!body.assignmentDate) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Assignment date is required.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    /* =====================================================
+       VALIDATE DUE DATE
+    ===================================================== */
+
+    if (!body.dueDate) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Due date is required.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    /* =====================================================
+       VALIDATE DATE RANGE
+       
+       Due date cannot be before assignment date.
+    ===================================================== */
+
+    if (
+      body.dueDate <
+      body.assignmentDate
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Due date cannot be earlier than the assignment date.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const now =
+      new Date().toISOString();
+
+    /* =====================================================
+       CREATE TASK
+    ===================================================== */
 
     const task = {
       taskId: randomUUID(),
@@ -91,25 +157,58 @@ export async function POST(req: Request) {
       title: body.title,
       description: body.description,
 
-      companyId: body.companyId ?? "",
-      companyName: body.companyName ?? "",
+      companyId:
+        body.companyId ?? "",
 
-      assignedTo: body.assignedTo,
-      assignedToName: body.assignedToName,
-      assignedToEmail: body.assignedToEmail,
+      companyName:
+        body.companyName ?? "",
 
-      // Always store the logged-in admin as the creator
-      assignedBy: user.userId,
-      assignedByName: user.email,
+      assignedTo:
+        body.assignedTo,
 
-      priority: body.priority ?? "Medium",
-      status: body.status ?? "Pending",
+      assignedToName:
+        body.assignedToName,
 
-      dueDate: body.dueDate,
-      remarks: body.remarks ?? "",
+      assignedToEmail:
+        body.assignedToEmail,
 
-      createdAt: now,
-      updatedAt: now,
+      // Always use the logged-in user as creator
+      assignedBy:
+        user.userId,
+
+      assignedByName:
+        user.email,
+
+      priority:
+        body.priority ?? "Medium",
+
+      // Every new task starts as Pending
+      status:
+        body.status ?? "Pending",
+
+      /*
+       * IMPORTANT:
+       *
+       * Assignment Date =
+       * first day employee can submit
+       *
+       * Due Date =
+       * last day employee can submit
+       */
+      assignmentDate:
+        body.assignmentDate,
+
+      dueDate:
+        body.dueDate,
+
+      remarks:
+        body.remarks ?? "",
+
+      createdAt:
+        now,
+
+      updatedAt:
+        now,
     };
 
     await createTask(task);
@@ -119,12 +218,16 @@ export async function POST(req: Request) {
       task,
     });
   } catch (error) {
-    console.error("Create Task Error:", error);
+    console.error(
+      "Create Task Error:",
+      error
+    );
 
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to create task.",
+        message:
+          "Failed to create task.",
       },
       {
         status: 500,
