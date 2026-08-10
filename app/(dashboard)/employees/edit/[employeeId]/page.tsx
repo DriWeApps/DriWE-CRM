@@ -55,6 +55,7 @@ export default function EditEmployeePage() {
         state: "",
         pincode: "",
         country: "",
+        password: "",
         pageAccess: [] as string[],
     });
 
@@ -90,6 +91,7 @@ export default function EditEmployeePage() {
                     state: data.employee.state || "",
                     pincode: data.employee.pincode || "",
                     country: data.employee.country || "",
+                    password: "",
                     pageAccess: data.employee.pageAccess || [],
                 });
             } catch (error) {
@@ -453,6 +455,34 @@ export default function EditEmployeePage() {
                                         </span>
                                     </label>
                                 ))}
+                            </div>
+                        </section>
+
+                        {/* ===================== LOGIN DETAILS ===================== */}
+
+                        <section>
+                            <h2 className="mb-5 flex items-center gap-2 text-xl font-semibold text-white">
+                                <Shield size={20} className="text-cyan-400" />
+                                Login Details
+                            </h2>
+
+                            <div className="grid gap-5 sm:grid-cols-2">
+                                <div className="sm:col-span-2">
+                                    <label className="mb-2 block text-sm text-slate-300">
+                                        Login Password
+                                    </label>
+                                    <input
+                                        type="password"
+                                        name="password"
+                                        value={form.password}
+                                        onChange={handleChange}
+                                        placeholder="Leave blank to keep current password"
+                                        className="input"
+                                    />
+                                    <p className="mt-1 text-xs text-slate-500">
+                                        Enter a new password only if you want to update the employee login.
+                                    </p>
+                                </div>
                             </div>
                         </section>
 

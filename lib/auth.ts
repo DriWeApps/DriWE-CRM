@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import type { JWTPayload } from "jose";
 import { NextRequest } from "next/server";
+import { getUserById } from "@/services/auth.service";
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
@@ -57,7 +58,13 @@ export async function getUserFromRequest(req: Request | NextRequest) {
     return null;
   }
 
-  return payload as {
+  const dbUser = await getUserById((payload as any).userId);
+
+  if (!dbUser) {
+    return null;
+  }
+
+  return dbUser as {
   userId: string;
   employeeId: string;
   email: string;

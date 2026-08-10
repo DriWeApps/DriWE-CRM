@@ -74,7 +74,7 @@ export default function CompaniesPage() {
     async function checkPermission() {
       try {
         const res = await fetch("/api/auth/me", {
-          credentials: "include",
+        cache: "no-store",
         });
 
         const data = await res.json();

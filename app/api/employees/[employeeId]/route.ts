@@ -5,10 +5,16 @@ import {
   isAdminUser,
 } from "@/lib/auth";
 
-// import {
-//   deleteEmployee,
-//   getEmployeeById,
-// } from "@/services/employee.service";
+import { hashPassword } from "@/lib/password";
+import {
+  getUserByEmployeeId,
+  getUserByEmail,
+  updateUserPassword,
+  updateUserPageAccess,
+  updateUserEmail,
+  updateUserName,
+  updateUserRole,
+} from "@/services/auth.service";
 
 import {
   deleteEmployee,
@@ -42,8 +48,72 @@ export async function PUT(
     }
 
     const { employeeId } = await params;
-
     const body = await req.json();
+
+    const employee = await getEmployeeById(employeeId);
+
+    if (!employee) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Employee not found",
+        },
+        { status: 404 }
+      );
+    }
+
+    let user = await getUserByEmployeeId(employee.employeeId);
+
+    if (!user && typeof body.email === "string" && body.email.trim()) {
+      user = await getUserByEmail(body.email.trim());
+    }
+
+    if (user) {
+      if (Array.isArray(body.pageAccess)) {
+        await updateUserPageAccess(user.userId, body.pageAccess);
+      }
+
+      if (body.password) {
+        if (typeof body.password !== "string" || body.password.length < 6) {
+          return NextResponse.json(
+            {
+              success: false,
+              message: "Password must be at least 6 characters.",
+            },
+            { status: 400 }
+          );
+        }
+
+        const hashedPassword = await hashPassword(body.password);
+        await updateUserPassword(user.userId, hashedPassword);
+      }
+
+      if (typeof body.email === "string" && body.email.trim() && body.email !== user.email) {
+        await updateUserEmail(user.userId, body.email.trim());
+      }
+
+      if (typeof body.role === "string" && body.role.trim() && body.role !== user.role) {
+        await updateUserRole(user.userId, body.role.trim());
+      }
+
+      if (
+        typeof body.firstName === "string" &&
+        typeof body.lastName === "string"
+      ) {
+        const fullName = `${body.firstName.trim()} ${body.lastName.trim()}`.trim();
+        if (fullName && fullName !== user.name) {
+          await updateUserName(user.userId, fullName);
+        }
+      }
+    } else if (body.password) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Login account not found for this employee.",
+        },
+        { status: 404 }
+      );
+    }
 
     await updateEmployee(employeeId, body);
 

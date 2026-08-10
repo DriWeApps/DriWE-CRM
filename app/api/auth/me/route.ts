@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 import { verifyToken } from "@/lib/auth";
+import { getUserById } from "@/services/auth.service";
 
 export async function GET() {
   const cookieStore = await cookies();
@@ -24,8 +25,25 @@ export async function GET() {
     );
   }
 
-  return NextResponse.json({
-    authenticated: true,
-    user: payload,
-  });
+  const user = await getUserById((payload as any).userId);
+
+  if (!user) {
+    return NextResponse.json(
+      { authenticated: false },
+      { status: 401 }
+    );
+  }
+
+  return NextResponse.json(
+    {
+      authenticated: true,
+      user,
+    },
+    {
+      status: 200,
+      headers: {
+        "Cache-Control": "no-store",
+      },
+    }
+  );
 }

@@ -46,21 +46,21 @@ export async function GET(
     }
 
     const canView =
-  user.role === "ADMIN" ||
-  user.role === "Manager" ||
-  task.assignedToEmail === user.email;
+      user.role === "ADMIN" ||
+      user.role === "Manager" ||
+      task.assignedToEmail === user.email;
 
-if (!canView) {
-  return NextResponse.json(
-    {
-      success: false,
-      message: "Forbidden",
-    },
-    {
-      status: 403,
+    if (!canView) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Forbidden",
+        },
+        {
+          status: 403,
+        }
+      );
     }
-  );
-}
 
     return NextResponse.json({
       success: true,
@@ -106,50 +106,79 @@ export async function PUT(
     const body = await req.json();
     console.log("Request body:", body);
 
-    // Employee can only update before deadline
-    if (!isAdminUser(user)) {
+   // Employee can only update task on the assigned date
+if (!isAdminUser(user)) {
+    const now = new Date();
 
-      const now = new Date();
+    const dueDate = new Date(oldTask.dueDate);
 
-      const dueDate = new Date(oldTask.dueDate);
-      dueDate.setHours(23, 59, 59, 999);
+    // Create start of task day
+    const taskDayStart = new Date(dueDate);
+    taskDayStart.setHours(0, 0, 0, 0);
 
-      if (now > dueDate) {
+    // Create end of task day
+    const taskDayEnd = new Date(dueDate);
+    taskDayEnd.setHours(23, 59, 59, 999);
+
+    // -----------------------------------------
+    // FUTURE TASK
+    // -----------------------------------------
+    if (now < taskDayStart) {
         return NextResponse.json(
-          {
-            success: false,
-            message:
-              "Task deadline has passed. Please contact your administrator for further changes.",
-          },
-          {
-            status: 403,
-          }
+            {
+                success: false,
+                message:
+                    "This task is scheduled for a future date. You can submit it only on the assigned date.",
+            },
+            {
+                status: 403,
+            }
         );
-      }
+    }
 
-      await updateTask(taskId, {
+    // -----------------------------------------
+    // EXPIRED TASK
+    // -----------------------------------------
+    if (now > taskDayEnd) {
+        return NextResponse.json(
+            {
+                success: false,
+                message:
+                    "Task deadline has passed. Please contact your administrator for further changes.",
+            },
+            {
+                status: 403,
+            }
+        );
+    }
+
+    // -----------------------------------------
+    // TODAY → ALLOW UPDATE
+    // -----------------------------------------
+    await updateTask(taskId, {
         ...oldTask,
+
         status: body.status,
         remarks: body.remarks,
 
         completionDescription:
-          body.completionDescription,
+            body.completionDescription,
 
         completionLink:
-          body.completionLink,
+            body.completionLink,
 
         completedAt:
-          body.status === "Completed"
-            ? new Date().toISOString()
-            : oldTask.completedAt,
+            body.status === "Completed"
+                ? new Date().toISOString()
+                : oldTask.completedAt,
 
         updatedAt: new Date().toISOString(),
-      });
+    });
 
-      return NextResponse.json({
+    return NextResponse.json({
         success: true,
-      });
-    }
+    });
+}
     // Admin can update everything
     await updateTask(taskId, {
       ...oldTask,
