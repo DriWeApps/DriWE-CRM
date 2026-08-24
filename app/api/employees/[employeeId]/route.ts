@@ -14,6 +14,7 @@ import {
   updateUserEmail,
   updateUserName,
   updateUserRole,
+  updateUserPortal,
 } from "@/services/auth.service";
 
 import {
@@ -27,8 +28,6 @@ interface Params {
     employeeId: string;
   }>;
 }
-
-
 
 export async function PUT(
   req: Request,
@@ -50,7 +49,8 @@ export async function PUT(
     const { employeeId } = await params;
     const body = await req.json();
 
-    const employee = await getEmployeeById(employeeId);
+    const employee =
+      await getEmployeeById(employeeId);
 
     if (!employee) {
       return NextResponse.json(
@@ -62,72 +62,184 @@ export async function PUT(
       );
     }
 
-    let user = await getUserByEmployeeId(employee.employeeId);
+    let user =
+      await getUserByEmployeeId(
+        employee.employeeId
+      );
 
-    if (!user && typeof body.email === "string" && body.email.trim()) {
-      user = await getUserByEmail(body.email.trim());
+    if (
+      !user &&
+      typeof body.email === "string" &&
+      body.email.trim()
+    ) {
+      user = await getUserByEmail(
+        body.email.trim()
+      );
     }
 
     if (user) {
+      /*
+       * =====================================================
+       * PAGE ACCESS
+       * =====================================================
+       */
       if (Array.isArray(body.pageAccess)) {
-        await updateUserPageAccess(user.userId, body.pageAccess);
+        await updateUserPageAccess(
+          user.userId,
+          body.pageAccess
+        );
       }
 
+      /*
+       * =====================================================
+       * PORTAL ACCESS
+       * =====================================================
+       */
+      if (
+        typeof body.portal === "string"
+      ) {
+        const portal =
+          body.portal.trim().toLowerCase();
+
+        if (
+          ["crm", "construction", "both"].includes(
+            portal
+          )
+        ) {
+          await updateUserPortal(
+            user.userId,
+            portal as
+              | "crm"
+              | "construction"
+              | "both"
+          );
+        }
+      }
+
+      /*
+       * =====================================================
+       * PASSWORD
+       * =====================================================
+       */
       if (body.password) {
-        if (typeof body.password !== "string" || body.password.length < 6) {
+        if (
+          typeof body.password !== "string" ||
+          body.password.length < 6
+        ) {
           return NextResponse.json(
             {
               success: false,
-              message: "Password must be at least 6 characters.",
+              message:
+                "Password must be at least 6 characters.",
             },
             { status: 400 }
           );
         }
 
-        const hashedPassword = await hashPassword(body.password);
-        await updateUserPassword(user.userId, hashedPassword);
+        const hashedPassword =
+          await hashPassword(
+            body.password
+          );
+
+        await updateUserPassword(
+          user.userId,
+          hashedPassword
+        );
       }
 
-      if (typeof body.email === "string" && body.email.trim() && body.email !== user.email) {
-        await updateUserEmail(user.userId, body.email.trim());
+      /*
+       * =====================================================
+       * EMAIL
+       * =====================================================
+       */
+      if (
+        typeof body.email === "string" &&
+        body.email.trim() &&
+        body.email.trim().toLowerCase() !==
+          user.email.toLowerCase()
+      ) {
+        await updateUserEmail(
+          user.userId,
+          body.email.trim()
+        );
       }
 
-      if (typeof body.role === "string" && body.role.trim() && body.role !== user.role) {
-        await updateUserRole(user.userId, body.role.trim());
+      /*
+       * =====================================================
+       * ROLE
+       * =====================================================
+       */
+      if (
+        typeof body.role === "string" &&
+        body.role.trim() &&
+        body.role !== user.role
+      ) {
+        await updateUserRole(
+          user.userId,
+          body.role.trim()
+        );
       }
 
+      /*
+       * =====================================================
+       * NAME
+       * =====================================================
+       */
       if (
         typeof body.firstName === "string" &&
         typeof body.lastName === "string"
       ) {
-        const fullName = `${body.firstName.trim()} ${body.lastName.trim()}`.trim();
-        if (fullName && fullName !== user.name) {
-          await updateUserName(user.userId, fullName);
+        const fullName =
+          `${body.firstName.trim()} ${body.lastName.trim()}`
+            .trim();
+
+        if (
+          fullName &&
+          fullName !== user.name
+        ) {
+          await updateUserName(
+            user.userId,
+            fullName
+          );
         }
       }
     } else if (body.password) {
       return NextResponse.json(
         {
           success: false,
-          message: "Login account not found for this employee.",
+          message:
+            "Login account not found for this employee.",
         },
         { status: 404 }
       );
     }
 
-    await updateEmployee(employeeId, body);
+    /*
+     * =====================================================
+     * UPDATE EMPLOYEE RECORD
+     * =====================================================
+     */
+    await updateEmployee(
+      employeeId,
+      body
+    );
 
     return NextResponse.json({
       success: true,
-      message: "Employee updated successfully",
+      message:
+        "Employee updated successfully",
     });
   } catch (error) {
-    console.error(error);
+    console.error(
+      "Update employee error:",
+      error
+    );
 
     return NextResponse.json(
       {
         success: false,
-        message: "Unable to update employee",
+        message:
+          "Unable to update employee",
       },
       { status: 500 }
     );
@@ -181,7 +293,6 @@ export async function GET(
     );
   }
 }
-
 
 export async function DELETE(
   req: Request,

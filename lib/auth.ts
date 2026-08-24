@@ -3,87 +3,197 @@ import type { JWTPayload } from "jose";
 import { NextRequest } from "next/server";
 import { getUserById } from "@/services/auth.service";
 
-const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+const secret = new TextEncoder().encode(
+  process.env.JWT_SECRET!
+);
 
-export async function createToken(payload: {
+export type Portal =
+  | "crm"
+  | "construction"
+  | "both";
+
+export interface UserTokenPayload extends JWTPayload {
   userId: string;
   employeeId: string;
   email: string;
   role: string;
   pageAccess?: string[];
-}) {
+  portal?: Portal;
+}
+
+/**
+ * =========================================================
+ * CREATE TOKEN
+ * =========================================================
+ */
+export async function createToken(
+  payload: UserTokenPayload
+) {
   return await new SignJWT(payload)
-    .setProtectedHeader({ alg: "HS256" })
+    .setProtectedHeader({
+      alg: "HS256",
+    })
     .setIssuedAt()
     .setExpirationTime("7d")
     .sign(secret);
 }
 
-// 
-
-export async function verifyToken(token: string) {
+/**
+ * =========================================================
+ * VERIFY TOKEN
+ * =========================================================
+ */
+export async function verifyToken(
+  token: string
+): Promise<UserTokenPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, secret);
+    const { payload } = await jwtVerify(
+      token,
+      secret
+    );
 
     console.log("JWT Payload:", payload);
 
-    return payload;
-  } catch {
+    return payload as UserTokenPayload;
+  } catch (error) {
+    console.error(
+      "JWT verification failed:",
+      error
+    );
+
     return null;
   }
 }
 
-export async function getUserFromRequest(req: Request | NextRequest) {
+/**
+ * =========================================================
+ * GET USER FROM REQUEST
+ * =========================================================
+ */
+export async function getUserFromRequest(
+  req: Request | NextRequest
+) {
   let token: string | undefined;
 
-  if ("cookies" in req && typeof req.cookies?.get === "function") {
+  if (
+    "cookies" in req &&
+    typeof req.cookies?.get === "function"
+  ) {
     token = req.cookies.get("token")?.value;
   } else {
-    const cookieHeader = req.headers.get("cookie") ?? "";
+    const cookieHeader =
+      req.headers.get("cookie") ?? "";
+
     const cookie = cookieHeader
       .split(";")
       .map((item) => item.trim())
-      .find((item) => item.startsWith("token="));
+      .find((item) =>
+        item.startsWith("token=")
+      );
 
-    token = cookie?.slice("token=".length);
+    token = cookie?.slice(
+      "token=".length
+    );
   }
 
   if (!token) {
     return null;
   }
 
-  const payload = await verifyToken(token);
+  const payload =
+    await verifyToken(token);
 
   if (!payload) {
     return null;
   }
 
-  const dbUser = await getUserById((payload as any).userId);
+  const dbUser =
+    await getUserById(payload.userId);
 
   if (!dbUser) {
     return null;
   }
 
+  /*
+   * Return the current user from DB.
+   *
+   * This is important because portal/pageAccess
+   * changes made by Admin are immediately reflected
+   * without requiring an old JWT to contain them.
+   */
   return dbUser as {
-  userId: string;
-  employeeId: string;
-  email: string;
-  role?: string;
-  pageAccess?: string[];
-};
+    userId: string;
+    employeeId: string;
+    email: string;
+    name?: string;
+    role?: string;
+    pageAccess?: string[];
+    portal?: Portal;
+  };
 }
 
-export function isAdminUser(user: { role?: string } | null | undefined) {
-  return user?.role?.toLowerCase() === "admin";
-}
-
-export function canAssignTask(user: any) {
+/**
+ * =========================================================
+ * ADMIN CHECK
+ * =========================================================
+ */
+export function isAdminUser(
+  user:
+    | { role?: string }
+    | null
+    | undefined
+) {
   return (
-    user?.role === "ADMIN" ||
-    user?.role === "Manager"
+    user?.role?.trim().toLowerCase() ===
+    "admin"
   );
 }
 
+/**
+ * =========================================================
+ * MANAGER CHECK
+ * =========================================================
+ */
+export function isManagerUser(
+  user:
+    | { role?: string }
+    | null
+    | undefined
+) {
+  return (
+    user?.role?.trim().toLowerCase() ===
+    "manager"
+  );
+}
+
+/**
+ * =========================================================
+ * TASK ASSIGNMENT PERMISSION
+ * =========================================================
+ */
+export function canAssignTask(
+  user:
+    | { role?: string }
+    | null
+    | undefined
+) {
+  const role =
+    user?.role?.trim().toUpperCase();
+
+  return (
+    role === "ADMIN" ||
+    role === "MANAGER"
+  );
+}
+
+/**
+ * =========================================================
+ * PAGE ACCESS
+ * =========================================================
+ *
+ * Admin + Manager = full CRM page access.
+ * Other users need explicit pageAccess.
+ */
 export function hasPageAccess(
   user: {
     role?: string;
@@ -91,10 +201,13 @@ export function hasPageAccess(
   },
   page: string
 ): boolean {
-  const role = user.role?.trim().toUpperCase();
+  const role =
+    user.role?.trim().toUpperCase();
 
-  // ADMIN + MANAGER = full access
-  if (role === "ADMIN" || role === "MANAGER") {
+  if (
+    role === "ADMIN" ||
+    role === "MANAGER"
+  ) {
     return true;
   }
 
@@ -105,15 +218,55 @@ export function hasPageAccess(
   return user.pageAccess.some(
     (item) =>
       typeof item === "string" &&
-      item.trim().toLowerCase() === page.trim().toLowerCase()
+      item.trim().toLowerCase() ===
+        page.trim().toLowerCase()
   );
 }
 
+/**
+ * =========================================================
+ * PORTAL ACCESS
+ * =========================================================
+ *
+ * crm          -> CRM only
+ * construction -> Construction only
+ * both         -> both portals
+ *
+ * Admin is automatically allowed to access both.
+ */
+export function hasPortalAccess(
+  user: {
+    role?: string;
+    portal?: Portal;
+  } | null | undefined,
+  portal: "crm" | "construction"
+): boolean {
+  if (!user) {
+    return false;
+  }
 
-interface UserTokenPayload extends JWTPayload {
-  userId: string;
-  employeeId: string;
-  email: string;
-  role: string;
-  pageAccess?: string[];
+  const role =
+    user.role?.trim().toUpperCase();
+
+  /*
+   * Admin can access both portals.
+   */
+  if (role === "ADMIN") {
+    return true;
+  }
+
+  const userPortal =
+    user.portal ?? "crm";
+
+  /*
+   * User assigned to both portals.
+   */
+  if (userPortal === "both") {
+    return true;
+  }
+
+  /*
+   * User assigned to the requested portal.
+   */
+  return userPortal === portal;
 }

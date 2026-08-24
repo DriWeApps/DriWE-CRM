@@ -13,6 +13,8 @@ export interface Employee {
   role: string;
   status: string;
 
+  portal?: "crm" | "construction" | "both";
+
   joiningDate: string;
   dateOfBirth?: string;
   gender?: string;

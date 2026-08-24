@@ -32,6 +32,10 @@ export default function AddEmployeePage() {
         department: "",
         role: "Executive",
         status: "Active",
+
+        // Portal access
+        portal: "crm",
+
         joiningDate: "",
         dateOfBirth: "",
         gender: "",
@@ -142,6 +146,60 @@ export default function AddEmployeePage() {
                         onSubmit={handleSubmit}
                         className="space-y-8 rounded-3xl border border-slate-800 bg-zinc-900 p-6 lg:col-span-3 md:p-8"
                     >
+
+                        {/* ===================== PORTAL ACCESS ===================== */}
+
+                        <section>
+                            <h2 className="mb-5 flex items-center gap-2 text-xl font-semibold text-white">
+                                <Shield size={20} className="text-orange-400" />
+                                Portal Access
+                            </h2>
+
+                            <div>
+                                <label className="mb-2 block text-sm text-slate-300">
+                                    Portal *
+                                </label>
+
+                                <select
+                                    required
+                                    name="portal"
+                                    value={form.portal}
+                                    onChange={handleChange}
+                                    className="input"
+                                >
+                                    <option value="crm">
+                                        DriWE CRM
+                                    </option>
+
+                                    <option value="construction">
+                                        Construction
+                                    </option>
+
+                                    <option value="both">
+                                        Both CRM & Construction
+                                    </option>
+                                </select>
+
+                                <p className="mt-2 text-xs text-slate-500">
+                                    This determines which platform the employee is allowed to log in to.
+                                </p>
+                            </div>
+
+                            <div className="mt-4 rounded-xl border border-slate-700 bg-zinc-950 p-4">
+                                <p className="text-sm font-medium text-white">
+                                    Selected Portal
+                                </p>
+
+                                <p className="mt-1 text-sm text-slate-400">
+                                    {form.portal === "crm"
+                                        ? "This employee can log in only to DriWE CRM."
+                                        : form.portal === "construction"
+                                            ? "This employee can log in only to Construction."
+                                            : "This employee can log in to both DriWE CRM and Construction."}
+                                </p>
+                            </div>
+                        </section>
+
                         {/* PERSONAL DETAILS */}
                         <section>
                             <h2 className="mb-5 flex items-center gap-2 text-xl font-semibold text-white">
@@ -558,6 +616,30 @@ export default function AddEmployeePage() {
                                         {form.status}
                                     </span>
                                 </div>
+
+                                {/* Portal Badge */}
+
+                                <div className="mb-5">
+                                    <p className="mb-2 text-xs uppercase tracking-wider text-slate-500">
+                                        Portal Access
+                                    </p>
+
+                                    <span
+                                        className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${form.portal === "crm"
+                                                ? "bg-cyan-500/15 text-cyan-400"
+                                                : form.portal === "construction"
+                                                    ? "bg-orange-500/15 text-orange-400"
+                                                    : "bg-violet-500/15 text-violet-400"
+                                            }`}
+                                    >
+                                        {form.portal === "crm"
+                                            ? "DriWE CRM"
+                                            : form.portal === "construction"
+                                                ? "Construction"
+                                                : "CRM + Construction"}
+                                    </span>
+                                </div>
+
 
                                 {/* Details */}
                                 <div className="space-y-4 text-sm">
