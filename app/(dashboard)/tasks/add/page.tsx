@@ -19,7 +19,7 @@ interface Employee {
 export default function AddTaskPage() {
     const [loading, setLoading] = useState(false);
     const [assignmentDate, setAssignmentDate] = useState("");
-const [dueDate, setDueDate] = useState("");
+    const [dueDate, setDueDate] = useState("");
 
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [selectedEmployee, setSelectedEmployee] =
@@ -138,32 +138,32 @@ const [dueDate, setDueDate] = useState("");
                CREATE TASK BODY
             ===================================================== */
 
-           const body = {
-    title: formData.get("title"),
-    description: formData.get("description"),
+            const body = {
+                title: formData.get("title"),
+                description: formData.get("description"),
 
-    assignedTo: formData.get("assignedTo"),
-    assignedToName: formData.get("assignedToName"),
-    assignedToEmail: formData.get("assignedToEmail"),
+                assignedTo: formData.get("assignedTo"),
+                assignedToName: formData.get("assignedToName"),
+                assignedToEmail: formData.get("assignedToEmail"),
 
-    assignedBy: me.user.userId,
-    assignedByName:
-        me.user.name || me.user.email,
+                assignedBy: me.user.userId,
+                assignedByName:
+                    me.user.name || me.user.email,
 
-    priority:
-        formData.get("priority") || "Medium",
+                priority:
+                    formData.get("priority") || "Medium",
 
-    status: "Pending",
+                status: "Pending",
 
-    // IMPORTANT:
-    // Employee can start submitting from this date
-    assignmentDate,
+                // IMPORTANT:
+                // Employee can start submitting from this date
+                assignmentDate,
 
-    // Employee must finish submitting by this date
-    dueDate,
+                // Employee must finish submitting by this date
+                dueDate,
 
-    remarks: "",
-};
+                remarks: "",
+            };
 
             /* =====================================================
                CREATE TASK
@@ -380,7 +380,7 @@ const [dueDate, setDueDate] = useState("");
                                 <select
                                     name="priority"
                                     defaultValue="Medium"
-                                    className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white"
+                                    className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-emerald-500"
                                 >
                                     <option value="Low">Low</option>
                                     <option value="Medium">Medium</option>
@@ -388,7 +388,9 @@ const [dueDate, setDueDate] = useState("");
                                 </select>
                             </div>
 
-                            {/* TASK / ASSIGN DATE */}
+                            {/* =====================================================
+        TASK DATE
+    ===================================================== */}
 
                             <div>
                                 <label className="mb-2 block text-sm text-zinc-300">
@@ -398,7 +400,7 @@ const [dueDate, setDueDate] = useState("");
                                 <div className="relative">
                                     <CalendarDays
                                         size={18}
-                                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+                                        className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-emerald-400"
                                     />
 
                                     <input
@@ -410,12 +412,19 @@ const [dueDate, setDueDate] = useState("");
                                         }
                                         required
                                         min={todayDate}
-                                        className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 pl-10 text-white outline-none focus:border-emerald-500"
+                                        onClick={(e) => {
+                                            try {
+                                                e.currentTarget.showPicker();
+                                            } catch {
+                                                // Browser does not support showPicker
+                                            }
+                                        }}
+                                        className="w-full cursor-pointer rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 pl-10 text-white outline-none transition hover:border-emerald-500/70 focus:border-emerald-500"
                                     />
                                 </div>
 
                                 <p className="mt-1 text-xs text-zinc-500">
-                                    The employee can start this task on this date.
+                                    Select the date when the employee can start the task.
                                 </p>
                             </div>
 
@@ -429,7 +438,7 @@ const [dueDate, setDueDate] = useState("");
                                 <div className="relative">
                                     <CalendarDays
                                         size={18}
-                                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+                                        className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-emerald-400"
                                     />
 
                                     <input
@@ -441,12 +450,19 @@ const [dueDate, setDueDate] = useState("");
                                         }
                                         required
                                         min={assignmentDate || todayDate}
-                                        className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 pl-10 text-white outline-none focus:border-emerald-500"
+                                        onClick={(e) => {
+                                            try {
+                                                e.currentTarget.showPicker();
+                                            } catch {
+                                                // Browser does not support showPicker
+                                            }
+                                        }}
+                                        className="w-full cursor-pointer rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 pl-10 text-white outline-none transition hover:border-emerald-500/70 focus:border-emerald-500"
                                     />
                                 </div>
 
                                 <p className="mt-1 text-xs text-zinc-500">
-                                    The final date the employee can submit the task.
+                                    Select the final date for submitting the task.
                                 </p>
                             </div>
 
