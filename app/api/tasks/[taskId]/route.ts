@@ -9,6 +9,7 @@ import {
 import {
   getUserFromRequest,
   isAdminUser,
+  isManagerUser,
 } from "@/lib/auth";
 
 interface Params {
@@ -17,11 +18,6 @@ interface Params {
   }>;
 }
 
-/**
- * Format YYYY-MM-DD into a readable date.
- * Example:
- * 2026-08-12 -> 12 Aug 2026
- */
 function formatTaskDate(dateString: string): string {
   const date = new Date(`${dateString}T00:00:00`);
 
@@ -36,9 +32,17 @@ function formatTaskDate(dateString: string): string {
   });
 }
 
-/**
- * GET TASK BY ID
- */
+function isAdminOrManager(user: {
+  role?: string;
+}) {
+  const role = user.role?.trim().toLowerCase();
+
+  return (
+    role === "admin" ||
+    role === "manager"
+  );
+}
+
 export async function GET(
   req: Request,
   { params }: Params
@@ -60,6 +64,18 @@ export async function GET(
 
     const { taskId } = await params;
 
+    if (!taskId) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Task ID is required",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
     const task = await getTaskById(taskId);
 
     if (!task) {
@@ -75,13 +91,13 @@ export async function GET(
     }
 
     /*
-     * ADMIN / MANAGER can view all tasks.
-     * Employee can view only their assigned tasks.
+     * Admin and Manager can view all tasks.
+     * Other employees can only view tasks assigned to them.
      */
     const canView =
-      user.role === "ADMIN" ||
-      user.role === "Manager" ||
-      task.assignedToEmail === user.email;
+      isAdminOrManager(user) ||
+      task.assignedToEmail?.trim().toLowerCase() ===
+        user.email?.trim().toLowerCase();
 
     if (!canView) {
       return NextResponse.json(
@@ -114,9 +130,6 @@ export async function GET(
   }
 }
 
-/**
- * UPDATE TASK
- */
 export async function PUT(
   req: Request,
   { params }: Params
@@ -138,6 +151,18 @@ export async function PUT(
 
     const { taskId } = await params;
 
+    if (!taskId) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Task ID is required",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
     const oldTask = await getTaskById(taskId);
 
     if (!oldTask) {
@@ -154,58 +179,84 @@ export async function PUT(
 
     const body = await req.json();
 
-    console.log("Request body:", body);
+    console.log("Update Task Request Body:", body);
 
-    /* =====================================================
-       ADMIN CAN UPDATE EVERYTHING
-    ===================================================== */
-
-    if (isAdminUser(user)) {
+    /*
+     * ---------------------------------------------------------
+     * ADMIN / MANAGER
+     * ---------------------------------------------------------
+     *
+     * Admin and Manager can fully edit the task.
+     */
+    if (isAdminOrManager(user)) {
       await updateTask(taskId, {
         ...oldTask,
         ...body,
+        taskId,
         updatedAt: new Date().toISOString(),
       });
 
       return NextResponse.json({
         success: true,
+        message: "Task updated successfully",
       });
     }
 
-    /* =====================================================
-       EMPLOYEE / MANAGER SUBMISSION DATE CHECK
-    ===================================================== */
+    /*
+     * ---------------------------------------------------------
+     * EMPLOYEE
+     * ---------------------------------------------------------
+     *
+     * Employee can only update their assigned task submission.
+     */
 
-    const now = new Date();
+    const userEmail =
+      user.email?.trim().toLowerCase();
 
-    /* =====================================================
-       ASSIGNMENT DATE
-       
-       This is the date from which the employee can
-       start working/submitting the task.
-    ===================================================== */
+    const assignedEmail =
+      oldTask.assignedToEmail
+        ?.trim()
+        .toLowerCase();
 
-    const assignmentDate = new Date(
-      `${oldTask.assignmentDate || oldTask.dueDate}T00:00:00`
-    );
-
-    if (isNaN(assignmentDate.getTime())) {
+    if (
+      !assignedEmail ||
+      assignedEmail !== userEmail
+    ) {
       return NextResponse.json(
         {
           success: false,
-          message: "This task is not currently available for submission. Please check the assignment and due dates.",
+          message:
+            "You are not authorized to update this task.",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
+    /*
+     * Assignment date
+     *
+     * Older tasks may not have assignmentDate,
+     * therefore fall back to createdAt or dueDate.
+     */
+    const rawAssignmentDate =
+      oldTask.assignmentDate ||
+      oldTask.createdAt?.split("T")[0] ||
+      oldTask.dueDate;
+
+    if (!rawAssignmentDate) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "This task is not currently available for submission. Please check the assignment and due dates.",
         },
         {
           status: 400,
         }
       );
     }
-
-    /* =====================================================
-       DUE DATE
-       
-       Employee can submit until the end of this date.
-    ===================================================== */
 
     if (!oldTask.dueDate) {
       return NextResponse.json(
@@ -220,15 +271,20 @@ export async function PUT(
       );
     }
 
+    const assignmentDate = new Date(
+      `${rawAssignmentDate}T00:00:00`
+    );
+
     const dueDate = new Date(
       `${oldTask.dueDate}T00:00:00`
     );
 
-    if (isNaN(dueDate.getTime())) {
+    if (isNaN(assignmentDate.getTime())) {
       return NextResponse.json(
         {
           success: false,
-          message: "This task is not currently available for submission. Please check the assignment and due dates.",
+          message:
+            "Invalid task assignment date.",
         },
         {
           status: 400,
@@ -236,13 +292,24 @@ export async function PUT(
       );
     }
 
-    /* =====================================================
-       START OF ASSIGNMENT DATE
-    ===================================================== */
+    if (isNaN(dueDate.getTime())) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Invalid task due date.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
 
-    const assignmentDayStart = new Date(
-      assignmentDate
-    );
+    /*
+     * Start of assignment day
+     */
+    const assignmentDayStart =
+      new Date(assignmentDate);
 
     assignmentDayStart.setHours(
       0,
@@ -251,11 +318,11 @@ export async function PUT(
       0
     );
 
-    /* =====================================================
-       END OF DUE DATE
-    ===================================================== */
-
-    const dueDayEnd = new Date(dueDate);
+    /*
+     * End of due date
+     */
+    const dueDayEnd =
+      new Date(dueDate);
 
     dueDayEnd.setHours(
       23,
@@ -264,13 +331,13 @@ export async function PUT(
       999
     );
 
-    /* =====================================================
-       INVALID DATE RANGE
-       
-       Due date cannot be before assignment date.
-    ===================================================== */
-
-    if (dueDayEnd < assignmentDayStart) {
+    /*
+     * Validate date order
+     */
+    if (
+      dueDayEnd <
+      assignmentDayStart
+    ) {
       return NextResponse.json(
         {
           success: false,
@@ -283,43 +350,32 @@ export async function PUT(
       );
     }
 
-    /* =====================================================
-       FUTURE TASK
-       
-       Example:
-       
-       Assignment Date = 15 Aug 2026
-       Due Date        = 20 Aug 2026
-       Today            = 10 Aug 2026
-       
-       Employee tries to submit.
-       
-       Message:
-       "You can submit this task from 15 Aug 2026
-        to 20 Aug 2026."
-    ===================================================== */
+    const now = new Date();
 
+    /*
+     * Employee is trying to submit before
+     * assignment date.
+     */
     if (now < assignmentDayStart) {
-      const rawAssignmentDate =
-        oldTask.assignmentDate ||
-        oldTask.createdAt?.split("T")[0] ||
-        oldTask.dueDate;
-
       const assignmentDateFormatted =
-        formatTaskDate(rawAssignmentDate);
+        formatTaskDate(
+          rawAssignmentDate
+        );
 
       const dueDateFormatted =
-        formatTaskDate(oldTask.dueDate);
+        formatTaskDate(
+          oldTask.dueDate
+        );
 
       return NextResponse.json(
         {
           success: false,
-
           message:
             `You can submit this task from ${assignmentDateFormatted} to ${dueDateFormatted}.`,
-
-          assignmentDate: rawAssignmentDate,
-          dueDate: oldTask.dueDate,
+          assignmentDate:
+            rawAssignmentDate,
+          dueDate:
+            oldTask.dueDate,
         },
         {
           status: 403,
@@ -327,96 +383,159 @@ export async function PUT(
       );
     }
 
-    /* =====================================================
-       DEADLINE PASSED
-       
-       Example:
-       
-       Assignment Date = 15 Aug
-       Due Date        = 20 Aug
-       Today            = 21 Aug
-    ===================================================== */
+    /*
+     * Employee is trying to submit after
+     * the due date.
+     */
+    if (now > dueDayEnd) {
+      const assignmentDateFormatted =
+        formatTaskDate(
+          rawAssignmentDate
+        );
 
-    // if (now > dueDayEnd) {
-    //   const assignmentDateFormatted =
-    //     formatTaskDate(
-    //       oldTask.assignmentDate
-    //     );
+      const dueDateFormatted =
+        formatTaskDate(
+          oldTask.dueDate
+        );
 
-    //   const dueDateFormatted =
-    //     formatTaskDate(
-    //       oldTask.dueDate
-    //     );
-
-    //   return NextResponse.json(
-    //     {
-    //       success: false,
-
-    //       message:
-    //         `The submission period for this task was from ${assignmentDateFormatted} to ${dueDateFormatted}. The due date has passed. Please contact your administrator for further changes.`,
-
-    //       assignmentDate:
-    //         oldTask.assignmentDate,
-
-    //       dueDate:
-    //         oldTask.dueDate,
-    //     },
-    //     {
-    //       status: 403,
-    //     }
-    //   );
-    // }
-
-
-    if (now < assignmentDayStart) {
-    return NextResponse.json(
+      return NextResponse.json(
         {
-            success: false,
-            message:
-                // `You can submit this task from ${oldTask.assignmentDate} to ${oldTask.dueDate}.`,
-                `You can't submit this task now.`,
+          success: false,
+          message:
+            `This task was available from ${assignmentDateFormatted} to ${dueDateFormatted}. The due date has passed.`,
+          assignmentDate:
+            rawAssignmentDate,
+          dueDate:
+            oldTask.dueDate,
         },
         {
-            status: 403,
+          status: 403,
         }
-    );
-}
-    /* =====================================================
-       ASSIGNMENT DATE <= TODAY <= DUE DATE
-       
-       Employee is allowed to update/submit.
-    ===================================================== */
+      );
+    }
 
-    await updateTask(taskId, {
+    /*
+     * ---------------------------------------------------------
+     * EMPLOYEE UPDATE
+     * ---------------------------------------------------------
+     *
+     * Employee should not be able to change:
+     * - Project
+     * - Company
+     * - Assignment
+     * - Assigned employee
+     * - Priority
+     * - Due date
+     *
+     * Only submission-related fields are accepted.
+     */
+
+    const allowedStatus =
+      body.status === "Pending" ||
+      body.status === "In Progress" ||
+      body.status === "Completed" ||
+      body.status === "Cancelled";
+
+    if (
+      body.status !== undefined &&
+      !allowedStatus
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Invalid task status.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const newStatus =
+      body.status ??
+      oldTask.status;
+
+    const updatedTask = {
       ...oldTask,
-      ...body,
-      assignmentDate:
-        body.assignmentDate ??
-        oldTask.assignmentDate ??
-        oldTask.createdAt?.split("T")[0] ??
+
+      /*
+       * Preserve all task ownership/
+       * assignment information.
+       */
+      projectId:
+        oldTask.projectId,
+
+      projectName:
+        oldTask.projectName,
+
+      companyId:
+        oldTask.companyId,
+
+      companyName:
+        oldTask.companyName,
+
+      assignedTo:
+        oldTask.assignedTo,
+
+      assignedToName:
+        oldTask.assignedToName,
+
+      assignedToEmail:
+        oldTask.assignedToEmail,
+
+      assignedBy:
+        oldTask.assignedBy,
+
+      assignedByName:
+        oldTask.assignedByName,
+
+      priority:
+        oldTask.priority,
+
+      dueDate:
         oldTask.dueDate,
 
-      status: body.status,
+      assignmentDate:
+        oldTask.assignmentDate ??
+        rawAssignmentDate,
 
-      remarks: body.remarks,
+      /*
+       * Employee-editable fields
+       */
+      status: newStatus,
+
+      remarks:
+        body.remarks ??
+        oldTask.remarks,
 
       completionDescription:
-        body.completionDescription,
+        body.completionDescription ??
+        oldTask.completionDescription,
 
       completionLink:
-        body.completionLink,
+        body.completionLink ??
+        oldTask.completionLink,
 
       completedAt:
-        body.status === "Completed"
-          ? new Date().toISOString()
-          : oldTask.completedAt,
+        newStatus === "Completed"
+          ? oldTask.completedAt ||
+            new Date().toISOString()
+          : undefined,
 
       updatedAt:
         new Date().toISOString(),
-    });
+    };
+
+    await updateTask(
+      taskId,
+      updatedTask
+    );
 
     return NextResponse.json({
       success: true,
+      message:
+        "Task updated successfully",
     });
   } catch (error) {
     console.error(
@@ -427,7 +546,8 @@ export async function PUT(
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to update task",
+        message:
+          "Failed to update task",
       },
       {
         status: 500,
@@ -436,19 +556,18 @@ export async function PUT(
   }
 }
 
-/**
- * DELETE TASK
- *
- * Only Admin can delete tasks.
- */
 export async function DELETE(
   req: Request,
   { params }: Params
 ) {
   try {
-    const user = await getUserFromRequest(req);
+    const user =
+      await getUserFromRequest(req);
 
-    if (!user || !isAdminUser(user)) {
+    if (
+      !user ||
+      !isAdminUser(user)
+    ) {
       return NextResponse.json(
         {
           success: false,
@@ -463,10 +582,41 @@ export async function DELETE(
 
     const { taskId } = await params;
 
+    if (!taskId) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Task ID is required",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const existingTask =
+      await getTaskById(taskId);
+
+    if (!existingTask) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Task not found",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
     await deleteTask(taskId);
 
     return NextResponse.json({
       success: true,
+      message:
+        "Task deleted successfully",
     });
   } catch (error) {
     console.error(
@@ -477,7 +627,8 @@ export async function DELETE(
     return NextResponse.json(
       {
         success: false,
-        message: "Delete failed",
+        message:
+          "Delete failed",
       },
       {
         status: 500,

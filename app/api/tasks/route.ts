@@ -5,8 +5,8 @@ import {
     createTask,
     getTasks,
 } from "@/services/task.service";
-import { Task } from "@/types/task";
 
+import { Task } from "@/types/task";
 
 import {
     getUserFromRequest,
@@ -14,8 +14,8 @@ import {
     canAssignTask,
 } from "@/lib/auth";
 
-/**
- * =========================================================
+
+/* =========================================================
  * GET TASKS
  * =========================================================
  */
@@ -41,41 +41,50 @@ export async function GET(req: Request) {
 
         console.log(
             "Task assignedTo values:",
-            tasks.map((t: any) => ({
-                title: t.title,
-                assignedTo: t.assignedTo,
-                assignedToEmail: t.assignedToEmail,
-                assignmentDate: t.assignmentDate,
-                dueDate: t.dueDate,
+            tasks.map((task: any) => ({
+                title: task.title,
+                assignedTo: task.assignedTo,
+                assignedToName: task.assignedToName,
+                assignedToEmail: task.assignedToEmail,
+                assignmentDate: task.assignmentDate,
+                dueDate: task.dueDate,
             }))
         );
 
-        /*
-         * ADMIN + MANAGER
+        
+        /* ADMIN + MANAGER
          * Can see all tasks.
          */
         const isManager =
-            user.role === "Manager";
+            user.role?.trim().toLowerCase() ===
+            "manager";
 
         if (
             !isAdminUser(user) &&
             !isManager
         ) {
-            /*
-             * EMPLOYEE / EXECUTIVE
+            
+            /* EMPLOYEE / EXECUTIVE
              * Can only see their own tasks.
-             */
+            */
+            const userEmail =
+                user.email?.trim().toLowerCase();
+
             tasks = tasks.filter(
                 (task: any) =>
-                    task.assignedToEmail ===
-                    user.email
+                    task.assignedToEmail
+                        ?.trim()
+                        .toLowerCase() ===
+                    userEmail
             );
         }
 
-        return NextResponse.json(tasks);
+        return NextResponse.json({
+            success: true,
+            tasks,
+        });
 
     } catch (error) {
-
         console.error(
             "Get Tasks Error:",
             error
@@ -94,20 +103,20 @@ export async function GET(req: Request) {
     }
 }
 
-/**
- * =========================================================
+
+/* =========================================================
  * CREATE TASK
  * =========================================================
- */
+*/
 export async function POST(req: Request) {
     try {
-
         const user =
             await getUserFromRequest(req);
 
-        /*
-         * Only Admin / Manager can assign tasks.
-         */
+        
+        /* Only Admin / Manager can
+         * create and assign tasks.
+        */
         if (
             !user ||
             !canAssignTask(user)
@@ -131,10 +140,86 @@ export async function POST(req: Request) {
             body
         );
 
+        
         /* =====================================================
-           VALIDATE TASK START DATE
-        ===================================================== */
+         * VALIDATE TITLE
+         * =====================================================
+        */
+        if (
+            !body.title ||
+            typeof body.title !== "string" ||
+            !body.title.trim()
+        ) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message:
+                        "Task title is required.",
+                },
+                {
+                    status: 400,
+                }
+            );
+        }
 
+        
+        /* =====================================================
+         * VALIDATE ASSIGNEE
+         * =====================================================
+        */
+        if (
+            !body.assignedTo ||
+            !String(body.assignedTo).trim()
+        ) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message:
+                        "Please select an employee to assign this task.",
+                },
+                {
+                    status: 400,
+                }
+            );
+        }
+
+        if (
+            !body.assignedToName ||
+            !String(body.assignedToName).trim()
+        ) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message:
+                        "Assigned employee name is required.",
+                },
+                {
+                    status: 400,
+                }
+            );
+        }
+
+        if (
+            !body.assignedToEmail ||
+            !String(body.assignedToEmail).trim()
+        ) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message:
+                        "Assigned employee email is required.",
+                },
+                {
+                    status: 400,
+                }
+            );
+        }
+
+        
+        /* =====================================================
+         * VALIDATE TASK START DATE
+         * =====================================================
+        */
         if (!body.assignmentDate) {
             return NextResponse.json(
                 {
@@ -148,10 +233,11 @@ export async function POST(req: Request) {
             );
         }
 
+        
         /* =====================================================
-           VALIDATE DUE DATE
-        ===================================================== */
-
+         * VALIDATE DUE DATE
+         * =====================================================
+        */
         if (!body.dueDate) {
             return NextResponse.json(
                 {
@@ -165,10 +251,11 @@ export async function POST(req: Request) {
             );
         }
 
+        
         /* =====================================================
-           VALIDATE DATE RANGE
-        ===================================================== */
-
+         * VALIDATE DATES
+         * =====================================================
+        */
         const assignmentDate =
             new Date(
                 `${body.assignmentDate}T00:00:00`
@@ -213,8 +300,13 @@ export async function POST(req: Request) {
             );
         }
 
+        
+        /* Due date cannot be before
+         * assignment date.
+        */
         if (
-            dueDate < assignmentDate
+            dueDate <
+            assignmentDate
         ) {
             return NextResponse.json(
                 {
@@ -228,47 +320,65 @@ export async function POST(req: Request) {
             );
         }
 
+        
         /* =====================================================
-           CREATE TIMESTAMP
-        ===================================================== */
-
+         * CREATE TIMESTAMP
+         * =====================================================
+        */
         const now =
             new Date().toISOString();
 
+        
         /* =====================================================
-           CREATE TASK
-        ===================================================== */
-
+         * CREATE TASK
+         * =====================================================
+        */
         const task: Task = {
-
             taskId:
                 randomUUID(),
 
             title:
-                body.title,
+                body.title.trim(),
 
             description:
-                body.description,
+                body.description?.trim() ||
+                "",
 
             companyId:
                 body.companyId ?? "",
 
             companyName:
-                body.companyName ?? "",
+                body.companyName?.trim() ||
+                "",
 
+            
+            /* Employee identifier
+            */
             assignedTo:
-                body.assignedTo,
+                String(body.assignedTo).trim(),
 
+            
+            /* Employee display name
+            */
             assignedToName:
-                body.assignedToName,
+                String(
+                    body.assignedToName
+                ).trim(),
 
+            
+            /* Employee email
+            */
             assignedToEmail:
-                body.assignedToEmail,
+                String(
+                    body.assignedToEmail
+                )
+                    .trim()
+                    .toLowerCase(),
 
-            /*
-             * Always use the logged-in
+            
+            /* Always use the logged-in
              * user as task creator.
-             */
+            */
             assignedBy:
                 user.userId,
 
@@ -279,31 +389,30 @@ export async function POST(req: Request) {
                 body.priority ??
                 "Medium",
 
-            /*
-             * New tasks always start
+            
+            /* Every new task starts
              * as Pending.
-             */
+            */
             status:
                 "Pending",
 
-            /*
-             * Date when the employee can
-             * start the task.
-             */
+            
+            /* Date from which the employee
+             * can start the task.
+            */
             assignmentDate:
                 body.assignmentDate,
 
-            /*
-             * IMPORTANT
-             *
-             * Last date employee can
-             * submit the task.
-             */
+            
+            /* Last date on which the
+             * employee can submit.
+            */
             dueDate:
                 body.dueDate,
 
             remarks:
-                body.remarks ?? "",
+                body.remarks?.trim() ||
+                "",
 
             createdAt:
                 now,
@@ -330,7 +439,6 @@ export async function POST(req: Request) {
         );
 
     } catch (error) {
-
         console.error(
             "Create Task Error:",
             error

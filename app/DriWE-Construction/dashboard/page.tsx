@@ -1,252 +1,365 @@
+// "use client";
 
+// import React, { useEffect, useState } from "react";
+// import {
+//     Building2,
+//     Home,
+//     Factory,
+//     Hammer,
+//     BriefcaseBusiness,
+//     ArrowRight,
+//     HardHat,
+//     IndianRupee,
+//     Users,
+//     ClipboardCheck,
+//     Package,
+//     Wallet,
+//     RefreshCw,
+// } from "lucide-react";
 
-"use client";
+// const constructionServices = [
+//     {
+//         id: 1,
+//         title: "Residential Construction",
+//         description:
+//             "Complete construction solutions for residential buildings, villas and housing projects.",
+//         price: "₹25,00,000",
+//         priceLabel: "Starting From",
+//         icon: Home,
+//         iconStyle: "bg-orange-500/10 text-orange-400",
+//         borderStyle: "hover:border-orange-500/50",
+//     },
+//     {
+//         id: 2,
+//         title: "Commercial Construction",
+//         description:
+//             "Construction management for offices, commercial buildings, shops and business spaces.",
+//         price: "₹45,00,000",
+//         priceLabel: "Starting From",
+//         icon: Building2,
+//         iconStyle: "bg-blue-500/10 text-blue-400",
+//         borderStyle: "hover:border-blue-500/50",
+//     },
+//     {
+//         id: 3,
+//         title: "Renovation & Remodeling",
+//         description:
+//             "Upgrade existing properties with renovation, remodeling and structural improvement services.",
+//         price: "₹8,50,000",
+//         priceLabel: "Starting From",
+//         icon: Hammer,
+//         iconStyle: "bg-green-500/10 text-green-400",
+//         borderStyle: "hover:border-green-500/50",
+//     },
+//     {
+//         id: 4,
+//         title: "Industrial Construction",
+//         description:
+//             "Construction solutions for factories, warehouses, industrial facilities and infrastructure.",
+//         price: "₹75,00,000",
+//         priceLabel: "Starting From",
+//         icon: Factory,
+//         iconStyle: "bg-purple-500/10 text-purple-400",
+//         borderStyle: "hover:border-purple-500/50",
+//     },
+//     {
+//         id: 5,
+//         title: "Turnkey Construction",
+//         description:
+//             "End-to-end construction management from planning and workforce to project completion.",
+//         price: "₹35,00,000",
+//         priceLabel: "Starting From",
+//         icon: BriefcaseBusiness,
+//         iconStyle: "bg-yellow-500/10 text-yellow-400",
+//         borderStyle: "hover:border-yellow-500/50",
+//     },
+// ];
 
-import React from "react";
-import {
-    Building2,
-    Home,
-    Factory,
-    Hammer,
-    BriefcaseBusiness,
-    ArrowRight,
-    HardHat,
-    IndianRupee,
-} from "lucide-react";
+// type DashboardStats = {
+//     workersToday: number;
+//     tasksCompleted: number;
+//     tasksTotal: number;
+//     materialMovement: number;
+//     labourCost: number;
+// };
 
-const constructionServices = [
-    {
-        id: 1,
-        title: "Residential Construction",
-        description:
-            "Complete construction solutions for residential buildings, villas and housing projects.",
-        price: "₹25,00,000",
-        priceLabel: "Starting From",
-        icon: Home,
-        iconStyle: "bg-orange-500/10 text-orange-400",
-        borderStyle: "hover:border-orange-500/50",
-    },
-    {
-        id: 2,
-        title: "Commercial Construction",
-        description:
-            "Construction management for offices, commercial buildings, shops and business spaces.",
-        price: "₹45,00,000",
-        priceLabel: "Starting From",
-        icon: Building2,
-        iconStyle: "bg-blue-500/10 text-blue-400",
-        borderStyle: "hover:border-blue-500/50",
-    },
-    {
-        id: 3,
-        title: "Renovation & Remodeling",
-        description:
-            "Upgrade existing properties with renovation, remodeling and structural improvement services.",
-        price: "₹8,50,000",
-        priceLabel: "Starting From",
-        icon: Hammer,
-        iconStyle: "bg-green-500/10 text-green-400",
-        borderStyle: "hover:border-green-500/50",
-    },
-    {
-        id: 4,
-        title: "Industrial Construction",
-        description:
-            "Construction solutions for factories, warehouses, industrial facilities and infrastructure.",
-        price: "₹75,00,000",
-        priceLabel: "Starting From",
-        icon: Factory,
-        iconStyle: "bg-purple-500/10 text-purple-400",
-        borderStyle: "hover:border-purple-500/50",
-    },
-    {
-        id: 5,
-        title: "Turnkey Construction",
-        description:
-            "End-to-end construction management from planning and workforce to project completion.",
-        price: "₹35,00,000",
-        priceLabel: "Starting From",
-        icon: BriefcaseBusiness,
-        iconStyle: "bg-yellow-500/10 text-yellow-400",
-        borderStyle: "hover:border-yellow-500/50",
-    },
-];
+// export default function ConstructionDashboardPage() {
+//     const [stats, setStats] = useState<DashboardStats>({
+//         workersToday: 0,
+//         tasksCompleted: 0,
+//         tasksTotal: 0,
+//         materialMovement: 0,
+//         labourCost: 0,
+//     });
 
-export default function ConstructionDashboardPage() {
-    return (
-        <div className="min-h-screen bg-zinc-950 text-white">
+//     const [loading, setLoading] = useState(true);
+//     const [error, setError] = useState("");
 
-            {/* Background */}
-            <div className="pointer-events-none fixed inset-0">
-                <div className="absolute left-0 top-0 h-[500px] w-[500px] rounded-full bg-orange-500/5 blur-[120px]" />
-                <div className="absolute bottom-0 right-0 h-[400px] w-[400px] rounded-full bg-amber-500/5 blur-[120px]" />
-            </div>
+//     const loadDashboard = async () => {
+//         try {
+//             setLoading(true);
+//             setError("");
 
-            {/* Header */}
-            <header className="relative z-10 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur-xl">
-                <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+//             const response = await fetch(
+//                 "/api/construction/dashboard",
+//                 {
+//                     method: "GET",
+//                     credentials: "include",
+//                     cache: "no-store",
+//                 }
+//             );
 
-                    {/* Logo / Brand */}
-                    <div className="flex items-center gap-4">
+//             const data = await response.json();
 
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 shadow-lg shadow-orange-500/20">
-                            <HardHat className="h-6 w-6 text-black" />
-                        </div>
+//             if (!response.ok) {
+//                 throw new Error(
+//                     data?.error ||
+//                         "Failed to load construction dashboard"
+//                 );
+//             }
 
-                        <div>
-                            <h1 className="text-xl font-bold">
-                                DriWE Construction
-                            </h1>
+//             setStats({
+//                 workersToday: Number(
+//                     data.workersToday || 0
+//                 ),
 
-                            <p className="text-sm text-zinc-500">
-                                Construction Management Platform
-                            </p>
-                        </div>
+//                 tasksCompleted: Number(
+//                     data.tasksCompleted || 0
+//                 ),
 
-                    </div>
+//                 tasksTotal: Number(
+//                     data.tasksTotal || 0
+//                 ),
 
-                    {/* Logout */}
-                    <button
-                        type="button"
-                        onClick={async () => {
-                            await fetch("/api/auth/logout", {
-                                method: "POST",
-                                credentials: "include",
-                            });
+//                 materialMovement: Number(
+//                     data.materialMovement || 0
+//                 ),
 
-                            window.location.href = "/login";
-                        }}
-                        className="rounded-xl border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-zinc-600 hover:bg-zinc-900 hover:text-white"
-                    >
-                        Logout
-                    </button>
+//                 labourCost: Number(
+//                     data.labourCost || 0
+//                 ),
+//             });
+//         } catch (error) {
+//             console.error(
+//                 "Failed to load construction dashboard:",
+//                 error
+//             );
 
-                </div>
-            </header>
+//             setError(
+//                 error instanceof Error
+//                     ? error.message
+//                     : "Failed to load dashboard"
+//             );
+//         } finally {
+//             setLoading(false);
+//         }
+//     };
 
-            {/* Main */}
-            <main className="relative z-10 px-6 py-12">
+//     useEffect(() => {
+//         loadDashboard();
+//     }, []);
 
-                <div className="mx-auto max-w-7xl">
+//     const formatCurrency = (amount: number) => {
+//         return new Intl.NumberFormat("en-IN", {
+//             style: "currency",
+//             currency: "INR",
+//             maximumFractionDigits: 0,
+//         }).format(amount);
+//     };
 
-                    {/* Page Heading */}
-                    <div className="mx-auto mb-12 max-w-3xl text-center">
+//     const formatNumber = (value: number) => {
+//         return new Intl.NumberFormat("en-IN").format(value);
+//     };
 
-                        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-500/10">
-                            <Building2 className="h-7 w-7 text-orange-400" />
-                        </div>
+//     return (
+//         <div className="min-h-screen bg-zinc-950 text-white">
+//             {/* Background */}
+//             <div className="pointer-events-none fixed inset-0">
+//                 <div className="absolute left-0 top-0 h-[500px] w-[500px] rounded-full bg-orange-500/5 blur-[120px]" />
+//                 <div className="absolute bottom-0 right-0 h-[400px] w-[400px] rounded-full bg-amber-500/5 blur-[120px]" />
+//             </div>
 
-                        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                            Construction Solutions
-                        </h2>
+//             {/* Header */}
+//             <header className="relative z-10 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur-xl">
+//                 <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+//                     {/* Logo / Brand */}
+//                     <div className="flex items-center gap-4">
+//                         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 shadow-lg shadow-orange-500/20">
+//                             <HardHat className="h-6 w-6 text-black" />
+//                         </div>
 
-                        <p className="mt-4 text-base leading-7 text-zinc-400">
-                            Choose the construction solution that fits your
-                            project. Manage your project, workforce and
-                            construction activities from one platform.
-                        </p>
+//                         <div>
+//                             <h1 className="text-xl font-bold">
+//                                 DriWE Construction
+//                             </h1>
 
-                    </div>
+//                             <p className="text-sm text-zinc-500">
+//                                 Construction Management Platform
+//                             </p>
+//                         </div>
+//                     </div>
 
-                    {/* Cards */}
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+//                     {/* Header Actions */}
+//                     <div className="flex items-center gap-3">
+//                         <button
+//                             type="button"
+//                             onClick={loadDashboard}
+//                             disabled={loading}
+//                             className="flex items-center gap-2 rounded-xl border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-orange-500/40 hover:bg-zinc-900 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+//                         >
+//                             <RefreshCw
+//                                 className={`h-4 w-4 ${
+//                                     loading
+//                                         ? "animate-spin"
+//                                         : ""
+//                                 }`}
+//                             />
 
-                        {constructionServices.map((service) => {
-                            const Icon = service.icon;
+//                             Refresh
+//                         </button>
 
-                            return (
-                                <button
-                                    key={service.id}
-                                    type="button"
-                                    className={`group relative overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900 p-7 text-left transition-all duration-300 hover:-translate-y-1 hover:bg-zinc-900/80 ${service.borderStyle}`}
-                                >
-                                    {/* Card Glow */}
-                                    <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-orange-500/5 blur-3xl transition group-hover:bg-orange-500/10" />
+//                         <button
+//                             type="button"
+//                             onClick={async () => {
+//                                 await fetch(
+//                                     "/api/auth/logout",
+//                                     {
+//                                         method: "POST",
+//                                         credentials: "include",
+//                                     }
+//                                 );
 
-                                    {/* Card Content */}
-                                    <div className="relative">
+//                                 window.location.href =
+//                                     "/login";
+//                             }}
+//                             className="rounded-xl border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-zinc-600 hover:bg-zinc-900 hover:text-white"
+//                         >
+//                             Logout
+//                         </button>
+//                     </div>
+//                 </div>
+//             </header>
 
-                                        {/* Icon + Arrow */}
-                                        <div className="mb-7 flex items-center justify-between">
+//             {/* Main */}
+//             <main className="relative z-10 px-6 py-10">
+//                 <div className="mx-auto max-w-7xl">
+//                     {/* Page Heading */}
+//                     <div className="mb-10">
+//                         <div className="flex items-center gap-3">
+//                             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-500/10">
+//                                 <Building2 className="h-6 w-6 text-orange-400" />
+//                             </div>
 
-                                            <div
-                                                className={`flex h-14 w-14 items-center justify-center rounded-2xl ${service.iconStyle}`}
-                                            >
-                                                <Icon className="h-7 w-7" />
-                                            </div>
+//                             <div>
+//                                 <h2 className="text-3xl font-bold tracking-tight">
+//                                     Construction Dashboard
+//                                 </h2>
 
-                                            <div className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-800 text-zinc-600 transition group-hover:border-zinc-700 group-hover:text-white">
-                                                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-                                            </div>
+//                                 <p className="mt-1 text-sm text-zinc-500">
+//                                     Live overview of your construction
+//                                     activities
+//                                 </p>
+//                             </div>
+//                         </div>
+//                     </div>
 
-                                        </div>
+//                     {/* Error */}
+//                     {error && (
+//                         <div className="mb-6 rounded-2xl border border-red-500/20 bg-red-500/10 px-5 py-4">
+//                             <p className="text-sm text-red-400">
+//                                 {error}
+//                             </p>
 
-                                        {/* Title */}
-                                        <h3 className="text-xl font-bold text-white">
-                                            {service.title}
-                                        </h3>
+//                             <button
+//                                 type="button"
+//                                 onClick={loadDashboard}
+//                                 className="mt-3 text-sm font-medium text-red-300 underline underline-offset-4 hover:text-white"
+//                             >
+//                                 Try again
+//                             </button>
+//                         </div>
+//                     )}
 
-                                        {/* Description */}
-                                        <p className="mt-3 min-h-[72px] text-sm leading-6 text-zinc-500">
-                                            {service.description}
-                                        </p>
+//                     {/* Service Cards */}
+//                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+//                         {constructionServices.map((service) => {
+//                             const Icon = service.icon;
 
-                                        {/* Divider */}
-                                        <div className="my-6 h-px bg-zinc-800" />
+//                             return (
+//                                 <button
+//                                     key={service.id}
+//                                     type="button"
+//                                     className={`group relative overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900 p-7 text-left transition-all duration-300 hover:-translate-y-1 hover:bg-zinc-900/80 ${service.borderStyle}`}
+//                                 >
+//                                     {/* Card Glow */}
+//                                     <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-orange-500/5 blur-3xl transition group-hover:bg-orange-500/10" />
 
-                                        {/* Price */}
-                                        <div>
+//                                     <div className="relative">
+//                                         {/* Icon + Arrow */}
+//                                         <div className="mb-7 flex items-center justify-between">
+//                                             <div
+//                                                 className={`flex h-14 w-14 items-center justify-center rounded-2xl ${service.iconStyle}`}
+//                                             >
+//                                                 <Icon className="h-7 w-7" />
+//                                             </div>
 
-                                            <p className="text-xs font-medium uppercase tracking-wider text-zinc-600">
-                                                {service.priceLabel}
-                                            </p>
+//                                             <div className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-800 text-zinc-600 transition group-hover:border-zinc-700 group-hover:text-white">
+//                                                 <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+//                                             </div>
+//                                         </div>
 
-                                            <div className="mt-2 flex items-center gap-2">
+//                                         {/* Title */}
+//                                         <h3 className="text-xl font-bold text-white">
+//                                             {service.title}
+//                                         </h3>
 
-                                                <IndianRupee className="h-5 w-5 text-orange-400" />
+//                                         {/* Description */}
+//                                         <p className="mt-3 min-h-[72px] text-sm leading-6 text-zinc-500">
+//                                             {service.description}
+//                                         </p>
 
-                                                <span className="text-2xl font-bold text-white">
-                                                    {service.price}
-                                                </span>
+//                                         {/* Divider */}
+//                                         <div className="my-6 h-px bg-zinc-800" />
 
-                                            </div>
+//                                         {/* Price */}
+//                                         <div>
+//                                             <p className="text-xs font-medium uppercase tracking-wider text-zinc-600">
+//                                                 {service.priceLabel}
+//                                             </p>
 
-                                        </div>
+//                                             <div className="mt-2 flex items-center gap-2">
+//                                                 <IndianRupee className="h-5 w-5 text-orange-400" />
 
-                                        {/* Bottom Action */}
-                                        <div className="mt-6 flex items-center justify-between">
+//                                                 <span className="text-2xl font-bold text-white">
+//                                                     {service.price}
+//                                                 </span>
+//                                             </div>
+//                                         </div>
 
-                                            <span className="text-sm font-medium text-zinc-400 transition group-hover:text-orange-400">
-                                                Explore Solution
-                                            </span>
+//                                         {/* Bottom Action */}
+//                                         <div className="mt-6 flex items-center justify-between">
+//                                             <span className="text-sm font-medium text-zinc-400 transition group-hover:text-orange-400">
+//                                                 Explore Solution
+//                                             </span>
 
-                                            <ArrowRight className="h-4 w-4 text-zinc-600 transition group-hover:translate-x-1 group-hover:text-orange-400" />
+//                                             <ArrowRight className="h-4 w-4 text-zinc-600 transition group-hover:translate-x-1 group-hover:text-orange-400" />
+//                                         </div>
+//                                     </div>
+//                                 </button>
+//                             );
+//                         })}
+//                     </div>
 
-                                        </div>
-
-                                    </div>
-
-                                </button>
-                            );
-                        })}
-
-                    </div>
-
-                    {/* Small Note */}
-                    <div className="mx-auto mt-10 max-w-2xl text-center">
-
-                        <p className="text-xs leading-5 text-zinc-600">
-                            * Prices shown above are sample prices for
-                            demonstration purposes and can be changed based
-                            on project requirements.
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </main>
-
-        </div>
-    );
-}
+//                     {/* Small Note */}
+//                     <div className="mx-auto mt-10 max-w-2xl text-center">
+//                         <p className="text-xs leading-5 text-zinc-600">
+//                             * Prices shown above are sample prices for
+//                             demonstration purposes and can be changed based
+//                             on project requirements.
+//                         </p>
+//                     </div>
+//                 </div>
+//             </main>
+//         </div>
+//     );
+// }
