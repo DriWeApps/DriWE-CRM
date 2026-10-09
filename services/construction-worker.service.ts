@@ -16,6 +16,15 @@ import type {
     WorkerType,
 } from "@/types/construction";
 
+import {
+    createUser,
+    getUserByEmail,
+} from "@/services/auth.service";
+
+import {
+    hashPassword,
+} from "@/lib/password";
+
 const client = new DynamoDBClient({
     region:
         process.env.AWS_REGION ||
@@ -129,10 +138,19 @@ export async function getWorkerById(
 }
 
 /**
- * Create worker
+ * Create construction worker
  *
- * Site is supplied by the backend based on
- * the site currently being processed.
+ * This creates:
+ *
+ * 1. Construction worker record
+ * 2. Login account in CRM_Users
+ *
+ * Worker login:
+ * - Role: ConstructionEmployee
+ * - Portal: construction
+ *
+ * Password is always hashed before
+ * being stored in CRM_Users.
  */
 export async function createWorker(data: {
     companyId: string;
@@ -145,6 +163,9 @@ export async function createWorker(data: {
 
     name: string;
     phone: string;
+
+    email: string;
+    password: string;
 
     role?: string;
 
@@ -159,11 +180,74 @@ export async function createWorker(data: {
     const now =
         new Date().toISOString();
 
+    const email =
+        data.email
+            .trim()
+            .toLowerCase();
+
+    const name =
+        data.name.trim();
+
+    const phone =
+        data.phone.trim();
+
+    /**
+     * Check if email already exists.
+     */
+    const existingUser =
+        await getUserByEmail(email);
+
+    if (existingUser) {
+        throw new Error(
+            "A user with this email already exists."
+        );
+    }
+
+    /**
+     * Generate IDs.
+     */
+    const workerId =
+        randomUUID();
+
+    const userId =
+        randomUUID();
+
+    const employeeId =
+        randomUUID();
+
+    /**
+     * Hash password.
+     *
+     * Never store plain-text passwords.
+     */
+    const hashedPassword =
+        await hashPassword(
+            data.password
+        );
+
+    /**
+     * Calculate salary.
+     */
     const salary =
         Number(data.salary) || 0;
 
+    /**
+     * Use the same role everywhere.
+     *
+     * This must match the role checked
+     * by the construction worker APIs.
+     */
+    const workerRole =
+        data.role ||
+        "ConstructionEmployee";
+
+    /**
+     * Create construction worker object.
+     */
     const worker: ConstructionWorker = {
-        workerId: randomUUID(),
+        workerId,
+
+        userId,
 
         companyId:
             data.companyId,
@@ -180,14 +264,14 @@ export async function createWorker(data: {
         siteName:
             data.siteName,
 
-        name:
-            data.name.trim(),
+        name,
 
-        phone:
-            data.phone.trim(),
+        phone,
+
+        email,
 
         role:
-            data.role,
+            workerRole,
 
         workerType:
             data.workerType,
@@ -197,7 +281,8 @@ export async function createWorker(data: {
         dailyWage:
             data.dailyWage !== undefined
                 ? Number(data.dailyWage) || 0
-                : data.workerType === "Daily Wage"
+                : data.workerType ===
+                    "Daily Wage"
                     ? salary
                     : 0,
 
@@ -206,6 +291,9 @@ export async function createWorker(data: {
                 ? data.active
                 : true,
 
+        loginEnabled:
+            true,
+
         createdAt:
             now,
 
@@ -213,12 +301,68 @@ export async function createWorker(data: {
             now,
     };
 
+    /**
+     * STEP 1
+     *
+     * Create worker record first.
+     */
     await client.send(
         new PutCommand({
             TableName: TABLE,
+
             Item: worker,
         })
     );
+
+    try {
+        /**
+         * STEP 2
+         *
+         * Create login account.
+         */
+       await createUser({
+    userId,
+    employeeId,
+    companyId: data.companyId,
+    name,
+    email,
+    password: hashedPassword,
+    role: workerRole,
+    pageAccess: [],
+    portal: "construction",
+});
+    } catch (error) {
+        /**
+         * If user creation fails,
+         * remove the worker record.
+         *
+         * This prevents an orphan
+         * construction worker.
+         */
+        try {
+            await client.send(
+                new DeleteCommand({
+                    TableName: TABLE,
+
+                    Key: {
+                        workerId,
+                    },
+                })
+            );
+        } catch (rollbackError) {
+            console.error(
+                "Failed to rollback construction worker:",
+                rollbackError
+            );
+        }
+
+        console.error(
+            "Failed to create construction worker login:",
+            error
+        );
+
+        throw error;
+    }
 
     return worker;
 }
@@ -257,6 +401,7 @@ export async function updateWorker(
     await client.send(
         new PutCommand({
             TableName: TABLE,
+
             Item: updated,
         })
     );

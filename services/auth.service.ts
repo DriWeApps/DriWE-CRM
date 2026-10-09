@@ -1,5 +1,3 @@
-// services/auth.service.ts
-
 import {
   PutCommand,
   QueryCommand,
@@ -10,91 +8,106 @@ import {
 
 import { db } from "@/lib/dynamodb";
 
-const USERS_TABLE = process.env.USERS_TABLE!;
+/* =========================================================
+   USERS TABLE
+========================================================= */
 
-/**
- * =========================================================
- * PORTAL TYPE
- * =========================================================
- */
+const USERS_TABLE =
+  process.env.USERS_TABLE ||
+  "CRM_Users";
+
+/* =========================================================
+   PORTAL TYPE
+========================================================= */
+
 export type Portal =
   | "crm"
   | "construction"
   | "both";
 
-/**
- * =========================================================
- * USER INTERFACE
- * =========================================================
- */
+/* =========================================================
+   USER INTERFACE
+========================================================= */
+
 export interface User {
   userId: string;
+
   employeeId: string;
+
+  companyId?: string;
+
   name: string;
+
   email: string;
+
+  /*
+   * Password is stored as a bcrypt hash.
+   */
   password: string;
+
   role: string;
 
   pageAccess: string[];
 
-  /*
-   * Portal access:
-   *
-   * crm          -> DriWE CRM only
-   * construction -> Construction only
-   * both         -> Both portals
-   */
   portal?: Portal;
 
   createdAt: string;
+
   updatedAt: string;
 }
 
-/**
- * =========================================================
- * GET USER BY EMAIL
- * =========================================================
- */
+/* =========================================================
+   GET USER BY EMAIL
+========================================================= */
+
 export async function getUserByEmail(
   email: string
-) {
+): Promise<User | null> {
+  const normalizedEmail =
+    email.trim().toLowerCase();
+
+  if (!normalizedEmail) {
+    return null;
+  }
+
   const result = await db.send(
     new QueryCommand({
       TableName: USERS_TABLE,
+
       IndexName: "email-index",
+
       KeyConditionExpression:
         "email = :email",
+
       ExpressionAttributeValues: {
-        ":email": email
-          .trim()
-          .toLowerCase(),
+        ":email": normalizedEmail,
       },
+
       Limit: 1,
     })
   );
 
   const user =
-    result.Items?.[0] ?? null;
+    result.Items?.[0];
 
-  console.log(
-    "User from DB:",
-    user
-  );
+  if (!user) {
+    return null;
+  }
 
-  return user as User | null;
+  return user as User;
 }
 
-/**
- * =========================================================
- * GET USER BY ID
- * =========================================================
- */
+/* =========================================================
+   GET USER BY ID
+========================================================= */
+
 export async function getUserById(
   userId: string
-) {
+): Promise<User | null> {
   const result = await db.send(
     new GetCommand({
       TableName: USERS_TABLE,
+
       Key: {
         userId,
       },
@@ -107,22 +120,25 @@ export async function getUserById(
   );
 }
 
-/**
- * =========================================================
- * GET USER BY EMPLOYEE ID
- * =========================================================
- */
+/* =========================================================
+   GET USER BY EMPLOYEE ID
+========================================================= */
+
 export async function getUserByEmployeeId(
   employeeId: string
-) {
+): Promise<User | null> {
   const result = await db.send(
     new ScanCommand({
       TableName: USERS_TABLE,
+
       FilterExpression:
         "employeeId = :employeeId",
+
       ExpressionAttributeValues: {
-        ":employeeId": employeeId,
+        ":employeeId":
+          employeeId,
       },
+
       Limit: 1,
     })
   );
@@ -133,11 +149,10 @@ export async function getUserByEmployeeId(
   );
 }
 
-/**
- * =========================================================
- * UPDATE PAGE ACCESS
- * =========================================================
- */
+/* =========================================================
+   UPDATE PAGE ACCESS
+========================================================= */
+
 export async function updateUserPageAccess(
   userId: string,
   pageAccess: string[]
@@ -145,13 +160,18 @@ export async function updateUserPageAccess(
   await db.send(
     new UpdateCommand({
       TableName: USERS_TABLE,
+
       Key: {
         userId,
       },
+
       UpdateExpression:
         "SET pageAccess = :pageAccess, updatedAt = :updatedAt",
+
       ExpressionAttributeValues: {
-        ":pageAccess": pageAccess,
+        ":pageAccess":
+          pageAccess,
+
         ":updatedAt":
           new Date().toISOString(),
       },
@@ -161,11 +181,10 @@ export async function updateUserPageAccess(
   return true;
 }
 
-/**
- * =========================================================
- * UPDATE PORTAL
- * =========================================================
- */
+/* =========================================================
+   UPDATE PORTAL
+========================================================= */
+
 export async function updateUserPortal(
   userId: string,
   portal: Portal
@@ -173,13 +192,18 @@ export async function updateUserPortal(
   await db.send(
     new UpdateCommand({
       TableName: USERS_TABLE,
+
       Key: {
         userId,
       },
+
       UpdateExpression:
         "SET portal = :portal, updatedAt = :updatedAt",
+
       ExpressionAttributeValues: {
-        ":portal": portal,
+        ":portal":
+          portal,
+
         ":updatedAt":
           new Date().toISOString(),
       },
@@ -189,27 +213,38 @@ export async function updateUserPortal(
   return true;
 }
 
-/**
- * =========================================================
- * UPDATE EMAIL
- * =========================================================
- */
+/* =========================================================
+   UPDATE EMAIL
+========================================================= */
+
 export async function updateUserEmail(
   userId: string,
   email: string
 ) {
+  const normalizedEmail =
+    email.trim().toLowerCase();
+
+  if (!normalizedEmail) {
+    throw new Error(
+      "Email is required."
+    );
+  }
+
   await db.send(
     new UpdateCommand({
       TableName: USERS_TABLE,
+
       Key: {
         userId,
       },
+
       UpdateExpression:
         "SET email = :email, updatedAt = :updatedAt",
+
       ExpressionAttributeValues: {
-        ":email": email
-          .trim()
-          .toLowerCase(),
+        ":email":
+          normalizedEmail,
+
         ":updatedAt":
           new Date().toISOString(),
       },
@@ -219,11 +254,10 @@ export async function updateUserEmail(
   return true;
 }
 
-/**
- * =========================================================
- * UPDATE NAME
- * =========================================================
- */
+/* =========================================================
+   UPDATE NAME
+========================================================= */
+
 export async function updateUserName(
   userId: string,
   name: string
@@ -231,16 +265,22 @@ export async function updateUserName(
   await db.send(
     new UpdateCommand({
       TableName: USERS_TABLE,
+
       Key: {
         userId,
       },
+
       UpdateExpression:
         "SET #name = :name, updatedAt = :updatedAt",
+
       ExpressionAttributeNames: {
         "#name": "name",
       },
+
       ExpressionAttributeValues: {
-        ":name": name,
+        ":name":
+          name.trim(),
+
         ":updatedAt":
           new Date().toISOString(),
       },
@@ -250,11 +290,10 @@ export async function updateUserName(
   return true;
 }
 
-/**
- * =========================================================
- * UPDATE ROLE
- * =========================================================
- */
+/* =========================================================
+   UPDATE ROLE
+========================================================= */
+
 export async function updateUserRole(
   userId: string,
   role: string
@@ -262,16 +301,22 @@ export async function updateUserRole(
   await db.send(
     new UpdateCommand({
       TableName: USERS_TABLE,
+
       Key: {
         userId,
       },
+
       UpdateExpression:
         "SET #role = :role, updatedAt = :updatedAt",
+
       ExpressionAttributeNames: {
         "#role": "role",
       },
+
       ExpressionAttributeValues: {
-        ":role": role,
+        ":role":
+          role.trim(),
+
         ":updatedAt":
           new Date().toISOString(),
       },
@@ -281,33 +326,91 @@ export async function updateUserRole(
   return true;
 }
 
-/**
- * =========================================================
- * CREATE USER
- * =========================================================
- */
+/* =========================================================
+   UPDATE COMPANY
+========================================================= */
+
+export async function updateUserCompany(
+  userId: string,
+  companyId: string
+) {
+  await db.send(
+    new UpdateCommand({
+      TableName: USERS_TABLE,
+
+      Key: {
+        userId,
+      },
+
+      UpdateExpression:
+        "SET companyId = :companyId, updatedAt = :updatedAt",
+
+      ExpressionAttributeValues: {
+        ":companyId":
+          companyId,
+
+        ":updatedAt":
+          new Date().toISOString(),
+      },
+    })
+  );
+
+  return true;
+}
+
+/* =========================================================
+   CREATE USER
+========================================================= */
+
 export async function createUser(
   userData: {
     userId: string;
+
     employeeId: string;
+
+    companyId?: string;
+
     name: string;
+
     email: string;
+
+    /*
+     * IMPORTANT:
+     *
+     * Password must already be hashed.
+     */
     password: string;
+
     role: string;
 
     pageAccess: string[];
 
     portal?: Portal;
   }
-) {
+): Promise<User> {
   const now =
     new Date().toISOString();
 
-  /*
-   * Existing users default to CRM.
-   */
+  const normalizedEmail =
+    userData.email
+      .trim()
+      .toLowerCase();
+
+  if (!normalizedEmail) {
+    throw new Error(
+      "Email is required."
+    );
+  }
+
+  if (!userData.password) {
+    throw new Error(
+      "Password is required."
+    );
+  }
+
   const portal: Portal =
-    userData.portal ?? "crm";
+    userData.portal ??
+    "crm";
 
   const user: User = {
     userId:
@@ -316,22 +419,28 @@ export async function createUser(
     employeeId:
       userData.employeeId,
 
+    ...(userData.companyId
+      ? {
+          companyId:
+            userData.companyId,
+        }
+      : {}),
+
     name:
-      userData.name,
+      userData.name.trim(),
 
     email:
-      userData.email
-        .trim()
-        .toLowerCase(),
+      normalizedEmail,
 
     password:
       userData.password,
 
     role:
-      userData.role,
+      userData.role.trim(),
 
     pageAccess:
-      userData.pageAccess ?? [],
+      userData.pageAccess ??
+      [],
 
     portal,
 
@@ -344,41 +453,72 @@ export async function createUser(
 
   await db.send(
     new PutCommand({
-      TableName: USERS_TABLE,
+      TableName:
+        USERS_TABLE,
 
-      Item: user,
+      Item:
+        user,
 
       ConditionExpression:
-        "attribute_not_exists(#email)",
-
-      ExpressionAttributeNames: {
-        "#email": "email",
-      },
+        "attribute_not_exists(userId)",
     })
   );
 
   return user;
 }
 
-/**
- * =========================================================
- * UPDATE PASSWORD
- * =========================================================
- */
+/* =========================================================
+   UPDATE PASSWORD
+========================================================= */
+
 export async function updateUserPassword(
   userId: string,
   hashedPassword: string
-) {
-  await db.send(
+): Promise<boolean> {
+  if (!userId) {
+    throw new Error(
+      "User ID is required."
+    );
+  }
+
+  if (!hashedPassword) {
+    throw new Error(
+      "Hashed password is required."
+    );
+  }
+
+  console.log(
+    "========== UPDATE PASSWORD DEBUG =========="
+  );
+
+  console.log(
+    "Updating user ID:",
+    userId
+  );
+
+  console.log(
+    "Hash exists:",
+    !!hashedPassword
+  );
+
+  console.log(
+    "Hash prefix:",
+    hashedPassword.substring(0, 20)
+  );
+
+  const result = await db.send(
     new UpdateCommand({
       TableName: USERS_TABLE,
+
       Key: {
         userId,
       },
+
       UpdateExpression: `
         SET password = :password,
             updatedAt = :updatedAt
       `,
+
       ExpressionAttributeValues: {
         ":password":
           hashedPassword,
@@ -386,7 +526,39 @@ export async function updateUserPassword(
         ":updatedAt":
           new Date().toISOString(),
       },
+
+      ReturnValues: "ALL_NEW",
     })
+  );
+
+  console.log(
+    "Password update successful:",
+    !!result.Attributes
+  );
+
+  if (result.Attributes) {
+    console.log(
+      "Updated user ID:",
+      result.Attributes.userId
+    );
+
+    console.log(
+      "Updated email:",
+      result.Attributes.email
+    );
+
+    console.log(
+      "Updated password prefix:",
+      result.Attributes.password
+        ? String(
+              result.Attributes.password
+          ).substring(0, 20)
+        : "NO PASSWORD"
+    );
+  }
+
+  console.log(
+    "=========================================="
   );
 
   return true;

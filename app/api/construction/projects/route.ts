@@ -28,14 +28,27 @@ function getCompanyId(user: any): string {
     return user.companyId || user.userId;
 }
 
+const WORKER_TYPES: WorkerType[] = [
+    "Employee",
+    "Contract Worker",
+    "Daily Wage",
+    "Subcontractor",
+];
+
+function isWorkerType(value: unknown): value is WorkerType {
+    return (
+        typeof value === "string" &&
+        WORKER_TYPES.includes(value as WorkerType)
+    );
+}
+
 /* =========================================================
    GET PROJECTS
 ========================================================= */
 
 export async function GET(req: Request) {
     try {
-        const user =
-            await getUserFromRequest(req);
+        const user = await getUserFromRequest(req);
 
         if (!user) {
             return NextResponse.json(
@@ -47,11 +60,9 @@ export async function GET(req: Request) {
             );
         }
 
-        const companyId =
-            getCompanyId(user);
+        const companyId = getCompanyId(user);
 
-        const projects =
-            await getProjects(companyId);
+        const projects = await getProjects(companyId);
 
         return NextResponse.json({
             success: true,
@@ -66,8 +77,7 @@ export async function GET(req: Request) {
         return NextResponse.json(
             {
                 success: false,
-                message:
-                    "Failed to fetch projects",
+                message: "Failed to fetch projects",
             },
             { status: 500 }
         );
@@ -75,13 +85,12 @@ export async function GET(req: Request) {
 }
 
 /* =========================================================
-   CREATE PROJECT + SITES + WORKERS
+   CREATE PROJECT + SITES + WORKERS + LOGIN ACCOUNTS
 ========================================================= */
 
 export async function POST(req: Request) {
     try {
-        const user =
-            await getUserFromRequest(req);
+        const user = await getUserFromRequest(req);
 
         if (!user) {
             return NextResponse.json(
@@ -93,32 +102,50 @@ export async function POST(req: Request) {
             );
         }
 
-        const body =
-            await req.json();
+        const body = await req.json();
 
         /*
-         * NEW FORMAT
+         * Expected format:
          *
          * {
-         *   project: {...},
+         *   project: {
+         *      projectName,
+         *      location,
+         *      projectManager,
+         *      projectManagerName,
+         *      siteSupervisor,
+         *      siteSupervisorName,
+         *      startDate,
+         *      expectedCompletion,
+         *      status,
+         *      description
+         *   },
+         *
          *   sites: [
          *      {
-         *        siteName,
-         *        location,
-         *        workers: [...]
+         *          siteName,
+         *          location,
+         *
+         *          workers: [
+         *              {
+         *                  name,
+         *                  phone,
+         *                  email,
+         *                  password,
+         *                  workerType,
+         *                  salary
+         *              }
+         *          ]
          *      }
          *   ]
          * }
          */
 
-        const projectData =
-            body?.project;
-
-        const sitesData =
-            body?.sites;
+        const projectData = body?.project;
+        const sitesData = body?.sites;
 
         /* =====================================================
-           VALIDATE PROJECT
+           VALIDATE PROJECT DATA
         ===================================================== */
 
         if (!projectData) {
@@ -143,10 +170,14 @@ export async function POST(req: Request) {
                 : "";
 
         const startDate =
-            projectData.startDate;
+            typeof projectData.startDate === "string"
+                ? projectData.startDate.trim()
+                : "";
 
         const expectedCompletion =
-            projectData.expectedCompletion;
+            typeof projectData.expectedCompletion === "string"
+                ? projectData.expectedCompletion.trim()
+                : "";
 
         if (
             !projectName ||
@@ -182,13 +213,25 @@ export async function POST(req: Request) {
             );
         }
 
+        /* =====================================================
+           VALIDATE SITES + WORKERS
+        ===================================================== */
+
+        const emailRegex =
+            /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        const workerEmails = new Set<string>();
+
         for (
             let siteIndex = 0;
             siteIndex < sitesData.length;
             siteIndex++
         ) {
-            const site =
-                sitesData[siteIndex];
+            const site = sitesData[siteIndex];
+
+            /* -------------------------------------------------
+               SITE VALIDATION
+            ------------------------------------------------- */
 
             if (
                 !site ||
@@ -206,83 +249,195 @@ export async function POST(req: Request) {
             }
 
             if (
-                !Array.isArray(
-                    site.workers
-                )
+                site.location !== undefined &&
+                site.location !== null &&
+                typeof site.location !== "string"
             ) {
                 return NextResponse.json(
                     {
                         success: false,
                         message:
-                            `Site ${siteIndex + 1}: Workers data is invalid.`,
+                            `Site ${siteIndex + 1}: Site location is invalid.`,
                     },
                     { status: 400 }
                 );
             }
 
+            /* -------------------------------------------------
+               WORKERS VALIDATION
+            ------------------------------------------------- */
+
+            if (
+                site.workers !== undefined &&
+                !Array.isArray(site.workers)
+            ) {
+                return NextResponse.json(
+                    {
+                        success: false,
+                        message:
+                            `Site ${siteIndex + 1}: Workers must be an array.`,
+                    },
+                    { status: 400 }
+                );
+            }
+
+            const workers = Array.isArray(site.workers)
+                ? site.workers
+                : [];
+
             for (
                 let workerIndex = 0;
-                workerIndex <
-                site.workers.length;
+                workerIndex < workers.length;
                 workerIndex++
             ) {
                 const worker =
-                    site.workers[
-                        workerIndex
-                    ];
+                    workers[workerIndex];
 
-                if (
-                    !worker ||
-                    typeof worker.name !== "string" ||
-                    !worker.name.trim()
-                ) {
+                const workerNumber =
+                    workerIndex + 1;
+
+                if (!worker) {
                     return NextResponse.json(
                         {
                             success: false,
                             message:
-                                `Site ${siteIndex + 1}, Worker ${workerIndex + 1}: Worker name is required.`,
+                                `Site ${siteIndex + 1}, Worker ${workerNumber}: Worker information is required.`,
                         },
                         { status: 400 }
                     );
                 }
 
-                const phone =
-                    String(
-                        worker.phone || ""
-                    ).replace(
-                        /\D/g,
-                        ""
+                /* ---------------------------------------------
+                   NAME
+                --------------------------------------------- */
+
+                const workerName =
+                    typeof worker.name === "string"
+                        ? worker.name.trim()
+                        : "";
+
+                if (!workerName) {
+                    return NextResponse.json(
+                        {
+                            success: false,
+                            message:
+                                `Site ${siteIndex + 1}, Worker ${workerNumber}: Worker name is required.`,
+                        },
+                        { status: 400 }
                     );
+                }
+
+                /* ---------------------------------------------
+                   PHONE
+                --------------------------------------------- */
+
+                const workerPhone =
+                    typeof worker.phone === "string"
+                        ? worker.phone.trim()
+                        : "";
+
+                if (!/^\d{10}$/.test(workerPhone)) {
+                    return NextResponse.json(
+                        {
+                            success: false,
+                            message:
+                                `Site ${siteIndex + 1}, Worker ${workerNumber}: A valid 10-digit mobile number is required.`,
+                        },
+                        { status: 400 }
+                    );
+                }
+
+                /* ---------------------------------------------
+                   EMAIL
+                --------------------------------------------- */
+
+                const workerEmail =
+                    typeof worker.email === "string"
+                        ? worker.email.trim().toLowerCase()
+                        : "";
 
                 if (
-                    phone.length !== 10
+                    !workerEmail ||
+                    !emailRegex.test(workerEmail)
                 ) {
                     return NextResponse.json(
                         {
                             success: false,
                             message:
-                                `Site ${siteIndex + 1}, Worker ${workerIndex + 1}: Valid 10-digit mobile number is required.`,
+                                `Site ${siteIndex + 1}, Worker ${workerNumber}: A valid email address is required.`,
                         },
                         { status: 400 }
                     );
                 }
+
+                /*
+                 * Prevent duplicate worker emails inside
+                 * the same project request.
+                 */
+                if (workerEmails.has(workerEmail)) {
+                    return NextResponse.json(
+                        {
+                            success: false,
+                            message:
+                                `Site ${siteIndex + 1}, Worker ${workerNumber}: Duplicate worker email "${workerEmail}".`,
+                        },
+                        { status: 400 }
+                    );
+                }
+
+                workerEmails.add(workerEmail);
+
+                /* ---------------------------------------------
+                   PASSWORD
+                --------------------------------------------- */
+
+                const workerPassword =
+                    typeof worker.password === "string"
+                        ? worker.password
+                        : "";
+
+                if (workerPassword.length < 6) {
+                    return NextResponse.json(
+                        {
+                            success: false,
+                            message:
+                                `Site ${siteIndex + 1}, Worker ${workerNumber}: Password must be at least 6 characters.`,
+                        },
+                        { status: 400 }
+                    );
+                }
+
+                /* ---------------------------------------------
+                   WORKER TYPE
+                --------------------------------------------- */
+
+                if (!isWorkerType(worker.workerType)) {
+                    return NextResponse.json(
+                        {
+                            success: false,
+                            message:
+                                `Site ${siteIndex + 1}, Worker ${workerNumber}: Invalid worker type.`,
+                        },
+                        { status: 400 }
+                    );
+                }
+
+                /* ---------------------------------------------
+                   SALARY
+                --------------------------------------------- */
 
                 const salary =
-                    Number(
-                        worker.salary
-                    );
+                    Number(worker.salary);
 
                 if (
-                    !Number.isFinite(
-                        salary
-                    ) ||
+                    !Number.isFinite(salary) ||
                     salary <= 0
                 ) {
                     return NextResponse.json(
                         {
                             success: false,
                             message:
-                                `Site ${siteIndex + 1}, Worker ${workerIndex + 1}: Salary / wage must be greater than 0.`,
+                                `Site ${siteIndex + 1}, Worker ${workerNumber}: Salary/wage must be greater than 0.`,
                         },
                         { status: 400 }
                     );
@@ -294,56 +449,58 @@ export async function POST(req: Request) {
            COMPANY
         ===================================================== */
 
-        const companyId =
-            getCompanyId(user);
+        const companyId = getCompanyId(user);
 
         /* =====================================================
            CREATE PROJECT
         ===================================================== */
 
-        const project =
-            await createProject({
-                companyId,
+        const project = await createProject({
+            companyId,
 
-                projectName,
+            projectName,
 
-                location,
+            location,
 
-                projectManager:
-                    projectData.projectManager ||
-                    undefined,
+            projectManager:
+                typeof projectData.projectManager === "string"
+                    ? projectData.projectManager.trim() || undefined
+                    : undefined,
 
-                projectManagerName:
-                    projectData.projectManagerName ||
-                    undefined,
+            projectManagerName:
+                typeof projectData.projectManagerName === "string"
+                    ? projectData.projectManagerName.trim() || undefined
+                    : undefined,
 
-                siteSupervisor:
-                    projectData.siteSupervisor ||
-                    undefined,
+            siteSupervisor:
+                typeof projectData.siteSupervisor === "string"
+                    ? projectData.siteSupervisor.trim() || undefined
+                    : undefined,
 
-                siteSupervisorName:
-                    projectData.siteSupervisorName ||
-                    undefined,
+            siteSupervisorName:
+                typeof projectData.siteSupervisorName === "string"
+                    ? projectData.siteSupervisorName.trim() || undefined
+                    : undefined,
 
-                startDate,
+            startDate,
 
-                expectedCompletion,
+            expectedCompletion,
 
-                status:
-                    (projectData.status ||
-                        "Planning") as ProjectStatus,
+            status:
+                (projectData.status ||
+                    "Planning") as ProjectStatus,
 
-                description:
-                    projectData.description ||
-                    undefined,
+            description:
+                typeof projectData.description === "string"
+                    ? projectData.description.trim() || undefined
+                    : undefined,
 
-                createdBy:
-                    user.userId,
+            createdBy: user.userId,
 
-                createdByName:
-                    (user as any).name ||
-                    user.email,
-            });
+            createdByName:
+                (user as any).name ||
+                user.email,
+        });
 
         /* =====================================================
            CREATE SITES + WORKERS
@@ -351,14 +508,15 @@ export async function POST(req: Request) {
 
         const createdSites = [];
 
-        const createdWorkers = [];
+        let totalWorkers = 0;
 
         for (
             const siteData of sitesData
         ) {
-            /*
-             * Create site first.
-             */
+            /* -------------------------------------------------
+               CREATE SITE
+            ------------------------------------------------- */
+
             const site =
                 await createSite({
                     companyId,
@@ -374,44 +532,26 @@ export async function POST(req: Request) {
 
                     location:
                         typeof siteData.location === "string"
-                            ? siteData.location.trim()
+                            ? siteData.location.trim() || undefined
                             : undefined,
 
                     active: true,
                 });
 
-            createdSites.push(site);
+            /* -------------------------------------------------
+               CREATE WORKERS FOR THIS SITE
+            ------------------------------------------------- */
 
-            /*
-             * Create workers inside this site.
-             *
-             * IMPORTANT:
-             *
-             * siteId and siteName come from
-             * the site created above.
-             *
-             * The user does NOT manually select
-             * a site for each worker.
-             */
+            const createdWorkers = [];
+
+            const workers =
+                Array.isArray(siteData.workers)
+                    ? siteData.workers
+                    : [];
+
             for (
-                const workerData of siteData.workers
+                const workerData of workers
             ) {
-                const phone =
-                    String(
-                        workerData.phone
-                    ).replace(
-                        /\D/g,
-                        ""
-                    );
-
-                const salary =
-                    Number(
-                        workerData.salary
-                    );
-
-                const workerType =
-                    workerData.workerType as WorkerType;
-
                 const worker =
                     await createWorker({
                         companyId,
@@ -431,29 +571,76 @@ export async function POST(req: Request) {
                         name:
                             workerData.name.trim(),
 
-                        phone,
+                        phone:
+                            workerData.phone.trim(),
 
-                        workerType,
+                        email:
+                            workerData.email
+                                .trim()
+                                .toLowerCase(),
 
-                        salary,
+                        password:
+                            workerData.password,
 
-                        /*
-                         * Daily wage is automatically
-                         * derived for Daily Wage workers.
-                         */
-                        dailyWage:
-                            workerType ===
-                            "Daily Wage"
-                                ? salary
-                                : undefined,
+                        role:
+                            "ConstructionEmployee",
 
-                        active: true,
+                        workerType:
+                            workerData.workerType,
+
+                        salary:
+                            Number(workerData.salary),
+
+                        active:
+                            true,
                     });
 
-                createdWorkers.push(
-                    worker
-                );
+                /*
+                 * Do NOT return the password or hashed password.
+                 */
+                createdWorkers.push({
+                    workerId:
+                        worker.workerId,
+
+                    userId:
+                        worker.userId,
+
+                    name:
+                        worker.name,
+
+                    phone:
+                        worker.phone,
+
+                    email:
+                        worker.email,
+
+                    role:
+                        worker.role,
+
+                    workerType:
+                        worker.workerType,
+
+                    salary:
+                        worker.salary,
+
+                    dailyWage:
+                        worker.dailyWage,
+
+                    active:
+                        worker.active,
+
+                    loginEnabled:
+                        worker.loginEnabled,
+                });
+
+                totalWorkers++;
             }
+
+            createdSites.push({
+                ...site,
+                workers:
+                    createdWorkers,
+            });
         }
 
         /* =====================================================
@@ -465,22 +652,19 @@ export async function POST(req: Request) {
                 success: true,
 
                 message:
-                    "Project, sites and workers created successfully.",
+                    "Project, sites, workers and worker login accounts created successfully.",
 
                 project,
 
                 sites:
                     createdSites,
 
-                workers:
-                    createdWorkers,
-
                 counts: {
                     sites:
                         createdSites.length,
 
                     workers:
-                        createdWorkers.length,
+                        totalWorkers,
                 },
             },
             { status: 201 }
@@ -495,7 +679,9 @@ export async function POST(req: Request) {
             {
                 success: false,
                 message:
-                    "Failed to create project.",
+                    error instanceof Error
+                        ? error.message
+                        : "Failed to create project.",
             },
             { status: 500 }
         );

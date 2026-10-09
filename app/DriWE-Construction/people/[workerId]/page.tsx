@@ -11,12 +11,17 @@ import {
     CheckCircle2,
     Edit,
     Loader2,
+    Lock,
+    Mail,
     MapPin,
     Phone,
+    ShieldCheck,
     Trash2,
     User,
     Wallet,
     XCircle,
+    Eye,
+    EyeOff,
 } from "lucide-react";
 
 type WorkerType =
@@ -28,6 +33,8 @@ type WorkerType =
 interface Worker {
     workerId: string;
 
+    userId?: string;
+
     companyId: string;
 
     projectId: string;
@@ -38,6 +45,7 @@ interface Worker {
 
     name: string;
     phone: string;
+    email?: string;
 
     role?: string;
 
@@ -47,6 +55,7 @@ interface Worker {
     dailyWage?: number;
 
     active: boolean;
+    loginEnabled?: boolean;
 
     createdAt?: string;
     updatedAt?: string;
@@ -79,6 +88,29 @@ export default function WorkerDetailPage() {
     const [loading, setLoading] = useState(true);
     const [deleting, setDeleting] = useState(false);
     const [error, setError] = useState("");
+
+    // ---------------------------------------------------------
+    // Password reset state
+    // ---------------------------------------------------------
+
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] =
+        useState("");
+
+    const [showNewPassword, setShowNewPassword] =
+        useState(false);
+
+    const [showConfirmPassword, setShowConfirmPassword] =
+        useState(false);
+
+    const [resettingPassword, setResettingPassword] =
+        useState(false);
+
+    const [passwordError, setPasswordError] =
+        useState("");
+
+    const [passwordSuccess, setPasswordSuccess] =
+        useState("");
 
     useEffect(() => {
         if (!workerId) return;
@@ -150,7 +182,10 @@ export default function WorkerDetailPage() {
 
             setProject(data.project || data);
         } catch (err) {
-            console.error("Load project error:", err);
+            console.error(
+                "Load project error:",
+                err
+            );
         }
     }
 
@@ -170,9 +205,16 @@ export default function WorkerDetailPage() {
 
             setSite(data.site || data);
         } catch (err) {
-            console.error("Load site error:", err);
+            console.error(
+                "Load site error:",
+                err
+            );
         }
     }
+
+    // ---------------------------------------------------------
+    // Delete worker
+    // ---------------------------------------------------------
 
     async function handleDelete() {
         if (!worker) return;
@@ -195,7 +237,10 @@ export default function WorkerDetailPage() {
                 }
             );
 
-            const data = await response.json().catch(() => null);
+            const data =
+                await response
+                    .json()
+                    .catch(() => null);
 
             if (!response.ok) {
                 throw new Error(
@@ -205,10 +250,16 @@ export default function WorkerDetailPage() {
                 );
             }
 
-            router.push("/DriWE-Construction/people");
+            router.push(
+                "/DriWE-Construction/people"
+            );
+
             router.refresh();
         } catch (err) {
-            console.error("Delete worker error:", err);
+            console.error(
+                "Delete worker error:",
+                err
+            );
 
             setError(
                 err instanceof Error
@@ -220,12 +271,123 @@ export default function WorkerDetailPage() {
         }
     }
 
+    // ---------------------------------------------------------
+    // Password reset
+    // ---------------------------------------------------------
+
+    async function handleResetPassword(
+        event: React.FormEvent<HTMLFormElement>
+    ) {
+        event.preventDefault();
+
+        setPasswordError("");
+        setPasswordSuccess("");
+
+        if (!newPassword) {
+            setPasswordError(
+                "Please enter a new password."
+            );
+            return;
+        }
+
+        if (newPassword.length < 6) {
+            setPasswordError(
+                "Password must be at least 6 characters."
+            );
+            return;
+        }
+
+        if (!confirmPassword) {
+            setPasswordError(
+                "Please confirm the new password."
+            );
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            setPasswordError(
+                "Passwords do not match."
+            );
+            return;
+        }
+
+        const confirmed =
+            window.confirm(
+                `Are you sure you want to reset the login password for "${worker?.name}"?`
+            );
+
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            setResettingPassword(true);
+
+            const response = await fetch(
+                `/api/construction/workers/${workerId}/password`,
+                {
+                    method: "PATCH",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json",
+                    },
+
+                    credentials: "include",
+
+                    body: JSON.stringify({
+                        password: newPassword,
+                        confirmPassword,
+                    }),
+                }
+            );
+
+            const data =
+                await response
+                    .json()
+                    .catch(() => null);
+
+            if (!response.ok) {
+                throw new Error(
+                    data?.message ||
+                        data?.error ||
+                        "Failed to update worker password."
+                );
+            }
+
+            setPasswordSuccess(
+                "Worker login password updated successfully."
+            );
+
+            setNewPassword("");
+            setConfirmPassword("");
+            setShowNewPassword(false);
+            setShowConfirmPassword(false);
+        } catch (err) {
+            console.error(
+                "Reset worker password error:",
+                err
+            );
+
+            setPasswordError(
+                err instanceof Error
+                    ? err.message
+                    : "Failed to update worker password."
+            );
+        } finally {
+            setResettingPassword(false);
+        }
+    }
+
     function formatCurrency(value?: number) {
-        return new Intl.NumberFormat("en-IN", {
-            style: "currency",
-            currency: "INR",
-            maximumFractionDigits: 0,
-        }).format(Number(value ?? 0));
+        return new Intl.NumberFormat(
+            "en-IN",
+            {
+                style: "currency",
+                currency: "INR",
+                maximumFractionDigits: 0,
+            }
+        ).format(Number(value ?? 0));
     }
 
     function formatDate(value?: string) {
@@ -237,14 +399,19 @@ export default function WorkerDetailPage() {
             return "-";
         }
 
-        return date.toLocaleDateString("en-IN", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-        });
+        return date.toLocaleDateString(
+            "en-IN",
+            {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+            }
+        );
     }
 
-    function getWorkerTypeLabel(type?: WorkerType) {
+    function getWorkerTypeLabel(
+        type?: WorkerType
+    ) {
         if (!type) return "-";
 
         return type;
@@ -259,7 +426,9 @@ export default function WorkerDetailPage() {
                         className="animate-spin text-yellow-400"
                     />
 
-                    <span>Loading worker...</span>
+                    <span>
+                        Loading worker...
+                    </span>
                 </div>
             </div>
         );
@@ -297,6 +466,7 @@ export default function WorkerDetailPage() {
     return (
         <div className="min-h-screen bg-zinc-950 text-white">
             <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+
                 {/* Back */}
                 <Link
                     href="/DriWE-Construction/people"
@@ -321,12 +491,16 @@ export default function WorkerDetailPage() {
 
                                 {worker.active ? (
                                     <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400">
-                                        <CheckCircle2 size={13} />
+                                        <CheckCircle2
+                                            size={13}
+                                        />
                                         Active
                                     </span>
                                 ) : (
                                     <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700 bg-zinc-800 px-3 py-1 text-xs font-medium text-zinc-400">
-                                        <XCircle size={13} />
+                                        <XCircle
+                                            size={13}
+                                        />
                                         Inactive
                                     </span>
                                 )}
@@ -379,6 +553,7 @@ export default function WorkerDetailPage() {
 
                 {/* Main information */}
                 <div className="grid gap-6 lg:grid-cols-3">
+
                     {/* Personal Information */}
                     <section className="rounded-2xl border border-zinc-800 bg-zinc-900/70 lg:col-span-2">
                         <div className="border-b border-zinc-800 px-5 py-4 sm:px-6">
@@ -400,6 +575,7 @@ export default function WorkerDetailPage() {
                         </div>
 
                         <div className="grid gap-x-8 gap-y-6 px-5 py-6 sm:grid-cols-2 sm:px-6">
+
                             {/* Name */}
                             <div>
                                 <p className="text-xs uppercase tracking-wider text-zinc-600">
@@ -430,6 +606,30 @@ export default function WorkerDetailPage() {
                                     >
                                         {worker.phone}
                                     </a>
+                                </div>
+                            </div>
+
+                            {/* Email */}
+                            <div>
+                                <p className="text-xs uppercase tracking-wider text-zinc-600">
+                                    Login Email
+                                </p>
+
+                                <div className="mt-2 flex items-center gap-2">
+                                    <Mail className="h-4 w-4 text-zinc-600" />
+
+                                    {worker.email ? (
+                                        <a
+                                            href={`mailto:${worker.email}`}
+                                            className="break-all text-sm font-medium text-zinc-200 transition hover:text-yellow-400"
+                                        >
+                                            {worker.email}
+                                        </a>
+                                    ) : (
+                                        <p className="text-sm text-zinc-500">
+                                            Login email not available
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 
@@ -470,7 +670,8 @@ export default function WorkerDetailPage() {
                             {/* Daily Wage */}
                             {worker.workerType ===
                                 "Daily Wage" &&
-                                worker.dailyWage !== undefined && (
+                                worker.dailyWage !==
+                                    undefined && (
                                     <div>
                                         <p className="text-xs uppercase tracking-wider text-zinc-600">
                                             Daily Wage
@@ -560,6 +761,257 @@ export default function WorkerDetailPage() {
                     </section>
                 </div>
 
+                {/* Login Account */}
+                <section className="mt-6 rounded-2xl border border-yellow-500/20 bg-zinc-900/70">
+                    <div className="border-b border-zinc-800 px-5 py-4 sm:px-6">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-500/10">
+                                <ShieldCheck className="h-5 w-5 text-yellow-400" />
+                            </div>
+
+                            <div>
+                                <h2 className="font-semibold text-white">
+                                    Construction Portal Login
+                                </h2>
+
+                                <p className="text-xs text-zinc-500">
+                                    Manage this worker's login credentials
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-5 sm:p-6">
+
+                        {/* Login email */}
+                        <div className="mb-6 rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
+                            <div className="flex items-start gap-3">
+                                <Mail className="mt-0.5 h-5 w-5 shrink-0 text-zinc-500" />
+
+                                <div className="min-w-0">
+                                    <p className="text-xs uppercase tracking-wider text-zinc-600">
+                                        Login Email
+                                    </p>
+
+                                    <p className="mt-1 break-all text-sm font-medium text-white">
+                                        {worker.email ||
+                                            "Email not available"}
+                                    </p>
+
+                                    <p className="mt-1 text-xs text-zinc-500">
+                                        This email is used to sign in
+                                        to the Construction Portal.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Password form */}
+                        <form
+                            onSubmit={
+                                handleResetPassword
+                            }
+                            className="space-y-5"
+                        >
+                            <div>
+                                <div className="mb-4">
+                                    <h3 className="text-sm font-semibold text-white">
+                                        Reset Login Password
+                                    </h3>
+
+                                    <p className="mt-1 text-xs text-zinc-500">
+                                        Set a new password for this
+                                        worker's Construction Portal
+                                        account.
+                                    </p>
+                                </div>
+
+                                {/* New password */}
+                                <div>
+                                    <label
+                                        htmlFor="newPassword"
+                                        className="mb-2 block text-sm font-medium text-zinc-200"
+                                    >
+                                        New Password{" "}
+                                        <span className="text-red-400">
+                                            *
+                                        </span>
+                                    </label>
+
+                                    <div className="relative">
+                                        <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+
+                                        <input
+                                            id="newPassword"
+                                            type={
+                                                showNewPassword
+                                                    ? "text"
+                                                    : "password"
+                                            }
+                                            value={
+                                                newPassword
+                                            }
+                                            onChange={(
+                                                event
+                                            ) =>
+                                                setNewPassword(
+                                                    event.target
+                                                        .value
+                                                )
+                                            }
+                                            placeholder="Enter new password"
+                                            autoComplete="new-password"
+                                            minLength={6}
+                                            className="w-full rounded-lg border border-zinc-700 bg-zinc-950 py-3 pl-10 pr-12 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-yellow-500"
+                                        />
+
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setShowNewPassword(
+                                                    (
+                                                        current
+                                                    ) =>
+                                                        !current
+                                                )
+                                            }
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 transition hover:text-zinc-300"
+                                            aria-label={
+                                                showNewPassword
+                                                    ? "Hide password"
+                                                    : "Show password"
+                                            }
+                                        >
+                                            {showNewPassword ? (
+                                                <EyeOff className="h-4 w-4" />
+                                            ) : (
+                                                <Eye className="h-4 w-4" />
+                                            )}
+                                        </button>
+                                    </div>
+
+                                    <p className="mt-2 text-xs text-zinc-500">
+                                        Minimum 6 characters.
+                                    </p>
+                                </div>
+
+                                {/* Confirm password */}
+                                <div className="mt-5">
+                                    <label
+                                        htmlFor="confirmPassword"
+                                        className="mb-2 block text-sm font-medium text-zinc-200"
+                                    >
+                                        Confirm Password{" "}
+                                        <span className="text-red-400">
+                                            *
+                                        </span>
+                                    </label>
+
+                                    <div className="relative">
+                                        <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+
+                                        <input
+                                            id="confirmPassword"
+                                            type={
+                                                showConfirmPassword
+                                                    ? "text"
+                                                    : "password"
+                                            }
+                                            value={
+                                                confirmPassword
+                                            }
+                                            onChange={(
+                                                event
+                                            ) =>
+                                                setConfirmPassword(
+                                                    event.target
+                                                        .value
+                                                )
+                                            }
+                                            placeholder="Confirm new password"
+                                            autoComplete="new-password"
+                                            minLength={6}
+                                            className="w-full rounded-lg border border-zinc-700 bg-zinc-950 py-3 pl-10 pr-12 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-yellow-500"
+                                        />
+
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setShowConfirmPassword(
+                                                    (
+                                                        current
+                                                    ) =>
+                                                        !current
+                                                )
+                                            }
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 transition hover:text-zinc-300"
+                                            aria-label={
+                                                showConfirmPassword
+                                                    ? "Hide password"
+                                                    : "Show password"
+                                            }
+                                        >
+                                            {showConfirmPassword ? (
+                                                <EyeOff className="h-4 w-4" />
+                                            ) : (
+                                                <Eye className="h-4 w-4" />
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Password error */}
+                            {passwordError && (
+                                <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3">
+                                    <p className="text-sm text-red-400">
+                                        {passwordError}
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Password success */}
+                            {passwordSuccess && (
+                                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
+                                    <div className="flex items-start gap-3">
+                                        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" />
+
+                                        <p className="text-sm text-emerald-400">
+                                            {passwordSuccess}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Reset button */}
+                            <div className="flex justify-end">
+                                <button
+                                    type="submit"
+                                    disabled={
+                                        resettingPassword
+                                    }
+                                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-yellow-500 px-5 py-3 text-sm font-semibold text-black transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {resettingPassword ? (
+                                        <>
+                                            <Loader2
+                                                size={17}
+                                                className="animate-spin"
+                                            />
+                                            Updating Password...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Lock size={17} />
+                                            Reset Login Password
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
                 {/* Assignment */}
                 <section className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-900/70">
                     <div className="border-b border-zinc-800 px-5 py-4 sm:px-6">
@@ -581,6 +1033,7 @@ export default function WorkerDetailPage() {
                     </div>
 
                     <div className="grid gap-4 p-5 sm:grid-cols-2 sm:p-6">
+
                         {/* Project */}
                         <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-5">
                             <div className="flex items-start gap-4">
@@ -676,7 +1129,9 @@ export default function WorkerDetailPage() {
                             </p>
 
                             <p className="mt-2 text-sm text-zinc-300">
-                                {formatDate(worker.createdAt)}
+                                {formatDate(
+                                    worker.createdAt
+                                )}
                             </p>
                         </div>
 
@@ -686,7 +1141,9 @@ export default function WorkerDetailPage() {
                             </p>
 
                             <p className="mt-2 text-sm text-zinc-300">
-                                {formatDate(worker.updatedAt)}
+                                {formatDate(
+                                    worker.updatedAt
+                                )}
                             </p>
                         </div>
                     </div>

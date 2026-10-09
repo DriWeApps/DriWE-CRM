@@ -1,389 +1,351 @@
-// import { NextResponse } from "next/server";
-
-// import { createToken } from "@/lib/auth";
-// import { verifyPassword } from "@/lib/password";
-// import { getUserByEmail } from "@/services/auth.service";
-
-// type Portal = "crm" | "construction" | "both";
-
-// export async function POST(req: Request) {
-//   try {
-//     const body = await req.json();
-
-//     const email =
-//       typeof body.email === "string"
-//         ? body.email.trim().toLowerCase()
-//         : "";
-
-//     const password =
-//       typeof body.password === "string"
-//         ? body.password
-//         : "";
-
-//     /* =====================================================
-//        VALIDATION
-//     ===================================================== */
-
-//     if (!email || !password) {
-//       return NextResponse.json(
-//         {
-//           success: false,
-//           message: "Email and password are required",
-//         },
-//         {
-//           status: 400,
-//         }
-//       );
-//     }
-
-//     /* =====================================================
-//        FIND USER
-//     ===================================================== */
-
-//     const user = await getUserByEmail(email);
-
-//     if (!user) {
-//       return NextResponse.json(
-//         {
-//           success: false,
-//           message: "Invalid credentials",
-//         },
-//         {
-//           status: 401,
-//         }
-//       );
-//     }
-
-//     /* =====================================================
-//        PASSWORD CHECK
-//     ===================================================== */
-
-//     const validPassword = await verifyPassword(
-//       password,
-//       user.password
-//     );
-
-//     if (!validPassword) {
-//       return NextResponse.json(
-//         {
-//           success: false,
-//           message: "Invalid credentials",
-//         },
-//         {
-//           status: 401,
-//         }
-//       );
-//     }
-
-//     console.log("User from DB:", user);
-
-//     /* =====================================================
-//        GET USER PORTAL
-//     ===================================================== */
-
-//     const role =
-//       user.role?.trim().toUpperCase();
-
-//     const isAdmin = role === "ADMIN";
-
-//     /*
-//      * Existing users without a portal are treated as
-//      * CRM users.
-//      */
-//     const userPortal: Portal =
-//       user.portal === "construction"
-//         ? "construction"
-//         : user.portal === "both"
-//           ? "both"
-//           : "crm";
-
-//     /*
-//      * Admin can access both.
-//      */
-//     const loginPortal: Portal =
-//       isAdmin
-//         ? "both"
-//         : userPortal;
-
-//     /* =====================================================
-//        CREATE JWT
-//     ===================================================== */
-
-//     const token = await createToken({
-//       userId: user.userId,
-//       employeeId: user.employeeId,
-//       email: user.email,
-//       role: user.role,
-//       pageAccess: user.pageAccess ?? [],
-//       portal: loginPortal,
-//     });
-
-//     console.log(
-//       "Created token with portal:",
-//       loginPortal
-//     );
-
-//     /* =====================================================
-//        RESPONSE
-//     ===================================================== */
-
-//     const response = NextResponse.json({
-//       success: true,
-
-//       user: {
-//         userId: user.userId,
-//         employeeId: user.employeeId,
-//         name: user.name,
-//         email: user.email,
-//         role: user.role,
-
-//         pageAccess:
-//           user.pageAccess ?? [],
-
-//         portal: loginPortal,
-//       },
-//     });
-
-//     /* =====================================================
-//        AUTH COOKIE
-//     ===================================================== */
-
-//     response.cookies.set("token", token, {
-//       httpOnly: true,
-//       secure:
-//         process.env.NODE_ENV === "production",
-//       sameSite: "lax",
-//       path: "/",
-//       maxAge: 60 * 60 * 24 * 7,
-//     });
-
-//     return response;
-//   } catch (error) {
-//     console.error(
-//       "Login Error:",
-//       error
-//     );
-
-//     return NextResponse.json(
-//       {
-//         success: false,
-//         message:
-//           "Internal Server Error",
-//       },
-//       {
-//         status: 500,
-//       }
-//     );
-//   }
-// }
-
 import { NextResponse } from "next/server";
 
 import { createToken } from "@/lib/auth";
 import { verifyPassword } from "@/lib/password";
 import { getUserByEmail } from "@/services/auth.service";
-import {
-createAttendanceSession,
-} from "@/services/attendance.service";
+import { createAttendanceSession } from "@/services/attendance.service";
 
 type Portal = "crm" | "construction" | "both";
 
+/* =========================================================
+   LOGIN
+========================================================= */
+
 export async function POST(req: Request) {
-try {
-const body = await req.json();
+  try {
+    /* =====================================================
+       READ REQUEST
+    ===================================================== */
 
+    const body = await req.json();
 
-const email =
-  typeof body.email === "string"
-    ? body.email.trim().toLowerCase()
-    : "";
+    const email =
+      typeof body.email === "string"
+        ? body.email.trim().toLowerCase()
+        : "";
 
-const password =
-  typeof body.password === "string"
-    ? body.password
-    : "";
+    const password =
+      typeof body.password === "string"
+        ? body.password
+        : "";
 
-/* =====================================================
-   VALIDATION
-===================================================== */
+    /* =====================================================
+       VALIDATION
+    ===================================================== */
 
-if (!email || !password) {
-  return NextResponse.json(
-    {
-      success: false,
-      message: "Email and password are required",
-    },
-    {
-      status: 400,
+    if (!email || !password) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Email and password are required",
+        },
+        {
+          status: 400,
+        }
+      );
     }
-  );
-}
 
-/* =====================================================
-   FIND USER
-===================================================== */
+    /* =====================================================
+       FIND USER
+    ===================================================== */
 
-const user = await getUserByEmail(email);
+    const user = await getUserByEmail(email);
 
-if (!user) {
-  return NextResponse.json(
-    {
-      success: false,
-      message: "Invalid credentials",
-    },
-    {
-      status: 401,
+    /*
+     * Temporary login diagnostics.
+     *
+     * IMPORTANT:
+     * Never log the actual password.
+     */
+    console.log("========== LOGIN DEBUG ==========");
+    console.log("Login email:", email);
+    console.log("User found:", !!user);
+
+    if (user) {
+      console.log("User ID:", user.userId);
+      console.log("User email:", user.email);
+      console.log("User role:", user.role);
+      console.log("User portal:", user.portal);
+      console.log("User companyId:", user.companyId);
+      console.log("Password hash exists:", !!user.password);
+
+      console.log(
+        "Password hash prefix:",
+        user.password
+          ? user.password.substring(0, 20)
+          : "NO PASSWORD"
+      );
     }
-  );
-}
 
-/* =====================================================
-   PASSWORD CHECK
-===================================================== */
+    if (!user) {
+      console.log(
+        "LOGIN RESULT: USER NOT FOUND"
+      );
 
-const validPassword = await verifyPassword(
-  password,
-  user.password
-);
-
-if (!validPassword) {
-  return NextResponse.json(
-    {
-      success: false,
-      message: "Invalid credentials",
-    },
-    {
-      status: 401,
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid credentials",
+        },
+        {
+          status: 401,
+        }
+      );
     }
-  );
-}
 
-console.log("User from DB:", user);
+    /* =====================================================
+       PASSWORD CHECK
+    ===================================================== */
 
-/* =====================================================
-   GET USER PORTAL
-===================================================== */
+    const validPassword = await verifyPassword(
+      password,
+      user.password
+    );
 
-const role =
-  user.role?.trim().toUpperCase();
+    console.log(
+      "Password verification result:",
+      validPassword
+    );
 
-const isAdmin = role === "ADMIN";
+    if (!validPassword) {
+      console.log(
+        "LOGIN RESULT: INVALID PASSWORD"
+      );
 
-/*
- * Existing users without a portal
- * are treated as CRM users.
- */
-const userPortal: Portal =
-  user.portal === "construction"
-    ? "construction"
-    : user.portal === "both"
-      ? "both"
-      : "crm";
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid credentials",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
 
-/*
- * Admin can access both.
- */
-const loginPortal: Portal =
-  isAdmin
-    ? "both"
-    : userPortal;
+    console.log(
+      "LOGIN RESULT: PASSWORD VERIFIED"
+    );
 
-/* =====================================================
-   CREATE ATTENDANCE SESSION
-===================================================== */
+    /* =====================================================
+       USER ROLE
+    ===================================================== */
 
-try {
-  await createAttendanceSession({
-    employeeId: user.employeeId,
-    userId: user.userId,
-    email: user.email,
-  });
-} catch (attendanceError) {
-  /*
-   * Do not block login if attendance tracking
-   * has a temporary database problem.
-   */
-  console.error(
-    "Attendance login tracking error:",
-    attendanceError
-  );
-}
+    const role =
+      typeof user.role === "string"
+        ? user.role.trim().toUpperCase()
+        : "";
 
-/* =====================================================
-   CREATE JWT
-===================================================== */
+    const isAdmin = role === "ADMIN";
 
-const token = await createToken({
-  userId: user.userId,
-  employeeId: user.employeeId,
-  email: user.email,
-  role: user.role,
-  pageAccess: user.pageAccess ?? [],
-  portal: loginPortal,
-});
+    const isConstructionEmployee =
+      role === "CONSTRUCTIONEMPLOYEE";
 
-console.log(
-  "Created token with portal:",
-  loginPortal
-);
+    /* =====================================================
+       USER PORTAL
+    ===================================================== */
 
-/* =====================================================
-   RESPONSE
-===================================================== */
+    /*
+     * Existing users without a portal
+     * are treated as CRM users.
+     */
 
-const response = NextResponse.json({
-  success: true,
+    const normalizedPortal =
+      typeof user.portal === "string"
+        ? user.portal.trim().toLowerCase()
+        : "";
 
-  user: {
-    userId: user.userId,
-    employeeId: user.employeeId,
-    name: user.name,
-    email: user.email,
-    role: user.role,
+    const userPortal: Portal =
+      normalizedPortal === "construction"
+        ? "construction"
+        : normalizedPortal === "both"
+          ? "both"
+          : "crm";
 
-    pageAccess:
-      user.pageAccess ?? [],
+    /* =====================================================
+       LOGIN PORTAL
+    ===================================================== */
 
-    portal: loginPortal,
-  },
-});
+    /*
+     * Admin can access both portals.
+     */
 
-/* =====================================================
-   AUTH COOKIE
-===================================================== */
+    const loginPortal: Portal =
+      isAdmin
+        ? "both"
+        : userPortal;
 
-response.cookies.set("token", token, {
-  httpOnly: true,
+    /* =====================================================
+       CONSTRUCTION USER VALIDATION
+    ===================================================== */
 
-  secure:
-    process.env.NODE_ENV === "production",
+    /*
+     * ConstructionEmployee accounts must belong
+     * to the Construction Portal.
+     */
 
-  sameSite: "lax",
+    if (
+      isConstructionEmployee &&
+      userPortal !== "construction" &&
+      userPortal !== "both"
+    ) {
+      console.log(
+        "LOGIN RESULT: CONSTRUCTION USER HAS INVALID PORTAL"
+      );
 
-  path: "/",
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "This construction employee is not assigned to the Construction Portal.",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
 
-  maxAge: 60 * 60 * 24 * 7,
-});
+    /* =====================================================
+       ATTENDANCE SESSION
+    ===================================================== */
 
-return response;
+    /*
+     * Attendance tracking must never block login.
+     */
 
-} catch (error) {
-console.error(
-"Login Error:",
-error
-);
+    try {
+      await createAttendanceSession({
+        employeeId: user.employeeId,
+        userId: user.userId,
+        email: user.email,
+      });
+    } catch (attendanceError) {
+      console.error(
+        "Attendance login tracking error:",
+        attendanceError
+      );
+    }
 
-return NextResponse.json(
-  {
-    success: false,
-    message:
-      "Internal Server Error",
-  },
-  {
-    status: 500,
+    /* =====================================================
+       CREATE JWT
+    ===================================================== */
+
+    const token = await createToken({
+      userId: user.userId,
+      employeeId: user.employeeId,
+      email: user.email,
+      role: user.role,
+
+      /*
+       * Include companyId when available.
+       */
+      ...(user.companyId
+        ? {
+            companyId: user.companyId,
+          }
+        : {}),
+
+      pageAccess: user.pageAccess ?? [],
+      portal: loginPortal,
+    });
+
+    console.log(
+      "JWT created successfully."
+    );
+
+    console.log(
+      "Login portal:",
+      loginPortal
+    );
+
+    console.log(
+      "Login role:",
+      user.role
+    );
+
+    /* =====================================================
+       RESPONSE
+    ===================================================== */
+
+    const response = NextResponse.json(
+      {
+        success: true,
+
+        user: {
+          userId: user.userId,
+
+          employeeId:
+            user.employeeId,
+
+          companyId:
+            user.companyId,
+
+          name:
+            user.name,
+
+          email:
+            user.email,
+
+          role:
+            user.role,
+
+          pageAccess:
+            user.pageAccess ?? [],
+
+          portal:
+            loginPortal,
+        },
+      },
+      {
+        status: 200,
+      }
+    );
+
+    /* =====================================================
+       AUTH COOKIE
+    ===================================================== */
+
+    response.cookies.set(
+      "token",
+      token,
+      {
+        httpOnly: true,
+
+        secure:
+          process.env.NODE_ENV ===
+          "production",
+
+        sameSite: "lax",
+
+        path: "/",
+
+        maxAge:
+          60 *
+          60 *
+          24 *
+          7,
+      }
+    );
+
+    console.log(
+      "LOGIN RESULT: SUCCESS"
+    );
+
+    return response;
+  } catch (error) {
+    console.error(
+      "Login Error:",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Internal Server Error",
+      },
+      {
+        status: 500,
+      }
+    );
   }
-);
-
-
-}
 }

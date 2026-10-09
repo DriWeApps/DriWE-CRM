@@ -13,6 +13,11 @@ import {
     Phone,
     Wallet,
     BriefcaseBusiness,
+    Mail,
+    Lock,
+    Eye,
+    EyeOff,
+    ShieldCheck,
 } from "lucide-react";
 
 type Project = {
@@ -42,20 +47,35 @@ export default function NewProjectWorkerPage() {
 
     const projectId = params.projectId as string;
 
-    const [project, setProject] = useState<Project | null>(null);
-    const [sites, setSites] = useState<Site[]>([]);
+    const [project, setProject] =
+        useState<Project | null>(null);
 
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
+    const [sites, setSites] =
+        useState<Site[]>([]);
 
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
+    const [loading, setLoading] =
+        useState(true);
+
+    const [saving, setSaving] =
+        useState(false);
+
+    const [error, setError] =
+        useState("");
+
+    const [success, setSuccess] =
+        useState("");
+
+    const [showPassword, setShowPassword] =
+        useState(false);
 
     const [form, setForm] = useState({
         siteId: "",
         name: "",
         phone: "",
-        workerType: "Employee" as WorkerType,
+        email: "",
+        password: "",
+        workerType:
+            "Employee" as WorkerType,
         salary: "",
     });
 
@@ -70,26 +90,28 @@ export default function NewProjectWorkerPage() {
             setLoading(true);
             setError("");
 
-            const [projectResponse, sitesResponse] =
-                await Promise.all([
-                    fetch(
-                        `/api/construction/projects/${projectId}`,
-                        {
-                            credentials: "include",
-                            cache: "no-store",
-                        }
-                    ),
+            const [
+                projectResponse,
+                sitesResponse,
+            ] = await Promise.all([
+                fetch(
+                    `/api/construction/projects/${projectId}`,
+                    {
+                        credentials: "include",
+                        cache: "no-store",
+                    }
+                ),
 
-                    fetch(
-                        `/api/construction/sites?projectId=${encodeURIComponent(
-                            projectId
-                        )}`,
-                        {
-                            credentials: "include",
-                            cache: "no-store",
-                        }
-                    ),
-                ]);
+                fetch(
+                    `/api/construction/sites?projectId=${encodeURIComponent(
+                        projectId
+                    )}`,
+                    {
+                        credentials: "include",
+                        cache: "no-store",
+                    }
+                ),
+            ]);
 
             const projectData =
                 await projectResponse.json();
@@ -99,34 +121,44 @@ export default function NewProjectWorkerPage() {
 
             if (!projectResponse.ok) {
                 throw new Error(
-                    projectData?.error ||
+                    projectData?.message ||
+                        projectData?.error ||
                         "Failed to load project."
                 );
             }
 
             if (!sitesResponse.ok) {
                 throw new Error(
-                    sitesData?.error ||
+                    sitesData?.message ||
+                        sitesData?.error ||
                         "Failed to load project sites."
                 );
             }
 
-            setProject(projectData.project || null);
+            setProject(
+                projectData.project || null
+            );
 
-            const projectSites = sitesData.sites || [];
+            const projectSites =
+                sitesData.sites || [];
 
             setSites(projectSites);
 
-            // Automatically select the first active site
-            // if there is only one active site.
-            const activeSites = projectSites.filter(
-                (site: Site) => site.active
-            );
+            /*
+             * Automatically select the first active site
+             * when there is only one active site.
+             */
+            const activeSites =
+                projectSites.filter(
+                    (site: Site) =>
+                        site.active
+                );
 
             if (activeSites.length === 1) {
                 setForm((current) => ({
                     ...current,
-                    siteId: activeSites[0].siteId,
+                    siteId:
+                        activeSites[0].siteId,
                 }));
             }
         } catch (err) {
@@ -152,18 +184,31 @@ export default function NewProjectWorkerPage() {
         }));
     }
 
-    function handlePhoneChange(value: string) {
+    function handlePhoneChange(
+        value: string
+    ) {
         const digitsOnly = value
             .replace(/\D/g, "")
             .slice(0, 10);
 
-        updateField("phone", digitsOnly);
+        updateField(
+            "phone",
+            digitsOnly
+        );
     }
 
-    function handleSalaryChange(value: string) {
-        const cleaned = value.replace(/[^\d.]/g, "");
+    function handleSalaryChange(
+        value: string
+    ) {
+        const cleaned = value.replace(
+            /[^\d.]/g,
+            ""
+        );
 
-        updateField("salary", cleaned);
+        updateField(
+            "salary",
+            cleaned
+        );
     }
 
     function validateForm() {
@@ -179,13 +224,40 @@ export default function NewProjectWorkerPage() {
             return "Please enter a valid 10-digit mobile number.";
         }
 
+        if (!form.email.trim()) {
+            return "Worker email is required.";
+        }
+
+        const email =
+            form.email.trim();
+
+        const emailRegex =
+            /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!emailRegex.test(email)) {
+            return "Please enter a valid email address.";
+        }
+
+        if (!form.password) {
+            return "Worker login password is required.";
+        }
+
+        if (form.password.length < 6) {
+            return "Password must be at least 6 characters.";
+        }
+
         if (!form.workerType) {
             return "Please select worker type.";
         }
 
-        const salary = Number(form.salary);
+        const salary =
+            Number(form.salary);
 
-        if (!form.salary || Number.isNaN(salary) || salary <= 0) {
+        if (
+            !form.salary ||
+            Number.isNaN(salary) ||
+            salary <= 0
+        ) {
             return "Please enter a valid salary or wage.";
         }
 
@@ -200,7 +272,8 @@ export default function NewProjectWorkerPage() {
         setError("");
         setSuccess("");
 
-        const validationError = validateForm();
+        const validationError =
+            validateForm();
 
         if (validationError) {
             setError(validationError);
@@ -210,34 +283,65 @@ export default function NewProjectWorkerPage() {
         try {
             setSaving(true);
 
-            const response = await fetch(
-                "/api/construction/workers",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    credentials: "include",
-                    body: JSON.stringify({
-                        siteId: form.siteId,
-                        name: form.name.trim(),
-                        phone: form.phone,
-                        workerType: form.workerType,
-                        salary: Number(form.salary),
-                    }),
-                }
-            );
+            const response =
+                await fetch(
+                    "/api/construction/workers",
+                    {
+                        method: "POST",
 
-            const data = await response.json();
+                        headers: {
+                            "Content-Type":
+                                "application/json",
+                        },
+
+                        credentials:
+                            "include",
+
+                        body: JSON.stringify({
+                            projectId,
+
+                            siteId:
+                                form.siteId,
+
+                            name:
+                                form.name.trim(),
+
+                            phone:
+                                form.phone,
+
+                            email:
+                                form.email
+                                    .trim()
+                                    .toLowerCase(),
+
+                            password:
+                                form.password,
+
+                            workerType:
+                                form.workerType,
+
+                            salary:
+                                Number(
+                                    form.salary
+                                ),
+                        }),
+                    }
+                );
+
+            const data =
+                await response.json();
 
             if (!response.ok) {
                 throw new Error(
-                    data?.error ||
+                    data?.message ||
+                        data?.error ||
                         "Failed to create worker."
                 );
             }
 
-            setSuccess("Worker created successfully.");
+            setSuccess(
+                "Worker and login account created successfully."
+            );
 
             const workerId =
                 data?.worker?.workerId;
@@ -252,7 +356,7 @@ export default function NewProjectWorkerPage() {
                         `/DriWE-Construction/projects/${projectId}/sites/workers`
                     );
                 }
-            }, 500);
+            }, 700);
         } catch (err) {
             console.error(err);
 
@@ -282,6 +386,7 @@ export default function NewProjectWorkerPage() {
     return (
         <div className="min-h-screen bg-zinc-950 text-white">
             <div className="mx-auto max-w-4xl px-6 py-8">
+
                 {/* Breadcrumb */}
                 <div className="mb-6 flex flex-wrap items-center gap-2 text-sm text-zinc-500">
                     <Link
@@ -297,7 +402,8 @@ export default function NewProjectWorkerPage() {
                         href={`/DriWE-Construction/projects/${projectId}`}
                         className="transition hover:text-yellow-400"
                     >
-                        {project?.projectName || "Project"}
+                        {project?.projectName ||
+                            "Project"}
                     </Link>
 
                     <span>/</span>
@@ -346,8 +452,10 @@ export default function NewProjectWorkerPage() {
                             </h1>
 
                             <p className="mt-1 text-zinc-400">
-                                Add a worker to this project and assign
-                                them to a site.
+                                Add a worker to this
+                                project and create
+                                their Construction
+                                Portal login.
                             </p>
                         </div>
                     </div>
@@ -402,9 +510,10 @@ export default function NewProjectWorkerPage() {
                                 </h3>
 
                                 <p className="mt-1 text-sm text-zinc-400">
-                                    You need to create at least one site
-                                    before adding a worker to this
-                                    project.
+                                    You need to create at
+                                    least one site before
+                                    adding a worker to
+                                    this project.
                                 </p>
 
                                 <Link
@@ -456,13 +565,16 @@ export default function NewProjectWorkerPage() {
                                     </h2>
 
                                     <p className="text-sm text-zinc-500">
-                                        Enter the worker's basic information.
+                                        Enter the worker's
+                                        information and
+                                        login details.
                                     </p>
                                 </div>
                             </div>
                         </div>
 
                         <div className="space-y-6 p-6">
+
                             {/* Site */}
                             <div>
                                 <label
@@ -480,11 +592,14 @@ export default function NewProjectWorkerPage() {
 
                                     <select
                                         id="siteId"
-                                        value={form.siteId}
+                                        value={
+                                            form.siteId
+                                        }
                                         onChange={(event) =>
                                             updateField(
                                                 "siteId",
-                                                event.target.value
+                                                event.target
+                                                    .value
                                             )
                                         }
                                         className="w-full appearance-none rounded-lg border border-zinc-700 bg-zinc-950 py-3 pl-10 pr-4 text-sm text-white outline-none transition focus:border-yellow-500"
@@ -499,26 +614,37 @@ export default function NewProjectWorkerPage() {
                                                 (site) =>
                                                     site.active
                                             )
-                                            .map((site) => (
-                                                <option
-                                                    key={site.siteId}
-                                                    value={
-                                                        site.siteId
-                                                    }
-                                                >
-                                                    {site.siteName}
-                                                    {site.location
-                                                        ? ` — ${site.location}`
-                                                        : ""}
-                                                </option>
-                                            ))}
+                                            .map(
+                                                (
+                                                    site
+                                                ) => (
+                                                    <option
+                                                        key={
+                                                            site.siteId
+                                                        }
+                                                        value={
+                                                            site.siteId
+                                                        }
+                                                    >
+                                                        {
+                                                            site.siteName
+                                                        }
+
+                                                        {site.location
+                                                            ? ` — ${site.location}`
+                                                            : ""}
+                                                    </option>
+                                                )
+                                            )}
                                     </select>
                                 </div>
 
                                 <p className="mt-2 text-xs text-zinc-500">
-                                    The worker will automatically be
-                                    linked to the selected site and
-                                    this project.
+                                    The worker will
+                                    automatically be
+                                    linked to this
+                                    project and
+                                    selected site.
                                 </p>
                             </div>
 
@@ -540,11 +666,14 @@ export default function NewProjectWorkerPage() {
                                     <input
                                         id="name"
                                         type="text"
-                                        value={form.name}
+                                        value={
+                                            form.name
+                                        }
                                         onChange={(event) =>
                                             updateField(
                                                 "name",
-                                                event.target.value
+                                                event.target
+                                                    .value
                                             )
                                         }
                                         placeholder="Enter worker name"
@@ -573,23 +702,175 @@ export default function NewProjectWorkerPage() {
                                         id="phone"
                                         type="tel"
                                         inputMode="numeric"
-                                        value={form.phone}
+                                        value={
+                                            form.phone
+                                        }
                                         onChange={(event) =>
                                             handlePhoneChange(
-                                                event.target.value
+                                                event.target
+                                                    .value
                                             )
                                         }
                                         placeholder="10-digit mobile number"
-                                        maxLength={10}
+                                        maxLength={
+                                            10
+                                        }
                                         className="w-full rounded-lg border border-zinc-700 bg-zinc-950 py-3 pl-10 pr-4 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-yellow-500"
                                         required
                                     />
                                 </div>
 
                                 <p className="mt-2 text-xs text-zinc-500">
-                                    Enter a valid 10-digit Indian
+                                    Enter a valid
+                                    10-digit Indian
                                     mobile number.
                                 </p>
+                            </div>
+
+                            {/* Email */}
+                            <div>
+                                <label
+                                    htmlFor="email"
+                                    className="mb-2 block text-sm font-medium text-zinc-200"
+                                >
+                                    Email Address{" "}
+                                    <span className="text-red-400">
+                                        *
+                                    </span>
+                                </label>
+
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+
+                                    <input
+                                        id="email"
+                                        type="email"
+                                        value={
+                                            form.email
+                                        }
+                                        onChange={(event) =>
+                                            updateField(
+                                                "email",
+                                                event.target
+                                                    .value
+                                            )
+                                        }
+                                        placeholder="worker@example.com"
+                                        autoComplete="email"
+                                        className="w-full rounded-lg border border-zinc-700 bg-zinc-950 py-3 pl-10 pr-4 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-yellow-500"
+                                        required
+                                    />
+                                </div>
+
+                                <p className="mt-2 text-xs text-zinc-500">
+                                    This email will be
+                                    used by the worker
+                                    to log in to the
+                                    Construction Portal.
+                                </p>
+                            </div>
+
+                            {/* Password */}
+                            <div>
+                                <label
+                                    htmlFor="password"
+                                    className="mb-2 block text-sm font-medium text-zinc-200"
+                                >
+                                    Login Password{" "}
+                                    <span className="text-red-400">
+                                        *
+                                    </span>
+                                </label>
+
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+
+                                    <input
+                                        id="password"
+                                        type={
+                                            showPassword
+                                                ? "text"
+                                                : "password"
+                                        }
+                                        value={
+                                            form.password
+                                        }
+                                        onChange={(event) =>
+                                            updateField(
+                                                "password",
+                                                event.target
+                                                    .value
+                                            )
+                                        }
+                                        placeholder="Create login password"
+                                        autoComplete="new-password"
+                                        className="w-full rounded-lg border border-zinc-700 bg-zinc-950 py-3 pl-10 pr-12 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-yellow-500"
+                                        required
+                                        minLength={
+                                            6
+                                        }
+                                    />
+
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setShowPassword(
+                                                (current) =>
+                                                    !current
+                                            )
+                                        }
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 transition hover:text-zinc-300"
+                                        aria-label={
+                                            showPassword
+                                                ? "Hide password"
+                                                : "Show password"
+                                        }
+                                    >
+                                        {showPassword ? (
+                                            <EyeOff className="h-4 w-4" />
+                                        ) : (
+                                            <Eye className="h-4 w-4" />
+                                        )}
+                                    </button>
+                                </div>
+
+                                <p className="mt-2 text-xs text-zinc-500">
+                                    Minimum 6 characters.
+                                    This password will
+                                    be used for the
+                                    worker's Construction
+                                    Portal login.
+                                </p>
+                            </div>
+
+                            {/* Login Account Notice */}
+                            <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-4">
+                                <div className="flex items-start gap-3">
+                                    <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-yellow-400" />
+
+                                    <div>
+                                        <p className="font-medium text-yellow-300">
+                                            Construction Portal
+                                            Login
+                                        </p>
+
+                                        <p className="mt-1 text-sm leading-6 text-zinc-400">
+                                            A login account
+                                            will be created
+                                            for this worker
+                                            using the email
+                                            and password
+                                            entered above.
+                                            The worker can
+                                            use these
+                                            credentials to
+                                            access their
+                                            assigned tasks
+                                            and submit their
+                                            work.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Worker Type */}
@@ -606,7 +887,9 @@ export default function NewProjectWorkerPage() {
 
                                 <select
                                     id="workerType"
-                                    value={form.workerType}
+                                    value={
+                                        form.workerType
+                                    }
                                     onChange={(event) =>
                                         updateField(
                                             "workerType",
@@ -662,7 +945,9 @@ export default function NewProjectWorkerPage() {
                                         type="number"
                                         min="1"
                                         step="0.01"
-                                        value={form.salary}
+                                        value={
+                                            form.salary
+                                        }
                                         onChange={(event) =>
                                             handleSalaryChange(
                                                 event.target
@@ -710,8 +995,9 @@ export default function NewProjectWorkerPage() {
 
                                             <div>
                                                 <p className="text-xs uppercase tracking-wide text-yellow-500">
-                                                    Worker will be
-                                                    assigned to
+                                                    Worker will
+                                                    be assigned
+                                                    to
                                                 </p>
 
                                                 <p className="mt-1 font-semibold text-white">

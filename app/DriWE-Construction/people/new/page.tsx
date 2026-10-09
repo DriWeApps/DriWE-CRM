@@ -15,6 +15,10 @@ import {
     Loader2,
     CheckCircle2,
     AlertCircle,
+    Mail,
+    LockKeyhole,
+    Eye,
+    EyeOff,
 } from "lucide-react";
 
 type Project = {
@@ -51,11 +55,15 @@ export default function NewWorkerPage() {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
 
+    const [showPassword, setShowPassword] = useState(false);
+
     const [formData, setFormData] = useState({
         projectId: "",
         siteId: "",
         name: "",
         phone: "",
+        email: "",
+        password: "",
         workerType: "Employee" as WorkerType,
         salary: "",
         active: true,
@@ -187,11 +195,13 @@ export default function NewWorkerPage() {
 
         const name = formData.name.trim();
         const phone = formData.phone.replace(/\D/g, "");
+        const email = formData.email.trim().toLowerCase();
+        const password = formData.password;
         const salary = Number(formData.salary);
 
-        // -------------------------
+        // --------------------------------------------------------
         // Validation
-        // -------------------------
+        // --------------------------------------------------------
 
         if (!formData.projectId) {
             setError("Please select a project.");
@@ -218,6 +228,42 @@ export default function NewWorkerPage() {
             return;
         }
 
+        // --------------------------------------------------------
+        // Email validation
+        // --------------------------------------------------------
+
+        if (!email) {
+            setError("Worker login email is required.");
+            return;
+        }
+
+        if (
+            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+        ) {
+            setError("Please enter a valid email address.");
+            return;
+        }
+
+        // --------------------------------------------------------
+        // Password validation
+        // --------------------------------------------------------
+
+        if (!password) {
+            setError("Worker login password is required.");
+            return;
+        }
+
+        if (password.length < 6) {
+            setError(
+                "Worker login password must be at least 6 characters."
+            );
+            return;
+        }
+
+        // --------------------------------------------------------
+        // Salary validation
+        // --------------------------------------------------------
+
         if (!formData.salary) {
             setError("Salary / wage is required.");
             return;
@@ -240,6 +286,10 @@ export default function NewWorkerPage() {
                 return;
             }
 
+            // ----------------------------------------------------
+            // Create Worker + Login Account
+            // ----------------------------------------------------
+
             const res = await fetch("/api/construction/workers", {
                 method: "POST",
                 headers: {
@@ -247,11 +297,19 @@ export default function NewWorkerPage() {
                 },
                 credentials: "include",
                 body: JSON.stringify({
+                    projectId: formData.projectId,
                     siteId: selectedSite.siteId,
+
                     name,
                     phone,
+
+                    email,
+                    password,
+
                     workerType: formData.workerType,
                     salary,
+
+                    active: formData.active,
                 }),
             });
 
@@ -263,9 +321,14 @@ export default function NewWorkerPage() {
                 );
             }
 
-            setSuccess("Worker created successfully.");
+            setSuccess(
+                "Worker and login account created successfully."
+            );
 
-            // Redirect to worker detail after successful creation.
+            // ----------------------------------------------------
+            // Redirect after successful creation
+            // ----------------------------------------------------
+
             setTimeout(() => {
                 if (data?.worker?.workerId) {
                     router.push(
@@ -276,7 +339,7 @@ export default function NewWorkerPage() {
                         `/DriWE-Construction/projects/${formData.projectId}/workers`
                     );
                 }
-            }, 500);
+            }, 700);
         } catch (err) {
             console.error(err);
 
@@ -301,9 +364,11 @@ export default function NewWorkerPage() {
     return (
         <div className="min-h-screen bg-zinc-950 text-white">
             <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+
                 {/* Header */}
                 <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-start gap-3">
+
                         <Link
                             href="/DriWE-Construction/people"
                             className="mt-1 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-400 transition hover:border-zinc-700 hover:bg-zinc-800 hover:text-white"
@@ -325,19 +390,23 @@ export default function NewWorkerPage() {
                             </h1>
 
                             <p className="mt-1 text-sm text-zinc-400">
-                                Add a worker and assign them to a project site.
+                                Add a worker and create their Construction Portal login.
                             </p>
                         </div>
                     </div>
                 </div>
 
                 {/* Alerts */}
+
                 {error && (
                     <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-red-300">
                         <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
 
                         <div>
-                            <p className="font-medium">Unable to create worker</p>
+                            <p className="font-medium">
+                                Unable to create worker
+                            </p>
+
                             <p className="mt-1 text-sm text-red-300/80">
                                 {error}
                             </p>
@@ -349,19 +418,24 @@ export default function NewWorkerPage() {
                     <div className="mb-6 flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-emerald-300">
                         <CheckCircle2 className="h-5 w-5" />
 
-                        <p className="font-medium">{success}</p>
+                        <p className="font-medium">
+                            {success}
+                        </p>
                     </div>
                 )}
 
                 <form onSubmit={handleSubmit}>
                     <div className="space-y-6">
+
                         {/* ------------------------------------------------ */}
                         {/* Project & Site */}
                         {/* ------------------------------------------------ */}
 
                         <section className="rounded-2xl border border-zinc-800 bg-zinc-900/70 shadow-xl">
+
                             <div className="border-b border-zinc-800 px-5 py-5 sm:px-6">
                                 <div className="flex items-center gap-3">
+
                                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-400/10">
                                         <Building2 className="h-5 w-5 text-yellow-400" />
                                     </div>
@@ -375,11 +449,14 @@ export default function NewWorkerPage() {
                                             Select where this worker will work.
                                         </p>
                                     </div>
+
                                 </div>
                             </div>
 
                             <div className="grid gap-5 p-5 sm:grid-cols-2 sm:p-6">
+
                                 {/* Project */}
+
                                 <div>
                                     <label className="mb-2 block text-sm font-medium text-zinc-300">
                                         Project
@@ -395,7 +472,10 @@ export default function NewWorkerPage() {
                                                 e.target.value
                                             )
                                         }
-                                        disabled={loadingProjects || saving}
+                                        disabled={
+                                            loadingProjects ||
+                                            saving
+                                        }
                                         className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-white outline-none transition focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 disabled:cursor-not-allowed disabled:opacity-60"
                                     >
                                         <option value="">
@@ -423,6 +503,7 @@ export default function NewWorkerPage() {
                                 </div>
 
                                 {/* Site */}
+
                                 <div>
                                     <label className="mb-2 block text-sm font-medium text-zinc-300">
                                         Site
@@ -436,7 +517,8 @@ export default function NewWorkerPage() {
                                         onChange={(e) =>
                                             setFormData((prev) => ({
                                                 ...prev,
-                                                siteId: e.target.value,
+                                                siteId:
+                                                    e.target.value,
                                             }))
                                         }
                                         disabled={
@@ -457,7 +539,10 @@ export default function NewWorkerPage() {
                                         </option>
 
                                         {sites
-                                            .filter((site) => site.active)
+                                            .filter(
+                                                (site) =>
+                                                    site.active
+                                            )
                                             .map((site) => (
                                                 <option
                                                     key={site.siteId}
@@ -483,8 +568,10 @@ export default function NewWorkerPage() {
                         {/* ------------------------------------------------ */}
 
                         <section className="rounded-2xl border border-zinc-800 bg-zinc-900/70 shadow-xl">
+
                             <div className="border-b border-zinc-800 px-5 py-5 sm:px-6">
                                 <div className="flex items-center gap-3">
+
                                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-400/10">
                                         <User className="h-5 w-5 text-yellow-400" />
                                     </div>
@@ -498,11 +585,14 @@ export default function NewWorkerPage() {
                                             Enter the worker's basic details.
                                         </p>
                                     </div>
+
                                 </div>
                             </div>
 
                             <div className="grid gap-5 p-5 sm:grid-cols-2 sm:p-6">
+
                                 {/* Name */}
+
                                 <div className="sm:col-span-2">
                                     <label className="mb-2 block text-sm font-medium text-zinc-300">
                                         Worker Name
@@ -518,10 +608,12 @@ export default function NewWorkerPage() {
                                             type="text"
                                             value={formData.name}
                                             onChange={(e) =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    name: e.target.value,
-                                                }))
+                                                setFormData(
+                                                    (prev) => ({
+                                                        ...prev,
+                                                        name: e.target.value,
+                                                    })
+                                                )
                                             }
                                             placeholder="Enter worker name"
                                             disabled={saving}
@@ -531,6 +623,7 @@ export default function NewWorkerPage() {
                                 </div>
 
                                 {/* Phone */}
+
                                 <div>
                                     <label className="mb-2 block text-sm font-medium text-zinc-300">
                                         Mobile Number
@@ -548,12 +641,20 @@ export default function NewWorkerPage() {
                                             maxLength={10}
                                             value={formData.phone}
                                             onChange={(e) =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    phone: e.target.value
-                                                        .replace(/\D/g, "")
-                                                        .slice(0, 10),
-                                                }))
+                                                setFormData(
+                                                    (prev) => ({
+                                                        ...prev,
+                                                        phone: e.target.value
+                                                            .replace(
+                                                                /\D/g,
+                                                                ""
+                                                            )
+                                                            .slice(
+                                                                0,
+                                                                10
+                                                            ),
+                                                    })
+                                                )
                                             }
                                             placeholder="10-digit mobile number"
                                             disabled={saving}
@@ -563,6 +664,7 @@ export default function NewWorkerPage() {
                                 </div>
 
                                 {/* Worker Type */}
+
                                 <div>
                                     <label className="mb-2 block text-sm font-medium text-zinc-300">
                                         Worker Type
@@ -575,10 +677,13 @@ export default function NewWorkerPage() {
                                         <BriefcaseBusiness className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
 
                                         <select
-                                            value={formData.workerType}
+                                            value={
+                                                formData.workerType
+                                            }
                                             onChange={(e) =>
                                                 handleWorkerTypeChange(
-                                                    e.target.value as WorkerType
+                                                    e.target
+                                                        .value as WorkerType
                                                 )
                                             }
                                             disabled={saving}
@@ -603,12 +708,121 @@ export default function NewWorkerPage() {
                                     </div>
                                 </div>
 
+                                {/* Login Email */}
+
+                                <div className="sm:col-span-2">
+                                    <label className="mb-2 block text-sm font-medium text-zinc-300">
+                                        Login Email
+                                        <span className="ml-1 text-red-400">
+                                            *
+                                        </span>
+                                    </label>
+
+                                    <div className="relative">
+                                        <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+
+                                        <input
+                                            type="email"
+                                            autoComplete="off"
+                                            value={formData.email}
+                                            onChange={(e) =>
+                                                setFormData(
+                                                    (prev) => ({
+                                                        ...prev,
+                                                        email: e.target.value,
+                                                    })
+                                                )
+                                            }
+                                            placeholder="worker@example.com"
+                                            disabled={saving}
+                                            className="w-full rounded-xl border border-zinc-700 bg-zinc-950 py-3 pl-10 pr-4 text-sm text-white placeholder:text-zinc-600 outline-none transition focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 disabled:opacity-60"
+                                        />
+                                    </div>
+
+                                    <p className="mt-2 text-xs text-zinc-500">
+                                        This email will be used by the worker
+                                        to log in to the Construction Portal.
+                                    </p>
+                                </div>
+
+                                {/* Login Password */}
+
+                                <div className="sm:col-span-2">
+                                    <label className="mb-2 block text-sm font-medium text-zinc-300">
+                                        Login Password
+                                        <span className="ml-1 text-red-400">
+                                            *
+                                        </span>
+                                    </label>
+
+                                    <div className="relative">
+                                        <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+
+                                        <input
+                                            type={
+                                                showPassword
+                                                    ? "text"
+                                                    : "password"
+                                            }
+                                            autoComplete="new-password"
+                                            value={
+                                                formData.password
+                                            }
+                                            onChange={(e) =>
+                                                setFormData(
+                                                    (prev) => ({
+                                                        ...prev,
+                                                        password:
+                                                            e.target
+                                                                .value,
+                                                    })
+                                                )
+                                            }
+                                            placeholder="Enter login password"
+                                            disabled={saving}
+                                            className="w-full rounded-xl border border-zinc-700 bg-zinc-950 py-3 pl-10 pr-12 text-sm text-white placeholder:text-zinc-600 outline-none transition focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 disabled:opacity-60"
+                                        />
+
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setShowPassword(
+                                                    (prev) =>
+                                                        !prev
+                                                )
+                                            }
+                                            disabled={saving}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                                            aria-label={
+                                                showPassword
+                                                    ? "Hide password"
+                                                    : "Show password"
+                                            }
+                                        >
+                                            {showPassword ? (
+                                                <EyeOff className="h-4 w-4" />
+                                            ) : (
+                                                <Eye className="h-4 w-4" />
+                                            )}
+                                        </button>
+                                    </div>
+
+                                    <p className="mt-2 text-xs text-zinc-500">
+                                        Minimum 6 characters. The password
+                                        will be securely hashed before being
+                                        stored.
+                                    </p>
+                                </div>
+
                                 {/* Salary */}
+
                                 <div>
                                     <label className="mb-2 block text-sm font-medium text-zinc-300">
-                                        {formData.workerType === "Daily Wage"
+                                        {formData.workerType ===
+                                        "Daily Wage"
                                             ? "Daily Wage"
                                             : "Salary / Wage"}
+
                                         <span className="ml-1 text-red-400">
                                             *
                                         </span>
@@ -621,12 +835,17 @@ export default function NewWorkerPage() {
                                             type="number"
                                             min="0"
                                             step="0.01"
-                                            value={formData.salary}
+                                            value={
+                                                formData.salary
+                                            }
                                             onChange={(e) =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    salary: e.target.value,
-                                                }))
+                                                setFormData(
+                                                    (prev) => ({
+                                                        ...prev,
+                                                        salary: e.target
+                                                            .value,
+                                                    })
+                                                )
                                             }
                                             placeholder={
                                                 formData.workerType ===
@@ -645,16 +864,23 @@ export default function NewWorkerPage() {
                                 </div>
 
                                 {/* Active */}
+
                                 <div className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-950/60 p-4">
                                     <input
                                         id="active"
                                         type="checkbox"
-                                        checked={formData.active}
+                                        checked={
+                                            formData.active
+                                        }
                                         onChange={(e) =>
-                                            setFormData((prev) => ({
-                                                ...prev,
-                                                active: e.target.checked,
-                                            }))
+                                            setFormData(
+                                                (prev) => ({
+                                                    ...prev,
+                                                    active:
+                                                        e.target
+                                                            .checked,
+                                                })
+                                            )
                                         }
                                         disabled={saving}
                                         className="h-4 w-4 rounded border-zinc-600 bg-zinc-900 text-yellow-400 accent-yellow-400"
@@ -669,8 +895,8 @@ export default function NewWorkerPage() {
                                         </span>
 
                                         <span className="block text-xs text-zinc-500">
-                                            Worker is currently working on the
-                                            project.
+                                            Worker is currently working on
+                                            the project.
                                         </span>
                                     </label>
                                 </div>
@@ -683,6 +909,7 @@ export default function NewWorkerPage() {
 
                         {selectedProject && selectedSite && (
                             <section className="rounded-2xl border border-yellow-400/20 bg-yellow-400/5 p-5">
+
                                 <div className="mb-4 flex items-center gap-2">
                                     <CheckCircle2 className="h-5 w-5 text-yellow-400" />
 
@@ -692,6 +919,7 @@ export default function NewWorkerPage() {
                                 </div>
 
                                 <div className="grid gap-4 sm:grid-cols-2">
+
                                     <div>
                                         <p className="text-xs uppercase tracking-wider text-zinc-500">
                                             Project
@@ -711,6 +939,7 @@ export default function NewWorkerPage() {
                                             {selectedSite.siteName}
                                         </p>
                                     </div>
+
                                 </div>
                             </section>
                         )}
@@ -720,6 +949,7 @@ export default function NewWorkerPage() {
                         {/* ------------------------------------------------ */}
 
                         <div className="flex flex-col-reverse gap-3 border-t border-zinc-800 pt-6 sm:flex-row sm:justify-end">
+
                             <Link
                                 href="/DriWE-Construction/people"
                                 className="inline-flex items-center justify-center rounded-xl border border-zinc-700 bg-zinc-900 px-6 py-3 text-sm font-medium text-zinc-300 transition hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
@@ -744,6 +974,7 @@ export default function NewWorkerPage() {
                                     </>
                                 )}
                             </button>
+
                         </div>
                     </div>
                 </form>

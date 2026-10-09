@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
-import { getUserFromRequest } from "@/lib/auth";
+import {
+    getUserFromRequest,
+} from "@/lib/auth";
 
 import {
     getWorkers,
@@ -16,6 +18,10 @@ import {
 import {
     getSiteById,
 } from "@/services/construction-site.service";
+
+import {
+    getUserByEmail,
+} from "@/services/auth.service";
 
 import type {
     WorkerType,
@@ -44,20 +50,6 @@ function isValidWorkerType(
    GET WORKERS
 ========================================================= */
 
-/**
- * GET /api/construction/workers
- *
- * Optional query parameters:
- *
- * ?projectId=xxx
- * ?siteId=xxx
- *
- * Examples:
- *
- * /api/construction/workers
- * /api/construction/workers?projectId=xxx
- * /api/construction/workers?siteId=xxx
- */
 export async function GET(req: Request) {
     try {
         const user =
@@ -69,7 +61,9 @@ export async function GET(req: Request) {
                     success: false,
                     message: "Unauthorized",
                 },
-                { status: 401 }
+                {
+                    status: 401,
+                }
             );
         }
 
@@ -91,45 +85,34 @@ export async function GET(req: Request) {
 
         let workers;
 
-        /* =====================================================
-           FILTER BY SITE
-        ===================================================== */
-
         if (siteId) {
             workers =
                 await getWorkersBySite(
                     siteId,
                     companyId
                 );
-        }
-
-        /* =====================================================
-           FILTER BY PROJECT
-        ===================================================== */
-
-        else if (projectId) {
+        } else if (projectId) {
             workers =
                 await getWorkersByProject(
                     projectId,
                     companyId
                 );
-        }
-
-        /* =====================================================
-           ALL COMPANY WORKERS
-        ===================================================== */
-
-        else {
+        } else {
             workers =
                 await getWorkers(
                     companyId
                 );
         }
 
-        return NextResponse.json({
-            success: true,
-            workers,
-        });
+        return NextResponse.json(
+            {
+                success: true,
+                workers,
+            },
+            {
+                status: 200,
+            }
+        );
     } catch (error) {
         console.error(
             "GET construction workers error:",
@@ -142,7 +125,9 @@ export async function GET(req: Request) {
                 message:
                     "Failed to fetch workers",
             },
-            { status: 500 }
+            {
+                status: 500,
+            }
         );
     }
 }
@@ -151,25 +136,12 @@ export async function GET(req: Request) {
    CREATE WORKER
 ========================================================= */
 
-/**
- * POST /api/construction/workers
- *
- * Creates a worker under a specific site.
- *
- * The site determines the project automatically.
- *
- * Expected body:
- *
- * {
- *   siteId: "...",
- *   name: "...",
- *   phone: "...",
- *   workerType: "Employee",
- *   salary: 30000
- * }
- */
 export async function POST(req: Request) {
     try {
+        /* =====================================================
+           AUTHENTICATION
+        ===================================================== */
+
         const user =
             await getUserFromRequest(req);
 
@@ -179,15 +151,47 @@ export async function POST(req: Request) {
                     success: false,
                     message: "Unauthorized",
                 },
-                { status: 401 }
+                {
+                    status: 401,
+                }
             );
         }
+
+        /* =====================================================
+           PREVENT CONSTRUCTION EMPLOYEES FROM
+           CREATING OTHER WORKERS
+        ===================================================== */
+
+        const currentRole =
+            user.role
+                ?.trim()
+                .toLowerCase();
+
+        if (
+            currentRole ===
+            "constructionemployee"
+        ) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message:
+                        "Construction employees cannot create workers.",
+                },
+                {
+                    status: 403,
+                }
+            );
+        }
+
+        /* =====================================================
+           READ REQUEST BODY
+        ===================================================== */
 
         const body =
             await req.json();
 
         /* =====================================================
-           BASIC FIELDS
+           BASIC WORKER FIELDS
         ===================================================== */
 
         const name =
@@ -199,6 +203,7 @@ export async function POST(req: Request) {
             typeof body.phone === "string"
                 ? body.phone
                     .replace(/\D/g, "")
+                    .slice(0, 10)
                 : "";
 
         const siteId =
@@ -208,14 +213,30 @@ export async function POST(req: Request) {
 
         const workerType =
             typeof body.workerType === "string"
-                ? body.workerType
+                ? body.workerType.trim()
                 : "";
 
         const salary =
             Number(body.salary);
 
         /* =====================================================
-           VALIDATION
+           LOGIN FIELDS
+        ===================================================== */
+
+        const email =
+            typeof body.email === "string"
+                ? body.email
+                    .trim()
+                    .toLowerCase()
+                : "";
+
+        const password =
+            typeof body.password === "string"
+                ? body.password
+                : "";
+
+        /* =====================================================
+           VALIDATE WORKER NAME
         ===================================================== */
 
         if (!name) {
@@ -225,22 +246,60 @@ export async function POST(req: Request) {
                     message:
                         "Worker name is required.",
                 },
-                { status: 400 }
+                {
+                    status: 400,
+                }
+            );
+        }
+
+        if (name.length < 2) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message:
+                        "Worker name must contain at least 2 characters.",
+                },
+                {
+                    status: 400,
+                }
+            );
+        }
+
+        /* =====================================================
+           VALIDATE PHONE
+        ===================================================== */
+
+        if (!phone) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message:
+                        "Worker mobile number is required.",
+                },
+                {
+                    status: 400,
+                }
             );
         }
 
         if (
-            phone.length !== 10
+            !/^\d{10}$/.test(phone)
         ) {
             return NextResponse.json(
                 {
                     success: false,
                     message:
-                        "Valid 10-digit mobile number is required.",
+                        "Please enter a valid 10-digit mobile number.",
                 },
-                { status: 400 }
+                {
+                    status: 400,
+                }
             );
         }
+
+        /* =====================================================
+           VALIDATE SITE
+        ===================================================== */
 
         if (!siteId) {
             return NextResponse.json(
@@ -249,38 +308,9 @@ export async function POST(req: Request) {
                     message:
                         "Site is required.",
                 },
-                { status: 400 }
-            );
-        }
-
-        if (
-            !isValidWorkerType(
-                workerType
-            )
-        ) {
-            return NextResponse.json(
                 {
-                    success: false,
-                    message:
-                        "Invalid worker type.",
-                },
-                { status: 400 }
-            );
-        }
-
-        if (
-            !Number.isFinite(
-                salary
-            ) ||
-            salary <= 0
-        ) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Salary / wage must be greater than 0.",
-                },
-                { status: 400 }
+                    status: 400,
+                }
             );
         }
 
@@ -306,9 +336,11 @@ export async function POST(req: Request) {
                 {
                     success: false,
                     message:
-                        "Site not found.",
+                        "Site not found or you do not have access to this site.",
                 },
-                { status: 404 }
+                {
+                    status: 404,
+                }
             );
         }
 
@@ -327,33 +359,170 @@ export async function POST(req: Request) {
                 {
                     success: false,
                     message:
-                        "Project associated with this site was not found.",
+                        "Project associated with this site was not found or you do not have access to it.",
                 },
-                { status: 404 }
+                {
+                    status: 404,
+                }
             );
         }
 
         /* =====================================================
-           CREATE WORKER
+           VALIDATE EMAIL
+        ===================================================== */
+
+        if (!email) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message:
+                        "Worker login email is required.",
+                },
+                {
+                    status: 400,
+                }
+            );
+        }
+
+        const emailRegex =
+            /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (
+            !emailRegex.test(email)
+        ) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message:
+                        "Please enter a valid email address.",
+                },
+                {
+                    status: 400,
+                }
+            );
+        }
+
+        /* =====================================================
+           CHECK DUPLICATE LOGIN EMAIL
+        ===================================================== */
+
+        const existingUser =
+            await getUserByEmail(
+                email
+            );
+
+        if (existingUser) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message:
+                        "An account with this email already exists.",
+                },
+                {
+                    status: 409,
+                }
+            );
+        }
+
+        /* =====================================================
+           VALIDATE PASSWORD
+        ===================================================== */
+
+        if (!password) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message:
+                        "Worker login password is required.",
+                },
+                {
+                    status: 400,
+                }
+            );
+        }
+
+        if (
+            password.length < 6
+        ) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message:
+                        "Worker password must be at least 6 characters.",
+                },
+                {
+                    status: 400,
+                }
+            );
+        }
+
+        /* =====================================================
+           VALIDATE WORKER TYPE
+        ===================================================== */
+
+        if (
+            !isValidWorkerType(
+                workerType
+            )
+        ) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message:
+                        "Invalid worker type.",
+                },
+                {
+                    status: 400,
+                }
+            );
+        }
+
+        /* =====================================================
+           VALIDATE SALARY
+        ===================================================== */
+
+        if (
+            !Number.isFinite(
+                salary
+            ) ||
+            salary <= 0
+        ) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message:
+                        "Salary / wage must be greater than 0.",
+                },
+                {
+                    status: 400,
+                }
+            );
+        }
+
+        /* =====================================================
+           CREATE WORKER + LOGIN ACCOUNT
+           
+           IMPORTANT:
+           
+           createWorker() is responsible for:
+           
+           1. Creating CRM_ConstructionWorkers record
+           2. Hashing the password
+           3. Creating CRM_Users record
+           
+           DO NOT call createUser() here.
         ===================================================== */
 
         const worker =
             await createWorker({
                 companyId,
 
-                /*
-                 * Project comes automatically
-                 * from the selected site.
-                 */
                 projectId:
                     site.projectId,
 
                 projectName:
                     project.projectName,
 
-                /*
-                 * Site comes from siteId.
-                 */
                 siteId:
                     site.siteId,
 
@@ -363,6 +532,13 @@ export async function POST(req: Request) {
                 name,
 
                 phone,
+
+                email,
+
+                password,
+
+                role:
+                    "ConstructionEmployee",
 
                 workerType,
 
@@ -382,12 +558,41 @@ export async function POST(req: Request) {
                         : true,
             });
 
+        /* =====================================================
+           SUCCESS RESPONSE
+           
+           Never return the password.
+        ===================================================== */
+
         return NextResponse.json(
             {
                 success: true,
-                worker,
+
+                message:
+                    "Worker and construction login account created successfully.",
+
+                worker: {
+                    ...worker,
+                },
+
+                login: {
+                    email:
+                        worker.email,
+
+                    role:
+                        "ConstructionEmployee",
+
+                    portal:
+                        "construction",
+
+                    loginEnabled:
+                        worker.loginEnabled ??
+                        true,
+                },
             },
-            { status: 201 }
+            {
+                status: 201,
+            }
         );
     } catch (error) {
         console.error(
@@ -395,13 +600,69 @@ export async function POST(req: Request) {
             error
         );
 
+        const message =
+            error instanceof Error
+                ? error.message
+                : "Failed to create worker";
+
+        /* =====================================================
+           DUPLICATE EMAIL
+        ===================================================== */
+
+        if (
+            message
+                .toLowerCase()
+                .includes(
+                    "email already exists"
+                )
+        ) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message:
+                        "An account with this email already exists.",
+                },
+                {
+                    status: 409,
+                }
+            );
+        }
+
+        /* =====================================================
+           DUPLICATE USER / CONDITION FAILURE
+        ===================================================== */
+
+        if (
+            message
+                .toLowerCase()
+                .includes(
+                    "conditional request failed"
+                )
+        ) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message:
+                        "An account with this email or user already exists.",
+                },
+                {
+                    status: 409,
+                }
+            );
+        }
+
+        /* =====================================================
+           GENERAL ERROR
+        ===================================================== */
+
         return NextResponse.json(
             {
                 success: false,
-                message:
-                    "Failed to create worker",
+                message,
             },
-            { status: 500 }
+            {
+                status: 500,
+            }
         );
     }
 }
