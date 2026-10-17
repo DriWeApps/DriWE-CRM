@@ -15,6 +15,8 @@ import {
 
 type Worker = {
     workerId: string;
+    personId?: string;
+    personType?: "Worker" | "Project Manager" | "Project Creator";
     name: string;
     phone: string;
     role: string;
@@ -24,6 +26,10 @@ type Worker = {
     projectName?: string;
     active: boolean;
 };
+
+function getWorkerId(worker: Worker): string {
+    return (worker.workerId || "").trim() || worker.personId?.trim() || "";
+}
 
 type Project = {
     projectId: string;
@@ -117,8 +123,21 @@ export default function AttendancePage() {
                 );
             }
 
+            const workerEntries = Array.isArray(workersData.workers)
+                ? workersData.workers.filter(
+                    (worker: Worker) =>
+                        worker.personType === "Worker" ||
+                        (!worker.personType && Boolean(worker.workerId))
+                )
+                : [];
+
             setWorkers(
-                workersData.workers || []
+                workerEntries
+                    .filter((worker: Worker) => Boolean(getWorkerId(worker)))
+                    .map((worker: Worker) => ({
+                        ...worker,
+                        workerId: getWorkerId(worker),
+                    }))
             );
 
             setProjects(
@@ -698,12 +717,13 @@ export default function AttendancePage() {
                                     <tbody>
                                         {projectWorkers.map(
                                             (
-                                                worker
+                                                worker,
+                                                index
                                             ) => {
+                                                const workerId = getWorkerId(worker);
                                                 const status =
                                                     attendance[
-                                                        worker
-                                                            .workerId
+                                                        workerId
                                                     ];
 
                                                 let cost = 0;
@@ -732,7 +752,7 @@ export default function AttendancePage() {
                                                 return (
                                                     <tr
                                                         key={
-                                                            worker.workerId
+                                                            `${workerId}-${index}`
                                                         }
                                                         className="border-b border-zinc-800/70 last:border-0"
                                                     >
@@ -772,7 +792,7 @@ export default function AttendancePage() {
                                                                     type="button"
                                                                     onClick={() =>
                                                                         setWorkerStatus(
-                                                                            worker.workerId,
+                                                                            workerId,
                                                                             "Present"
                                                                         )
                                                                     }
@@ -790,7 +810,7 @@ export default function AttendancePage() {
                                                                     type="button"
                                                                     onClick={() =>
                                                                         setWorkerStatus(
-                                                                            worker.workerId,
+                                                                            workerId,
                                                                             "Half Day"
                                                                         )
                                                                     }
@@ -808,7 +828,7 @@ export default function AttendancePage() {
                                                                     type="button"
                                                                     onClick={() =>
                                                                         setWorkerStatus(
-                                                                            worker.workerId,
+                                                                            workerId,
                                                                             "Absent"
                                                                         )
                                                                     }

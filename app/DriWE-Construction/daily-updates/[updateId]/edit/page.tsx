@@ -18,6 +18,12 @@ type DailySiteUpdate = {
     tasksCompleted: number;
     materialReceived: number;
     materialUsed: number;
+    materialsUsed?: Array<{
+        materialId: string;
+        materialName: string;
+        quantity: number;
+        unit: string;
+    }>;
     issues: number;
     issueDescription?: string;
     photos?: string[];
@@ -55,6 +61,7 @@ export default function EditDailyUpdatePage() {
 
     const [projectId, setProjectId] = useState("");
     const [projectName, setProjectName] = useState("");
+    const [materialsUsed, setMaterialsUsed] = useState<NonNullable<DailySiteUpdate["materialsUsed"]>>([]);
 
     useEffect(() => {
         if (!updateId) return;
@@ -88,6 +95,7 @@ export default function EditDailyUpdatePage() {
 
                 setProjectId(update.projectId || "");
                 setProjectName(update.projectName || "");
+                setMaterialsUsed(update.materialsUsed || []);
 
                 setForm({
                     date: update.date || "",
@@ -382,25 +390,21 @@ export default function EditDailyUpdatePage() {
                             />
                         </div>
 
-                        <div>
-                            <label className="block text-sm text-zinc-300 mb-2">
-                                Material Used
-                            </label>
-
-                            <input
-                                type="number"
-                                min="0"
-                                value={
-                                    form.materialUsed
-                                }
-                                onChange={(e) =>
-                                    updateField(
-                                        "materialUsed",
-                                        e.target.value
-                                    )
-                                }
-                                className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-yellow-500"
-                            />
+                        <div className="rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3">
+                            <p className="mb-2 text-sm text-zinc-300">Materials Used</p>
+                            {materialsUsed.length > 0 ? (
+                                <ul className="space-y-2">
+                                    {materialsUsed.map((item, index) => (
+                                        <li key={`${item.materialId}-${index}`} className="flex justify-between gap-3 text-sm">
+                                            <span className="text-zinc-300">{item.materialName}</span>
+                                            <span className="text-white">{item.quantity} {item.unit}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="text-sm text-zinc-500">{form.materialUsed} (legacy total)</p>
+                            )}
+                            <p className="mt-2 text-xs text-zinc-600">Recorded material usage is preserved to keep inventory accurate.</p>
                         </div>
 
                         <div>

@@ -1,668 +1,527 @@
+
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { jwtVerify } from "jose";
 
 import {
-    getUserFromRequest,
-} from "@/lib/auth";
-
-import {
-    getWorkers,
-    getWorkersByProject,
-    getWorkersBySite,
-    createWorker,
-} from "@/services/construction-worker.service";
-
-import {
-    getProjectById,
+  getProjects,
+  getProjectById,
 } from "@/services/construction-project.service";
 
 import {
-    getSiteById,
-} from "@/services/construction-site.service";
+  getWorkers,
+  getWorkersByProject,
+  createWorker,
+} from "@/services/construction-worker.service";
 
-import {
-    getUserByEmail,
-} from "@/services/auth.service";
+import type { WorkerType } from "@/types/construction";
 
-import type {
-    WorkerType,
-} from "@/types/construction";
+export const dynamic = "force-dynamic";
 
-/* =========================================================
-   HELPERS
-========================================================= */
+type AuthUser = {
+  userId?: string;
+  employeeId?: string;
+  email?: string;
+  role?: string;
+  companyId?: string;
+  portal?: string;
+};
 
-function getCompanyId(user: any): string {
-    return user.companyId || user.userId;
-}
+type PersonEntry = {
+  personId: string;
+  workerId?: string;
+  companyId: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  personType: "Worker" | "Project Manager" | "Project Creator";
+  workerType?: WorkerType;
+  salary: number;
+  dailyWage: number;
+  compensationType: "Salary" | "Daily Wage" | "Not Set";
+  compensationAmount: number;
+  projectId: string;
+  projectName: string;
+  active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
 
-function isValidWorkerType(
-    value: string
-): value is WorkerType {
-    return (
-        value === "Employee" ||
-        value === "Contract Worker" ||
-        value === "Daily Wage" ||
-        value === "Subcontractor"
+function getJwtSecret(): Uint8Array {
+  const secret =
+    process.env.JWT_SECRET || process.env.AUTH_SECRET;
+
+  if (!secret) {
+    throw new Error(
+      "JWT_SECRET or AUTH_SECRET is not configured."
     );
+  }
+
+  return new TextEncoder().encode(secret);
 }
 
-/* =========================================================
-   GET WORKERS
-========================================================= */
+async function getAuthenticatedUser(): Promise<AuthUser | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
 
-export async function GET(req: Request) {
-    try {
-        const user =
-            await getUserFromRequest(req);
+  if (!token) return null;
 
-        if (!user) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message: "Unauthorized",
-                },
-                {
-                    status: 401,
-                }
-            );
-        }
+  try {
+    const { payload } = await jwtVerify(
+      token,
+      getJwtSecret()
+    );
 
-        const companyId =
-            getCompanyId(user);
-
-        const url =
-            new URL(req.url);
-
-        const projectId =
-            url.searchParams.get(
-                "projectId"
-            );
-
-        const siteId =
-            url.searchParams.get(
-                "siteId"
-            );
-
-        let workers;
-
-        if (siteId) {
-            workers =
-                await getWorkersBySite(
-                    siteId,
-                    companyId
-                );
-        } else if (projectId) {
-            workers =
-                await getWorkersByProject(
-                    projectId,
-                    companyId
-                );
-        } else {
-            workers =
-                await getWorkers(
-                    companyId
-                );
-        }
-
-        return NextResponse.json(
-            {
-                success: true,
-                workers,
-            },
-            {
-                status: 200,
-            }
-        );
-    } catch (error) {
-        console.error(
-            "GET construction workers error:",
-            error
-        );
-
-        return NextResponse.json(
-            {
-                success: false,
-                message:
-                    "Failed to fetch workers",
-            },
-            {
-                status: 500,
-            }
-        );
-    }
+    return {
+      userId:
+        typeof payload.userId === "string"
+          ? payload.userId
+          : undefined,
+      employeeId:
+        typeof payload.employeeId === "string"
+          ? payload.employeeId
+          : undefined,
+      email:
+        typeof payload.email === "string"
+          ? payload.email
+          : undefined,
+      role:
+        typeof payload.role === "string"
+          ? payload.role
+          : undefined,
+      companyId:
+        typeof payload.companyId === "string"
+          ? payload.companyId
+          : undefined,
+      portal:
+        typeof payload.portal === "string"
+          ? payload.portal
+          : undefined,
+    };
+  } catch {
+    return null;
+  }
 }
 
-/* =========================================================
-   CREATE WORKER
-========================================================= */
-
-export async function POST(req: Request) {
-    try {
-        /* =====================================================
-           AUTHENTICATION
-        ===================================================== */
-
-        const user =
-            await getUserFromRequest(req);
-
-        if (!user) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message: "Unauthorized",
-                },
-                {
-                    status: 401,
-                }
-            );
-        }
-
-        /* =====================================================
-           PREVENT CONSTRUCTION EMPLOYEES FROM
-           CREATING OTHER WORKERS
-        ===================================================== */
-
-        const currentRole =
-            user.role
-                ?.trim()
-                .toLowerCase();
-
-        if (
-            currentRole ===
-            "constructionemployee"
-        ) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Construction employees cannot create workers.",
-                },
-                {
-                    status: 403,
-                }
-            );
-        }
-
-        /* =====================================================
-           READ REQUEST BODY
-        ===================================================== */
-
-        const body =
-            await req.json();
-
-        /* =====================================================
-           BASIC WORKER FIELDS
-        ===================================================== */
-
-        const name =
-            typeof body.name === "string"
-                ? body.name.trim()
-                : "";
-
-        const phone =
-            typeof body.phone === "string"
-                ? body.phone
-                    .replace(/\D/g, "")
-                    .slice(0, 10)
-                : "";
-
-        const siteId =
-            typeof body.siteId === "string"
-                ? body.siteId.trim()
-                : "";
-
-        const workerType =
-            typeof body.workerType === "string"
-                ? body.workerType.trim()
-                : "";
-
-        const salary =
-            Number(body.salary);
-
-        /* =====================================================
-           LOGIN FIELDS
-        ===================================================== */
-
-        const email =
-            typeof body.email === "string"
-                ? body.email
-                    .trim()
-                    .toLowerCase()
-                : "";
-
-        const password =
-            typeof body.password === "string"
-                ? body.password
-                : "";
-
-        /* =====================================================
-           VALIDATE WORKER NAME
-        ===================================================== */
-
-        if (!name) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Worker name is required.",
-                },
-                {
-                    status: 400,
-                }
-            );
-        }
-
-        if (name.length < 2) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Worker name must contain at least 2 characters.",
-                },
-                {
-                    status: 400,
-                }
-            );
-        }
-
-        /* =====================================================
-           VALIDATE PHONE
-        ===================================================== */
-
-        if (!phone) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Worker mobile number is required.",
-                },
-                {
-                    status: 400,
-                }
-            );
-        }
-
-        if (
-            !/^\d{10}$/.test(phone)
-        ) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Please enter a valid 10-digit mobile number.",
-                },
-                {
-                    status: 400,
-                }
-            );
-        }
-
-        /* =====================================================
-           VALIDATE SITE
-        ===================================================== */
-
-        if (!siteId) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Site is required.",
-                },
-                {
-                    status: 400,
-                }
-            );
-        }
-
-        /* =====================================================
-           COMPANY
-        ===================================================== */
-
-        const companyId =
-            getCompanyId(user);
-
-        /* =====================================================
-           VERIFY SITE
-        ===================================================== */
-
-        const site =
-            await getSiteById(
-                siteId,
-                companyId
-            );
-
-        if (!site) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Site not found or you do not have access to this site.",
-                },
-                {
-                    status: 404,
-                }
-            );
-        }
-
-        /* =====================================================
-           VERIFY PROJECT
-        ===================================================== */
-
-        const project =
-            await getProjectById(
-                site.projectId,
-                companyId
-            );
-
-        if (!project) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Project associated with this site was not found or you do not have access to it.",
-                },
-                {
-                    status: 404,
-                }
-            );
-        }
-
-        /* =====================================================
-           VALIDATE EMAIL
-        ===================================================== */
-
-        if (!email) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Worker login email is required.",
-                },
-                {
-                    status: 400,
-                }
-            );
-        }
-
-        const emailRegex =
-            /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-        if (
-            !emailRegex.test(email)
-        ) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Please enter a valid email address.",
-                },
-                {
-                    status: 400,
-                }
-            );
-        }
-
-        /* =====================================================
-           CHECK DUPLICATE LOGIN EMAIL
-        ===================================================== */
-
-        const existingUser =
-            await getUserByEmail(
-                email
-            );
-
-        if (existingUser) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "An account with this email already exists.",
-                },
-                {
-                    status: 409,
-                }
-            );
-        }
-
-        /* =====================================================
-           VALIDATE PASSWORD
-        ===================================================== */
-
-        if (!password) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Worker login password is required.",
-                },
-                {
-                    status: 400,
-                }
-            );
-        }
-
-        if (
-            password.length < 6
-        ) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Worker password must be at least 6 characters.",
-                },
-                {
-                    status: 400,
-                }
-            );
-        }
-
-        /* =====================================================
-           VALIDATE WORKER TYPE
-        ===================================================== */
-
-        if (
-            !isValidWorkerType(
-                workerType
-            )
-        ) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Invalid worker type.",
-                },
-                {
-                    status: 400,
-                }
-            );
-        }
-
-        /* =====================================================
-           VALIDATE SALARY
-        ===================================================== */
-
-        if (
-            !Number.isFinite(
-                salary
-            ) ||
-            salary <= 0
-        ) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Salary / wage must be greater than 0.",
-                },
-                {
-                    status: 400,
-                }
-            );
-        }
-
-        /* =====================================================
-           CREATE WORKER + LOGIN ACCOUNT
-           
-           IMPORTANT:
-           
-           createWorker() is responsible for:
-           
-           1. Creating CRM_ConstructionWorkers record
-           2. Hashing the password
-           3. Creating CRM_Users record
-           
-           DO NOT call createUser() here.
-        ===================================================== */
-
-        const worker =
-            await createWorker({
-                companyId,
-
-                projectId:
-                    site.projectId,
-
-                projectName:
-                    project.projectName,
-
-                siteId:
-                    site.siteId,
-
-                siteName:
-                    site.siteName,
-
-                name,
-
-                phone,
-
-                email,
-
-                password,
-
-                role:
-                    "ConstructionEmployee",
-
-                workerType,
-
-                salary,
-
-                dailyWage:
-                    workerType ===
-                    "Daily Wage"
-                        ? salary
-                        : undefined,
-
-                active:
-                    body.active !== undefined
-                        ? Boolean(
-                            body.active
-                        )
-                        : true,
-            });
-
-        /* =====================================================
-           SUCCESS RESPONSE
-           
-           Never return the password.
-        ===================================================== */
-
-        return NextResponse.json(
-            {
-                success: true,
-
-                message:
-                    "Worker and construction login account created successfully.",
-
-                worker: {
-                    ...worker,
-                },
-
-                login: {
-                    email:
-                        worker.email,
-
-                    role:
-                        "ConstructionEmployee",
-
-                    portal:
-                        "construction",
-
-                    loginEnabled:
-                        worker.loginEnabled ??
-                        true,
-                },
-            },
-            {
-                status: 201,
-            }
-        );
-    } catch (error) {
-        console.error(
-            "POST construction worker error:",
-            error
-        );
-
-        const message =
-            error instanceof Error
-                ? error.message
-                : "Failed to create worker";
-
-        /* =====================================================
-           DUPLICATE EMAIL
-        ===================================================== */
-
-        if (
-            message
-                .toLowerCase()
-                .includes(
-                    "email already exists"
-                )
-        ) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "An account with this email already exists.",
-                },
-                {
-                    status: 409,
-                }
-            );
-        }
-
-        /* =====================================================
-           DUPLICATE USER / CONDITION FAILURE
-        ===================================================== */
-
-        if (
-            message
-                .toLowerCase()
-                .includes(
-                    "conditional request failed"
-                )
-        ) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "An account with this email or user already exists.",
-                },
-                {
-                    status: 409,
-                }
-            );
-        }
-
-        /* =====================================================
-           GENERAL ERROR
-        ===================================================== */
-
-        return NextResponse.json(
-            {
-                success: false,
-                message,
-            },
-            {
-                status: 500,
-            }
-        );
+function jsonError(message: string, status: number) {
+  return NextResponse.json(
+    { success: false, error: message, message },
+    { status }
+  );
+}
+
+function getCompanyId(user: AuthUser): string | null {
+  return user.companyId || user.userId || null;
+}
+
+function normalizeId(value: unknown): string {
+  return typeof value === "string"
+    ? value.trim()
+    : "";
+}
+
+function isWorkerType(value: string): value is WorkerType {
+  return (
+    value === "Employee" ||
+    value === "Contract Worker" ||
+    value === "Daily Wage" ||
+    value === "Subcontractor"
+  );
+}
+
+function getWorkerCompensation(worker: {
+  workerType?: string;
+  salary?: number;
+  dailyWage?: number;
+}) {
+  const salary = Number(worker.salary || 0);
+  const dailyWage = Number(
+    worker.dailyWage || 0
+  );
+
+  if (worker.workerType === "Daily Wage") {
+    return {
+      salary,
+      dailyWage,
+      compensationType: "Daily Wage" as const,
+      compensationAmount:
+        dailyWage || salary,
+    };
+  }
+
+  return {
+    salary,
+    dailyWage,
+    compensationType:
+      salary > 0 ? ("Salary" as const) : ("Not Set" as const),
+    compensationAmount: salary,
+  };
+}
+
+/**
+ * GET /api/construction/workers
+ * GET /api/construction/workers?projectId=PROJECT_ID
+ *
+ * Returns workers plus project managers and project creators.
+ */
+export async function GET(request: Request) {
+  try {
+    const user = await getAuthenticatedUser();
+
+    if (!user) {
+      return jsonError(
+        "Unauthorized. Please log in.",
+        401
+      );
     }
+
+    const companyId = getCompanyId(user);
+
+    if (!companyId) {
+      return jsonError(
+        "Your account is not associated with a company.",
+        403
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const projectId = normalizeId(
+      searchParams.get("projectId")
+    );
+
+    let projects;
+
+    if (projectId) {
+      const project = await getProjectById(
+        projectId,
+        companyId
+      );
+
+      if (!project) {
+        return jsonError(
+          "Project not found or you do not have access to it.",
+          404
+        );
+      }
+
+      projects = [project];
+    } else {
+      projects = await getProjects(companyId);
+    }
+
+    const workers = projectId
+      ? await getWorkersByProject(
+          projectId,
+          companyId
+        )
+      : await getWorkers(companyId);
+
+    const people: PersonEntry[] = [];
+
+    for (const worker of workers) {
+      const compensation =
+        getWorkerCompensation(worker);
+
+      people.push({
+        personId: worker.workerId,
+        workerId: worker.workerId,
+        companyId: worker.companyId,
+        name: worker.name,
+        email: worker.email,
+        phone: worker.phone || "",
+        role: worker.role || "ConstructionEmployee",
+        personType: "Worker",
+        workerType: worker.workerType,
+        ...compensation,
+        projectId: worker.projectId,
+        projectName: worker.projectName || "",
+        active: worker.active !== false,
+        createdAt: worker.createdAt,
+        updatedAt: worker.updatedAt,
+      });
+    }
+
+    const workerEmails = new Set(
+      workers
+        .map((worker) =>
+          normalizeId(worker.email).toLowerCase()
+        )
+        .filter(Boolean)
+    );
+
+    const workerUserIds = new Set(
+      workers
+        .map((worker) => normalizeId(worker.userId))
+        .filter(Boolean)
+    );
+
+    for (const project of projects) {
+      const projectName = project.projectName || "";
+
+      const managerName =
+        normalizeId(project.projectManagerName) ||
+        normalizeId(project.projectManager);
+
+      const managerEmail = normalizeId(
+        project.projectManagerEmail
+      ).toLowerCase();
+
+      const managerUserId = normalizeId(
+        project.projectManagerUserId
+      );
+
+      const managerAlreadyListed =
+        (managerEmail && workerEmails.has(managerEmail)) ||
+        (managerUserId && workerUserIds.has(managerUserId));
+
+      if (managerName && !managerAlreadyListed) {
+        people.push({
+          personId: `manager-${project.projectId}`,
+          companyId,
+          name: managerName,
+          email: managerEmail,
+          phone: "",
+          role: "ConstructionProjectManager",
+          personType: "Project Manager",
+          salary: 0,
+          dailyWage: 0,
+          compensationType: "Not Set",
+          compensationAmount: 0,
+          projectId: project.projectId,
+          projectName,
+          active: true,
+        });
+      }
+
+      const creatorName = normalizeId(
+        project.createdByName
+      );
+
+      const creatorId = normalizeId(
+        project.createdBy
+      );
+
+      const creatorAlreadyListed =
+        (creatorId && workerUserIds.has(creatorId)) ||
+        (creatorId &&
+          workerEmails.has(creatorId.toLowerCase())) ||
+        (managerUserId && creatorId === managerUserId) ||
+        (managerEmail &&
+          creatorId.toLowerCase() === managerEmail);
+
+      if (
+        creatorName &&
+        !creatorAlreadyListed &&
+        creatorName.toLowerCase() !==
+          managerName.toLowerCase()
+      ) {
+        people.push({
+          personId: `creator-${project.projectId}`,
+          companyId,
+          name: creatorName,
+          email: "",
+          phone: "",
+          role: "Project Creator",
+          personType: "Project Creator",
+          salary: 0,
+          dailyWage: 0,
+          compensationType: "Not Set",
+          compensationAmount: 0,
+          projectId: project.projectId,
+          projectName,
+          active: true,
+        });
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      workers: people,
+    });
+  } catch (error) {
+    console.error(
+      "GET /api/construction/workers error:",
+      error
+    );
+
+    return jsonError(
+      error instanceof Error
+        ? error.message
+        : "Failed to retrieve workers.",
+      500
+    );
+  }
+}
+
+/**
+ * POST /api/construction/workers
+ *
+ * Creates a worker associated with a project.
+ */
+export async function POST(request: Request) {
+  try {
+    const user = await getAuthenticatedUser();
+
+    if (!user) {
+      return jsonError(
+        "Unauthorized. Please log in.",
+        401
+      );
+    }
+
+    const companyId = getCompanyId(user);
+
+    if (!companyId) {
+      return jsonError(
+        "Your account is not associated with a company.",
+        403
+      );
+    }
+
+    const role = (user.role || "")
+      .trim()
+      .toUpperCase();
+
+    const canManageWorkers = [
+      "ADMIN",
+      "CONSTRUCTIONADMIN",
+      "CONSTRUCTIONMANAGER",
+      "MANAGER",
+    ].includes(role);
+
+    if (!canManageWorkers) {
+      return jsonError(
+        "You do not have permission to create workers.",
+        403
+      );
+    }
+
+    let body: Record<string, unknown>;
+
+    try {
+      body = await request.json();
+    } catch {
+      return jsonError(
+        "Invalid JSON request body.",
+        400
+      );
+    }
+
+    const projectId = normalizeId(body.projectId);
+    const name = normalizeId(body.name);
+    const email = normalizeId(body.email).toLowerCase();
+    const phone = normalizeId(body.phone);
+    const workerType = normalizeId(body.workerType);
+    const password =
+      typeof body.password === "string"
+        ? body.password
+        : "";
+    const salaryInput = body.salary;
+    const salary = Number(salaryInput);
+
+    if (!projectId) {
+      return jsonError(
+        "Please select a project for this worker.",
+        400
+      );
+    }
+
+    if (!name) {
+      return jsonError(
+        "Worker name is required.",
+        400
+      );
+    }
+
+    if (!email || !phone || !password) {
+      return jsonError(
+        "Email, phone, and password are required.",
+        400
+      );
+    }
+
+    if (!isWorkerType(workerType)) {
+      return jsonError(
+        "Please select a valid worker type.",
+        400
+      );
+    }
+
+    if (
+      salaryInput === undefined ||
+      salaryInput === null ||
+      String(salaryInput).trim() === "" ||
+      !Number.isFinite(salary) ||
+      salary < 0
+    ) {
+      return jsonError(
+        "A valid non-negative salary is required.",
+        400
+      );
+    }
+
+    const project = await getProjectById(
+      projectId,
+      companyId
+    );
+
+    if (!project) {
+      return jsonError(
+        "Project not found or you do not have access to it.",
+        404
+      );
+    }
+
+    const dailyWageInput = body.dailyWage;
+    const dailyWage =
+      dailyWageInput !== undefined &&
+      dailyWageInput !== null &&
+      String(dailyWageInput).trim() !== "" &&
+      Number.isFinite(Number(dailyWageInput)) &&
+      Number(dailyWageInput) >= 0
+        ? Number(dailyWageInput)
+        : undefined;
+
+    const worker = await createWorker({
+      projectId,
+      projectName:
+        normalizeId(body.projectName) ||
+        normalizeId(
+          (project as { projectName?: string }).projectName
+        ),
+      companyId,
+      name,
+      email,
+      phone,
+      password,
+      workerType,
+      salary,
+      ...(dailyWage !== undefined
+        ? { dailyWage }
+        : {}),
+      active: body.active === false ? false : true,
+    });
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Worker created successfully.",
+        worker,
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error(
+      "POST /api/construction/workers error:",
+      error
+    );
+
+    return jsonError(
+      error instanceof Error
+        ? error.message
+        : "Failed to create worker.",
+      500
+    );
+  }
 }

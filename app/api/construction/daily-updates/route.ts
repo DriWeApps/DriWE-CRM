@@ -7,11 +7,20 @@ import {
     getDailyUpdates,
 } from "@/services/construction-daily-update.service";
 
-function getCompanyId(user: any): string {
+type DailyUpdateUser = {
+    userId: string;
+    companyId?: string;
+    name?: string;
+    employeeName?: string;
+    fullName?: string;
+    email?: string;
+};
+
+function getCompanyId(user: DailyUpdateUser): string {
     return user.companyId || user.userId;
 }
 
-function getUserName(user: any): string {
+function getUserName(user: DailyUpdateUser): string {
     return (
         user.name ||
         user.employeeName ||
@@ -116,6 +125,13 @@ export async function POST(req: Request) {
                     body.materialUsed || 0
                 ),
 
+                materialsUsed: Array.isArray(body.materialsUsed)
+                    ? body.materialsUsed.map((item: { materialId?: unknown; quantity?: unknown }) => ({
+                        materialId: typeof item.materialId === "string" ? item.materialId : "",
+                        quantity: Number(item.quantity),
+                    }))
+                    : [],
+
                 issues: Number(body.issues || 0),
 
                 issueDescription:
@@ -147,6 +163,13 @@ export async function POST(req: Request) {
             "POST construction daily update error:",
             error
         );
+
+        if (error instanceof Error && /not available|valid material|selected material|insufficient|stock changed/i.test(error.message)) {
+            return NextResponse.json(
+                { success: false, error: error.message, message: error.message },
+                { status: 409 }
+            );
+        }
 
         return NextResponse.json(
             {

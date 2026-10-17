@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 
@@ -7,16 +8,11 @@ import {
   getUserByEmail,
 } from "@/services/auth.service";
 
-import {
-  createEmployee,
-} from "@/services/employee.service";
+import { createEmployee } from "@/services/employee.service";
 
 export async function POST(req: Request) {
   try {
-    /* =====================================================
-       READ REQUEST BODY
-    ====================================================== */
-
+    // Read request body
     const body = await req.json();
 
     const firstName =
@@ -64,86 +60,59 @@ export async function POST(req: Request) {
         ? body.password
         : "";
 
-    /* =====================================================
-       VALIDATION
-    ====================================================== */
-
+    // Validation
     if (!firstName) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "First name is required.",
-        },
+        { success: false, message: "First name is required." },
         { status: 400 }
       );
     }
 
     if (!lastName) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Last name is required.",
-        },
+        { success: false, message: "Last name is required." },
         { status: 400 }
       );
     }
 
     if (!email) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Email address is required.",
-        },
+        { success: false, message: "Email address is required." },
         { status: 400 }
       );
     }
 
     if (!contactNo) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Contact number is required.",
-        },
+        { success: false, message: "Contact number is required." },
         { status: 400 }
       );
     }
 
     if (!companyName) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Company name is required.",
-        },
+        { success: false, message: "Company name is required." },
         { status: 400 }
       );
     }
 
     if (!companyGSTNo) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Company GST number is required.",
-        },
+        { success: false, message: "Company GST number is required." },
         { status: 400 }
       );
     }
 
     if (!companyPANNo) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Company PAN number is required.",
-        },
+        { success: false, message: "Company PAN number is required." },
         { status: 400 }
       );
     }
 
     if (!pincode) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Pincode is required.",
-        },
+        { success: false, message: "Pincode is required." },
         { status: 400 }
       );
     }
@@ -160,10 +129,7 @@ export async function POST(req: Request) {
 
     if (!password) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Password is required.",
-        },
+        { success: false, message: "Password is required." },
         { status: 400 }
       );
     }
@@ -172,19 +138,14 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           success: false,
-          message:
-            "Password must be at least 6 characters.",
+          message: "Password must be at least 6 characters.",
         },
         { status: 400 }
       );
     }
 
-    /* =====================================================
-       CHECK EXISTING ACCOUNT
-    ====================================================== */
-
-    const existingUser =
-      await getUserByEmail(email);
+    // Check whether the email is already registered
+    const existingUser = await getUserByEmail(email);
 
     if (existingUser) {
       return NextResponse.json(
@@ -197,167 +158,95 @@ export async function POST(req: Request) {
       );
     }
 
-    /* =====================================================
-       CREATE IDS / TIMESTAMP
-    ====================================================== */
-
+    // Create IDs and timestamp
     const userId = randomUUID();
     const employeeId = randomUUID();
-
     const now = new Date().toISOString();
 
-    /* =====================================================
-       HASH PASSWORD
-    ====================================================== */
+    // Hash password
+    const hashedPassword = await hashPassword(password);
 
-    const hashedPassword =
-      await hashPassword(password);
-
-    /* =====================================================
-       CREATE CONSTRUCTION EMPLOYEE PROFILE
-    ====================================================== */
-
+    // Construction company administrator profile
     const employee = {
       employeeId,
 
-      /* Personal Details */
+      // Personal details
       firstName,
       lastName,
       email,
       mobile: contactNo,
 
-      /* Company Details */
+      // Company details
       companyName,
       companyGSTNo,
       companyPANNo,
 
-      /* Location */
+      // Location
       pincode,
 
-      /* Construction Account */
-      designation: "Construction Candidate",
-
+      // Construction account
+      designation: "Construction Admin",
       department: "Construction",
-
-      role: "Executive",
-
+      role: "ConstructionAdmin",
       status: "Active",
-
       portal: "construction" as const,
-
       joiningDate: now.split("T")[0],
 
-      /* Unused profile fields */
+      // Unused profile fields
       dateOfBirth: "",
-
       gender: "",
-
       address: "",
-
       city: "",
-
       state: "",
-
       country: "India",
 
-      /*
-       * Construction signup users should not
-       * receive CRM page permissions.
-       */
+      // No CRM page access
       pageAccess: [],
 
       createdAt: now,
-
       updatedAt: now,
     };
 
-    /* =====================================================
-       CREATE EMPLOYEE RECORD
-    ====================================================== */
-
+    // Create employee record
     await createEmployee(employee);
 
-    /* =====================================================
-       CREATE LOGIN USER
-    ====================================================== */
-
+    // Create login user with the same role
     const user = await createUser({
       userId,
-
       employeeId,
-
-      name:
-        `${firstName} ${lastName}`.trim(),
-
+      name: `${firstName} ${lastName}`.trim(),
       email,
-
-      password:
-        hashedPassword,
-
-      role: "Executive",
-
-      /*
-       * This account is ALWAYS Construction.
-       */
+      password: hashedPassword,
+      role: "ConstructionAdmin",
       portal: "construction",
-
-      /*
-       * No CRM page access.
-       */
       pageAccess: [],
     });
 
-    /* =====================================================
-       SUCCESS RESPONSE
-    ====================================================== */
-
+    // Success response
     return NextResponse.json(
       {
         success: true,
-
-        message:
-          "Construction account created successfully.",
-
+        message: "Construction account created successfully.",
         user: {
-          userId:
-            user.userId,
-
-          employeeId:
-            user.employeeId,
-
-          name:
-            user.name,
-
-          email:
-            user.email,
-
-          role:
-            user.role,
-
-          portal:
-            "construction",
+          userId: user.userId,
+          employeeId: user.employeeId,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          portal: "construction",
         },
       },
-      {
-        status: 201,
-      }
+      { status: 201 }
     );
   } catch (error) {
-    console.error(
-      "Construction Signup Error:",
-      error
-    );
+    console.error("Construction Signup Error:", error);
 
     return NextResponse.json(
       {
         success: false,
-
-        message:
-          "Unable to create Construction account.",
+        message: "Unable to create Construction account.",
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     );
   }
 }

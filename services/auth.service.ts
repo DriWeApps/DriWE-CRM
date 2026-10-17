@@ -31,13 +31,9 @@ export type Portal =
 
 export interface User {
   userId: string;
-
   employeeId: string;
-
   companyId?: string;
-
   name: string;
-
   email: string;
 
   /*

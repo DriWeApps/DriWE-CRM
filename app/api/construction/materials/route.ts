@@ -15,12 +15,7 @@ import {
     getProjectById,
 } from "@/services/construction-project.service";
 
-import {
-    getSiteById,
-} from "@/services/construction-site.service";
-
 import type {
-    MaterialUnit,
     MaterialStatus,
 } from "@/services/construction-material.service";
 
@@ -38,21 +33,6 @@ type ConstructionUser = {
     pageAccess?: string[];
     portal?: "crm" | "construction" | "both";
 };
-
-const VALID_UNITS: MaterialUnit[] = [
-    "Kg",
-    "Gram",
-    "Ton",
-    "Litre",
-    "ML",
-    "Piece",
-    "Box",
-    "Bag",
-    "Meter",
-    "Square Feet",
-    "Cubic Feet",
-    "Other",
-];
 
 const VALID_STATUSES: MaterialStatus[] = [
     "Active",
@@ -212,9 +192,6 @@ export async function POST(req: Request) {
         const projectId =
             body.projectId?.trim();
 
-        const siteId =
-            body.siteId?.trim();
-
         const materialName =
             body.materialName?.trim();
 
@@ -222,7 +199,9 @@ export async function POST(req: Request) {
             body.category?.trim();
 
         const unit =
-            body.unit;
+            typeof body.unit === "string"
+                ? body.unit.trim()
+                : "";
 
         const quantity =
             Number(body.quantity);
@@ -278,19 +257,6 @@ export async function POST(req: Request) {
             );
         }
 
-        if (!siteId) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Site ID is required",
-                },
-                {
-                    status: 400,
-                }
-            );
-        }
-
         if (!materialName) {
             return NextResponse.json(
                 {
@@ -304,33 +270,12 @@ export async function POST(req: Request) {
             );
         }
 
-        if (!unit) {
+        if (!unit || unit.length > 50 || !/[a-zA-Z]/.test(unit)) {
             return NextResponse.json(
                 {
                     success: false,
                     message:
-                        "Material unit is required",
-                },
-                {
-                    status: 400,
-                }
-            );
-        }
-
-        /* ----------------------------------------------------
-           UNIT VALIDATION
-        ---------------------------------------------------- */
-
-        if (
-            !VALID_UNITS.includes(
-                unit
-            )
-        ) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Invalid material unit",
+                        "Enter a valid unit (for example kg, bags, or pieces). Enter the stock count in quantity.",
                 },
                 {
                     status: 400,
@@ -453,49 +398,6 @@ export async function POST(req: Request) {
         }
 
         /* ----------------------------------------------------
-           GET SITE
-        ---------------------------------------------------- */
-
-        const site =
-            await getSiteById(
-                siteId,
-                companyId
-            );
-
-        if (!site) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Site not found",
-                },
-                {
-                    status: 404,
-                }
-            );
-        }
-
-        /* ----------------------------------------------------
-           VERIFY SITE BELONGS TO PROJECT
-        ---------------------------------------------------- */
-
-        if (
-            site.projectId !==
-            projectId
-        ) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Selected site does not belong to the selected project",
-                },
-                {
-                    status: 400,
-                }
-            );
-        }
-
-        /* ----------------------------------------------------
            CREATE MATERIAL
         ---------------------------------------------------- */
 
@@ -511,12 +413,6 @@ export async function POST(req: Request) {
 
                 projectName:
                     project.projectName,
-
-                siteId:
-                    site.siteId,
-
-                siteName:
-                    site.siteName,
 
                 materialName,
 

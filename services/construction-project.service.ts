@@ -1,3 +1,4 @@
+
 import {
     DynamoDBClient,
 } from "@aws-sdk/client-dynamodb";
@@ -7,7 +8,6 @@ import {
     GetCommand,
     PutCommand,
     ScanCommand,
-    UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 
 import { randomUUID } from "crypto";
@@ -46,13 +46,12 @@ export async function getProjectById(
     const result = await client.send(
         new GetCommand({
             TableName: TABLE,
-            Key: {
-                projectId,
-            },
+            Key: { projectId },
         })
     );
 
-    const project = result.Item as ConstructionProject | undefined;
+    const project =
+        result.Item as ConstructionProject | undefined;
 
     if (!project || project.companyId !== companyId) {
         return null;
@@ -70,6 +69,8 @@ export async function createProject(data: {
 
     projectManager?: string;
     projectManagerName?: string;
+    projectManagerUserId?: string;
+    projectManagerEmail?: string;
 
     siteSupervisor?: string;
     siteSupervisorName?: string;
@@ -78,7 +79,6 @@ export async function createProject(data: {
     expectedCompletion: string;
 
     status?: ProjectStatus;
-
     description?: string;
 
     createdBy: string;
@@ -97,6 +97,9 @@ export async function createProject(data: {
 
         projectManager: data.projectManager,
         projectManagerName: data.projectManagerName,
+        projectManagerUserId: data.projectManagerUserId,
+        projectManagerEmail:
+            data.projectManagerEmail?.trim().toLowerCase(),
 
         siteSupervisor: data.siteSupervisor,
         siteSupervisorName: data.siteSupervisorName,
@@ -105,7 +108,6 @@ export async function createProject(data: {
         expectedCompletion: data.expectedCompletion,
 
         status: data.status || "Planning",
-
         description: data.description,
 
         createdBy: data.createdBy,
@@ -119,6 +121,7 @@ export async function createProject(data: {
         new PutCommand({
             TableName: TABLE,
             Item: project,
+            ConditionExpression: "attribute_not_exists(projectId)",
         })
     );
 
@@ -139,7 +142,7 @@ export async function updateProject(
         return null;
     }
 
-    const updated = {
+    const updated: ConstructionProject = {
         ...existing,
         ...data,
         projectId,
@@ -173,9 +176,7 @@ export async function deleteProject(
     await client.send(
         new DeleteCommand({
             TableName: TABLE,
-            Key: {
-                projectId,
-            },
+            Key: { projectId },
         })
     );
 

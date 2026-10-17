@@ -1,8 +1,6 @@
-import { NextResponse } from "next/server";
 
-import {
-    getUserFromRequest,
-} from "@/lib/auth";
+import { NextResponse } from "next/server";
+import { getUserFromRequest } from "@/lib/auth";
 
 import {
     getTaskById,
@@ -10,29 +8,27 @@ import {
     deleteTask,
 } from "@/services/construction-task.service";
 
-import type {
-    ConstructionTaskStatus,
-} from "@/types/construction";
+import { getProjectById } from "@/services/construction-project.service";
 
-/* ============================================================
-   TYPES
-============================================================ */
+import type { ConstructionTaskStatus } from "@/types/construction";
 
 type ConstructionUser = {
     userId: string;
-    employeeId: string;
+    employeeId?: string;
     email: string;
     name?: string;
     role?: string;
     companyId?: string;
-    pageAccess?: string[];
-    portal?: "crm" | "construction" | "both";
+};
+
+type AssignedTask = {
+    assignedTo?: string;
+    assignedToEmail?: string;
+    projectId?: string;
 };
 
 type RouteContext = {
-    params: Promise<{
-        taskId: string;
-    }>;
+    params: Promise<{ taskId: string }>;
 };
 
 const VALID_STATUSES: ConstructionTaskStatus[] = [
@@ -42,74 +38,135 @@ const VALID_STATUSES: ConstructionTaskStatus[] = [
     "Delayed",
 ];
 
-const VALID_PRIORITIES = [
-    "Low",
-    "Medium",
-    "High",
-] as const;
+const VALID_PRIORITIES = ["Low", "Medium", "High"] as const;
 
-/* ============================================================
-   GET TASK BY ID
-============================================================ */
+const WORKER_EDITABLE_FIELDS = new Set([
+    "status",
+    "remarks",
+    "completionDescription",
+    "completionLink",
+]);
 
-export async function GET(
-    req: Request,
-    context: RouteContext
+function role(user: ConstructionUser) {
+    return user.role?.trim().toLowerCase() ?? "";
+}
+
+function isAdmin(user: ConstructionUser) {
+    return ["admin", "constructionadmin"].includes(role(user));
+}
+
+function isProjectManager(user: ConstructionUser) {
+    return role(user) === "constructionprojectmanager";
+}
+
+function isWorker(user: ConstructionUser) {
+    return role(user) === "constructionemployee";
+}
+
+function companyIdFor(user: ConstructionUser) {
+    return user.companyId || user.userId;
+}
+
+function jsonError(message: string, status: number) {
+    return NextResponse.json(
+        { success: false, message },
+        { status }
+    );
+}
+
+function isAssignedToUser(
+    task: AssignedTask,
+    user: ConstructionUser
 ) {
+    const assignedTo = task.assignedTo?.trim().toLowerCase();
+    const assignedEmail = task.assignedToEmail?.trim().toLowerCase();
+    const userId = user.userId?.trim().toLowerCase();
+    const employeeId = user.employeeId?.trim().toLowerCase();
+    const email = user.email?.trim().toLowerCase();
+
+    return Boolean(
+        (userId && assignedTo === userId) ||
+        (employeeId && assignedTo === employeeId) ||
+        (email && (assignedTo === email || assignedEmail === email))
+    );
+}
+
+async function canManageTaskProject(
+    user: ConstructionUser,
+    projectId?: string
+): Promise<boolean> {
+    if (!projectId) {
+        return false;
+    }
+
+    const project = await getProjectById(
+        projectId,
+        companyIdFor(user)
+    );
+
+    if (!project) {
+        return false;
+    }
+
+    if (isAdmin(user)) {
+        return true;
+    }
+
+    if (isProjectManager(user)) {
+        return (
+            (project as { projectManagerUserId?: string })
+                .projectManagerUserId === user.userId
+        );
+    }
+
+    return false;
+}
+
+/* GET TASK BY ID */
+export async function GET(req: Request, context: RouteContext) {
     try {
-        const user =
-            (await getUserFromRequest(
-                req
-            )) as ConstructionUser | null;
+        const user = await getUserFromRequest(req) as
+            | ConstructionUser
+            | null;
 
         if (!user) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message: "Unauthorized",
-                },
-                {
-                    status: 401,
-                }
+            return jsonError("Unauthorized.", 401);
+        }
+
+        if (!isAdmin(user) && !isProjectManager(user) && !isWorker(user)) {
+            return jsonError(
+                "You do not have permission to view tasks.",
+                403
             );
         }
 
-        const { taskId } =
-            await context.params;
+        const { taskId } = await context.params;
 
         if (!taskId) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Task ID is required",
-                },
-                {
-                    status: 400,
-                }
+            return jsonError("Task ID is required.", 400);
+        }
+
+        const companyId = companyIdFor(user);
+        const task = await getTaskById(taskId, companyId);
+
+        if (!task) {
+            return jsonError("Task not found.", 404);
+        }
+
+        if (isWorker(user) && !isAssignedToUser(task, user)) {
+            return jsonError(
+                "You can view only tasks assigned to you.",
+                403
             );
         }
 
-        const companyId =
-            user.companyId ||
-            user.userId;
-
-        const task =
-            await getTaskById(
-                taskId,
-                companyId
-            );
-
-        if (!task) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Task not found",
-                },
-                {
-                    status: 404,
-                }
+        if (
+            isProjectManager(user) &&
+            !(await canManageTaskProject(user, task.projectId))
+        ) {
+            return jsonError(
+                "This task is outside your assigned projects.",
+                403
             );
         }
 
@@ -118,529 +175,325 @@ export async function GET(
             task,
         });
     } catch (error) {
-        console.error(
-            "GET construction task error:",
-            error
-        );
+        console.error("GET construction task error:", error);
 
-        return NextResponse.json(
-            {
-                success: false,
-                message:
-                    "Failed to fetch construction task",
-            },
-            {
-                status: 500,
-            }
-        );
+        return jsonError("Failed to fetch construction task.", 500);
     }
 }
 
-/* ============================================================
-   PUT / UPDATE TASK
-============================================================ */
-
-export async function PUT(
-    req: Request,
-    context: RouteContext
-) {
+/* UPDATE TASK */
+export async function PUT(req: Request, context: RouteContext) {
     try {
-        const user =
-            (await getUserFromRequest(
-                req
-            )) as ConstructionUser | null;
+        const user = await getUserFromRequest(req) as
+            | ConstructionUser
+            | null;
 
         if (!user) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message: "Unauthorized",
-                },
-                {
-                    status: 401,
-                }
+            return jsonError("Unauthorized.", 401);
+        }
+
+        if (!isAdmin(user) && !isProjectManager(user) && !isWorker(user)) {
+            return jsonError(
+                "You do not have permission to update tasks.",
+                403
             );
         }
 
-        const { taskId } =
-            await context.params;
+        const { taskId } = await context.params;
 
         if (!taskId) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Task ID is required",
-                },
-                {
-                    status: 400,
-                }
-            );
+            return jsonError("Task ID is required.", 400);
         }
 
-        const companyId =
-            user.companyId ||
-            user.userId;
-
-        /* ----------------------------------------------------
-           CHECK EXISTING TASK
-        ---------------------------------------------------- */
-
-        const existingTask =
-            await getTaskById(
-                taskId,
-                companyId
-            );
+        const companyId = companyIdFor(user);
+        const existingTask = await getTaskById(taskId, companyId);
 
         if (!existingTask) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Task not found",
-                },
-                {
-                    status: 404,
-                }
+            return jsonError("Task not found.", 404);
+        }
+
+        if (isWorker(user) && !isAssignedToUser(existingTask, user)) {
+            return jsonError(
+                "You can update only tasks assigned to you.",
+                403
             );
         }
 
-        const body =
-            await req.json();
+        if (
+            isProjectManager(user) &&
+            !(await canManageTaskProject(user, existingTask.projectId))
+        ) {
+            return jsonError(
+                "This task is outside your assigned projects.",
+                403
+            );
+        }
 
-        /* ----------------------------------------------------
-           BASIC VALIDATION
-        ---------------------------------------------------- */
+        const body = await req.json();
 
         if (
-            body.title !==
-                undefined &&
+            !body ||
+            typeof body !== "object" ||
+            Array.isArray(body) ||
+            Object.keys(body).length === 0
+        ) {
+            return jsonError(
+                "Provide at least one field to update.",
+                400
+            );
+        }
+
+        if (isWorker(user)) {
+            const forbiddenFields = Object.keys(body).filter(
+                (field) => !WORKER_EDITABLE_FIELDS.has(field)
+            );
+
+            if (forbiddenFields.length > 0) {
+                return jsonError(
+                    "Workers can update only task status, remarks, and completion details.",
+                    403
+                );
+            }
+        }
+
+        if (
+            body.status !== undefined &&
             (
-                typeof body.title !==
-                    "string" ||
+                typeof body.status !== "string" ||
+                !VALID_STATUSES.includes(
+                    body.status as ConstructionTaskStatus
+                )
+            )
+        ) {
+            return jsonError("Invalid task status.", 400);
+        }
+
+        if (
+            !isWorker(user) &&
+            body.title !== undefined &&
+            (
+                typeof body.title !== "string" ||
                 !body.title.trim()
             )
         ) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Task title cannot be empty",
-                },
-                {
-                    status: 400,
-                }
-            );
+            return jsonError("Task title cannot be empty.", 400);
         }
 
         if (
-            body.status !==
-                undefined &&
-            !VALID_STATUSES.includes(
-                body.status
+            !isWorker(user) &&
+            body.priority !== undefined &&
+            (
+                typeof body.priority !== "string" ||
+                !VALID_PRIORITIES.includes(
+                    body.priority as (typeof VALID_PRIORITIES)[number]
+                )
             )
         ) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Invalid task status",
-                },
-                {
-                    status: 400,
-                }
-            );
+            return jsonError("Invalid task priority.", 400);
         }
 
         if (
-            body.priority !==
-                undefined &&
-            !VALID_PRIORITIES.includes(
-                body.priority
-            )
+            !isWorker(user) &&
+            body.description !== undefined &&
+            typeof body.description !== "string"
         ) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Invalid task priority",
-                },
-                {
-                    status: 400,
-                }
+            return jsonError(
+                "Task description must be text.",
+                400
             );
         }
 
-        /* ----------------------------------------------------
-           DATE VALIDATION
-        ---------------------------------------------------- */
-
         if (
-            body.startDate !==
-                undefined &&
+            !isWorker(user) &&
+            body.startDate !== undefined &&
             body.startDate !== "" &&
-            isNaN(
-                Date.parse(
-                    body.startDate
-                )
+            (
+                typeof body.startDate !== "string" ||
+                Number.isNaN(Date.parse(body.startDate))
             )
         ) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Invalid start date",
-                },
-                {
-                    status: 400,
-                }
-            );
+            return jsonError("Invalid start date.", 400);
         }
 
         if (
-            body.dueDate !==
-                undefined &&
+            !isWorker(user) &&
+            body.dueDate !== undefined &&
             body.dueDate !== "" &&
-            isNaN(
-                Date.parse(
-                    body.dueDate
-                )
+            (
+                typeof body.dueDate !== "string" ||
+                Number.isNaN(Date.parse(body.dueDate))
             )
         ) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Invalid due date",
-                },
-                {
-                    status: 400,
-                }
+            return jsonError("Invalid due date.", 400);
+        }
+
+        const nextStartDate =
+            !isWorker(user) && body.startDate !== undefined
+                ? body.startDate
+                : existingTask.startDate;
+
+        const nextDueDate =
+            !isWorker(user) && body.dueDate !== undefined
+                ? body.dueDate
+                : existingTask.dueDate;
+
+        if (
+            nextStartDate &&
+            nextDueDate &&
+            new Date(nextDueDate).getTime() <
+                new Date(nextStartDate).getTime()
+        ) {
+            return jsonError(
+                "Due date cannot be earlier than the start date.",
+                400
             );
         }
 
-        /* ----------------------------------------------------
-           PREPARE UPDATE DATA
-        ---------------------------------------------------- */
-
-        const updateData: Record<
-            string,
-            unknown
-        > = {};
-
-        if (
-            body.title !==
-                undefined
-        ) {
-            updateData.title =
-                body.title.trim();
+        for (const field of [
+            "remarks",
+            "completionDescription",
+            "completionLink",
+        ]) {
+            if (
+                body[field] !== undefined &&
+                typeof body[field] !== "string"
+            ) {
+                return jsonError(
+                    `${field} must be text.`,
+                    400
+                );
+            }
         }
 
-        if (
-            body.description !==
-                undefined
-        ) {
-            updateData.description =
-                body.description
-                    ? String(
-                          body.description
-                      ).trim()
+        const updateData: Record<string, unknown> = {};
+
+        // Only admins and authorized managers can edit task details.
+        if (!isWorker(user)) {
+            if (body.title !== undefined) {
+                updateData.title = body.title.trim();
+            }
+
+            if (body.description !== undefined) {
+                updateData.description =
+                    body.description.trim() || undefined;
+            }
+
+            if (body.priority !== undefined) {
+                updateData.priority = body.priority;
+            }
+
+            if (body.startDate !== undefined) {
+                updateData.startDate = body.startDate || undefined;
+            }
+
+            if (body.dueDate !== undefined) {
+                updateData.dueDate = body.dueDate || undefined;
+            }
+        }
+
+        if (body.status !== undefined) {
+            updateData.status = body.status;
+            updateData.completedAt =
+                body.status === "Completed"
+                    ? new Date().toISOString()
                     : undefined;
         }
 
-        if (
-            body.assignedTo !==
-                undefined
-        ) {
-            updateData.assignedTo =
-                body.assignedTo
-                    ? String(
-                          body.assignedTo
-                      ).trim()
-                    : undefined;
-        }
-
-        if (
-            body.assignedToName !==
-                undefined
-        ) {
-            updateData.assignedToName =
-                body.assignedToName
-                    ? String(
-                          body.assignedToName
-                      ).trim()
-                    : undefined;
-        }
-
-        if (
-            body.assignedToEmail !==
-                undefined
-        ) {
-            updateData.assignedToEmail =
-                body.assignedToEmail
-                    ? String(
-                          body.assignedToEmail
-                      )
-                          .trim()
-                          .toLowerCase()
-                    : undefined;
-        }
-
-        if (
-            body.assignedBy !==
-                undefined
-        ) {
-            updateData.assignedBy =
-                body.assignedBy
-                    ? String(
-                          body.assignedBy
-                      ).trim()
-                    : undefined;
-        }
-
-        if (
-            body.assignedByName !==
-                undefined
-        ) {
-            updateData.assignedByName =
-                body.assignedByName
-                    ? String(
-                          body.assignedByName
-                      ).trim()
-                    : undefined;
-        }
-
-        if (
-            body.priority !==
-                undefined
-        ) {
-            updateData.priority =
-                body.priority;
-        }
-
-        if (
-            body.status !==
-                undefined
-        ) {
-            updateData.status =
-                body.status;
-        }
-
-        if (
-            body.startDate !==
-                undefined
-        ) {
-            updateData.startDate =
-                body.startDate ||
-                undefined;
-        }
-
-        if (
-            body.dueDate !==
-                undefined
-        ) {
-            updateData.dueDate =
-                body.dueDate ||
-                undefined;
-        }
-
-        if (
-            body.remarks !==
-                undefined
-        ) {
+        if (body.remarks !== undefined) {
             updateData.remarks =
-                body.remarks
-                    ? String(
-                          body.remarks
-                      ).trim()
-                    : undefined;
+                body.remarks.trim() || undefined;
         }
 
-        if (
-            body.completionDescription !==
-                undefined
-        ) {
+        if (body.completionDescription !== undefined) {
             updateData.completionDescription =
-                body.completionDescription
-                    ? String(
-                          body.completionDescription
-                      ).trim()
-                    : undefined;
+                body.completionDescription.trim() || undefined;
         }
 
-        if (
-            body.completionLink !==
-                undefined
-        ) {
+        if (body.completionLink !== undefined) {
             updateData.completionLink =
-                body.completionLink
-                    ? String(
-                          body.completionLink
-                      ).trim()
-                    : undefined;
+                body.completionLink.trim() || undefined;
         }
 
-        /* ----------------------------------------------------
-           UPDATE TASK
-        ---------------------------------------------------- */
-
-        const updatedTask =
-            await updateTask(
-                taskId,
-                companyId,
-                updateData as any
+        if (Object.keys(updateData).length === 0) {
+            return jsonError(
+                "No permitted fields were provided.",
+                400
             );
+        }
+
+        const updatedTask = await updateTask(
+            taskId,
+            companyId,
+            updateData as any
+        );
 
         if (!updatedTask) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Failed to update task",
-                },
-                {
-                    status: 404,
-                }
-            );
+            return jsonError("Failed to update task.", 500);
         }
 
         return NextResponse.json({
             success: true,
-            message:
-                "Task updated successfully",
+            message: "Task updated successfully.",
             task: updatedTask,
         });
     } catch (error) {
-        console.error(
-            "PUT construction task error:",
-            error
-        );
+        console.error("PUT construction task error:", error);
 
-        return NextResponse.json(
-            {
-                success: false,
-                message:
-                    "Failed to update construction task",
-            },
-            {
-                status: 500,
-            }
-        );
+        return jsonError("Failed to update construction task.", 500);
     }
 }
 
-/* ============================================================
-   DELETE TASK
-============================================================ */
-
-export async function DELETE(
-    req: Request,
-    context: RouteContext
-) {
+/* DELETE TASK */
+export async function DELETE(req: Request, context: RouteContext) {
     try {
-        const user =
-            (await getUserFromRequest(
-                req
-            )) as ConstructionUser | null;
+        const user = await getUserFromRequest(req) as
+            | ConstructionUser
+            | null;
 
         if (!user) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message: "Unauthorized",
-                },
-                {
-                    status: 401,
-                }
-            );
+            return jsonError("Unauthorized.", 401);
         }
 
-        const { taskId } =
-            await context.params;
+        if (!isAdmin(user) && !isProjectManager(user)) {
+            return jsonError("Workers cannot delete tasks.", 403);
+        }
+
+        const { taskId } = await context.params;
 
         if (!taskId) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Task ID is required",
-                },
-                {
-                    status: 400,
-                }
+            return jsonError("Task ID is required.", 400);
+        }
+
+        const companyId = companyIdFor(user);
+        const task = await getTaskById(taskId, companyId);
+
+        if (!task) {
+            return jsonError("Task not found.", 404);
+        }
+
+        if (
+            isProjectManager(user) &&
+            !(await canManageTaskProject(user, task.projectId))
+        ) {
+            return jsonError(
+                "This task is outside your assigned projects.",
+                403
             );
         }
 
-        const companyId =
-            user.companyId ||
-            user.userId;
-
-        /* ----------------------------------------------------
-           CHECK TASK OWNERSHIP
-        ---------------------------------------------------- */
-
-        const existingTask =
-            await getTaskById(
-                taskId,
-                companyId
-            );
-
-        if (!existingTask) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Task not found",
-                },
-                {
-                    status: 404,
-                }
-            );
-        }
-
-        /* ----------------------------------------------------
-           DELETE
-        ---------------------------------------------------- */
-
-        const deleted =
-            await deleteTask(
-                taskId,
-                companyId
-            );
+        const deleted = await deleteTask(taskId, companyId);
 
         if (!deleted) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "Failed to delete task",
-                },
-                {
-                    status: 500,
-                }
-            );
+            return jsonError("Failed to delete task.", 500);
         }
 
         return NextResponse.json({
             success: true,
-            message:
-                "Task deleted successfully",
+            message: "Task deleted successfully.",
         });
     } catch (error) {
-        console.error(
-            "DELETE construction task error:",
-            error
-        );
+        console.error("DELETE construction task error:", error);
 
-        return NextResponse.json(
-            {
-                success: false,
-                message:
-                    "Failed to delete construction task",
-            },
-            {
-                status: 500,
-            }
-        );
+        return jsonError("Failed to delete construction task.", 500);
     }
 }

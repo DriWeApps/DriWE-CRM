@@ -7,16 +7,8 @@ import {
     Plus,
     Search,
     RefreshCw,
-    Eye,
     Pencil,
     Trash2,
-    Building2,
-    MapPin,
-    AlertTriangle,
-    CheckCircle2,
-    XCircle,
-    Boxes,
-    IndianRupee,
     Filter,
 } from "lucide-react";
 
@@ -42,8 +34,6 @@ interface Material {
     currentStock?: number;
     minimumStock?: number;
 
-    unitPrice?: number;
-    totalValue?: number;
 
     supplier?: string;
     supplierName?: string;
@@ -63,17 +53,9 @@ interface Project {
     projectName: string;
 }
 
-interface Site {
-    siteId: string;
-    projectId: string;
-    siteName: string;
-    location?: string;
-}
-
 export default function MaterialsPage() {
     const [materials, setMaterials] = useState<Material[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
-    const [sites, setSites] = useState<Site[]>([]);
 
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -81,7 +63,6 @@ export default function MaterialsPage() {
 
     const [search, setSearch] = useState("");
     const [projectFilter, setProjectFilter] = useState("");
-    const [siteFilter, setSiteFilter] = useState("");
     const [categoryFilter, setCategoryFilter] = useState("");
     const [statusFilter, setStatusFilter] = useState("");
 
@@ -93,14 +74,11 @@ export default function MaterialsPage() {
                 setLoading(true);
             }
 
-            const [materialsRes, projectsRes, sitesRes] = await Promise.all([
+            const [materialsRes, projectsRes] = await Promise.all([
                 fetch("/api/construction/materials", {
                     cache: "no-store",
                 }),
                 fetch("/api/construction/projects", {
-                    cache: "no-store",
-                }),
-                fetch("/api/construction/sites", {
                     cache: "no-store",
                 }),
             ]);
@@ -127,15 +105,6 @@ export default function MaterialsPage() {
                 }
             }
 
-            if (sitesRes.ok) {
-                const data = await sitesRes.json();
-
-                if (Array.isArray(data)) {
-                    setSites(data);
-                } else {
-                    setSites(data.sites || []);
-                }
-            }
         } catch (error) {
             console.error("Failed to load materials:", error);
         } finally {
@@ -158,23 +127,6 @@ export default function MaterialsPage() {
         ).sort() as string[];
     }, [materials]);
 
-    const filteredSites = useMemo(() => {
-        if (!projectFilter) return sites;
-
-        return sites.filter(
-            (site) => site.projectId === projectFilter
-        );
-    }, [sites, projectFilter]);
-
-    useEffect(() => {
-        if (
-            siteFilter &&
-            !filteredSites.some((site) => site.siteId === siteFilter)
-        ) {
-            setSiteFilter("");
-        }
-    }, [filteredSites, siteFilter]);
-
     const filteredMaterials = useMemo(() => {
         const searchText = search.trim().toLowerCase();
 
@@ -190,9 +142,6 @@ export default function MaterialsPage() {
                 material.projectName
                     ?.toLowerCase()
                     .includes(searchText) ||
-                material.siteName
-                    ?.toLowerCase()
-                    .includes(searchText) ||
                 material.supplier
                     ?.toLowerCase()
                     .includes(searchText) ||
@@ -203,10 +152,6 @@ export default function MaterialsPage() {
             const matchesProject =
                 !projectFilter ||
                 material.projectId === projectFilter;
-
-            const matchesSite =
-                !siteFilter ||
-                material.siteId === siteFilter;
 
             const matchesCategory =
                 !categoryFilter ||
@@ -219,7 +164,6 @@ export default function MaterialsPage() {
             return (
                 matchesSearch &&
                 matchesProject &&
-                matchesSite &&
                 matchesCategory &&
                 matchesStatus
             );
@@ -228,101 +172,14 @@ export default function MaterialsPage() {
         materials,
         search,
         projectFilter,
-        siteFilter,
         categoryFilter,
         statusFilter,
     ]);
-
-    const stats = useMemo(() => {
-        let totalStockValue = 0;
-        let lowStock = 0;
-        let active = 0;
-        let inactive = 0;
-
-        materials.forEach((material) => {
-            const currentStock = Number(material.currentStock ?? 0);
-            const minimumStock = Number(material.minimumStock ?? 0);
-            const unitPrice = Number(material.unitPrice ?? 0);
-
-            totalStockValue +=
-                Number(
-                    material.totalValue ??
-                        currentStock * unitPrice
-                );
-
-            if (
-                minimumStock > 0 &&
-                currentStock <= minimumStock
-            ) {
-                lowStock++;
-            }
-
-            if (material.status === "Inactive") {
-                inactive++;
-            } else {
-                active++;
-            }
-        });
-
-        return {
-            total: materials.length,
-            active,
-            inactive,
-            lowStock,
-            totalStockValue,
-        };
-    }, [materials]);
-
-    const getStockStatus = (material: Material) => {
-        const stock = Number(material.currentStock ?? 0);
-        const minimum = Number(material.minimumStock ?? 0);
-
-        if (minimum > 0 && stock <= minimum) {
-            return "Low Stock";
-        }
-
-        return "In Stock";
-    };
-
-    const getStockPercentage = (material: Material) => {
-        const stock = Number(material.currentStock ?? 0);
-        const minimum = Number(material.minimumStock ?? 0);
-
-        if (minimum <= 0) return 100;
-
-        const percentage = (stock / minimum) * 100;
-
-        return Math.min(Math.max(percentage, 0), 100);
-    };
-
-    const formatCurrency = (value: number | undefined) => {
-        return new Intl.NumberFormat("en-IN", {
-            style: "currency",
-            currency: "INR",
-            maximumFractionDigits: 0,
-        }).format(Number(value ?? 0));
-    };
 
     const formatNumber = (value: number | undefined) => {
         return new Intl.NumberFormat("en-IN", {
             maximumFractionDigits: 2,
         }).format(Number(value ?? 0));
-    };
-
-    const formatDate = (value?: string) => {
-        if (!value) return "-";
-
-        const date = new Date(value);
-
-        if (Number.isNaN(date.getTime())) {
-            return "-";
-        }
-
-        return date.toLocaleDateString("en-IN", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-        });
     };
 
     const handleDelete = async (material: Material) => {
@@ -374,7 +231,6 @@ export default function MaterialsPage() {
     const clearFilters = () => {
         setSearch("");
         setProjectFilter("");
-        setSiteFilter("");
         setCategoryFilter("");
         setStatusFilter("");
     };
@@ -382,7 +238,6 @@ export default function MaterialsPage() {
     const hasFilters =
         search ||
         projectFilter ||
-        siteFilter ||
         categoryFilter ||
         statusFilter;
 
@@ -455,83 +310,6 @@ export default function MaterialsPage() {
                     </div>
                 </div>
 
-                {/* Stats */}
-                <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-5">
-                        <div className="flex items-start justify-between">
-                            <div>
-                                <p className="text-sm text-zinc-400">
-                                    Total Materials
-                                </p>
-
-                                <p className="mt-2 text-2xl font-bold text-white">
-                                    {stats.total}
-                                </p>
-                            </div>
-
-                            <div className="rounded-lg bg-yellow-500/10 p-2.5">
-                                <Boxes className="h-5 w-5 text-yellow-400" />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-5">
-                        <div className="flex items-start justify-between">
-                            <div>
-                                <p className="text-sm text-zinc-400">
-                                    Active Materials
-                                </p>
-
-                                <p className="mt-2 text-2xl font-bold text-emerald-400">
-                                    {stats.active}
-                                </p>
-                            </div>
-
-                            <div className="rounded-lg bg-emerald-500/10 p-2.5">
-                                <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-5">
-                        <div className="flex items-start justify-between">
-                            <div>
-                                <p className="text-sm text-zinc-400">
-                                    Low Stock
-                                </p>
-
-                                <p className="mt-2 text-2xl font-bold text-red-400">
-                                    {stats.lowStock}
-                                </p>
-                            </div>
-
-                            <div className="rounded-lg bg-red-500/10 p-2.5">
-                                <AlertTriangle className="h-5 w-5 text-red-400" />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-5">
-                        <div className="flex items-start justify-between">
-                            <div>
-                                <p className="text-sm text-zinc-400">
-                                    Stock Value
-                                </p>
-
-                                <p className="mt-2 text-xl font-bold text-yellow-400">
-                                    {formatCurrency(
-                                        stats.totalStockValue
-                                    )}
-                                </p>
-                            </div>
-
-                            <div className="rounded-lg bg-yellow-500/10 p-2.5">
-                                <IndianRupee className="h-5 w-5 text-yellow-400" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 {/* Filters */}
                 <div className="mb-6 rounded-xl border border-zinc-800 bg-zinc-900/70 p-4">
                     <div className="mb-4 flex items-center justify-between">
@@ -588,28 +366,6 @@ export default function MaterialsPage() {
                                     value={project.projectId}
                                 >
                                     {project.projectName}
-                                </option>
-                            ))}
-                        </select>
-
-                        {/* Site */}
-                        <select
-                            value={siteFilter}
-                            onChange={(e) =>
-                                setSiteFilter(e.target.value)
-                            }
-                            className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-200 outline-none focus:border-yellow-500/50"
-                        >
-                            <option value="">
-                                All Sites
-                            </option>
-
-                            {filteredSites.map((site) => (
-                                <option
-                                    key={site.siteId}
-                                    value={site.siteId}
-                                >
-                                    {site.siteName}
                                 </option>
                             ))}
                         </select>
@@ -717,23 +473,7 @@ export default function MaterialsPage() {
                                             </th>
 
                                             <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                                                Project / Site
-                                            </th>
-
-                                            <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                                                Stock
-                                            </th>
-
-                                            <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                                                Unit Price
-                                            </th>
-
-                                            <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                                                Supplier
-                                            </th>
-
-                                            <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                                                Status
+                                                Available Quantity
                                             </th>
 
                                             <th className="px-5 py-4 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">
@@ -745,20 +485,6 @@ export default function MaterialsPage() {
                                     <tbody className="divide-y divide-zinc-800">
                                         {filteredMaterials.map(
                                             (material) => {
-                                                const stockStatus =
-                                                    getStockStatus(
-                                                        material
-                                                    );
-
-                                                const stockPercentage =
-                                                    getStockPercentage(
-                                                        material
-                                                    );
-
-                                                const isLowStock =
-                                                    stockStatus ===
-                                                    "Low Stock";
-
                                                 return (
                                                     <tr
                                                         key={
@@ -773,166 +499,24 @@ export default function MaterialsPage() {
                                                                 </div>
 
                                                                 <div className="min-w-0">
-                                                                    <Link
-                                                                        href={`/DriWE-Construction/materials/${material.materialId}`}
-                                                                        className="block truncate font-semibold text-white hover:text-yellow-400"
-                                                                    >
+                                                                        <span className="block truncate font-semibold text-white">
                                                                         {
                                                                             material.materialName
                                                                         }
-                                                                    </Link>
+                                                                        </span>
 
-                                                                    <div className="mt-1 flex items-center gap-2">
-                                                                        {material.category && (
-                                                                            <span className="rounded-full border border-zinc-700 bg-zinc-800 px-2 py-0.5 text-[11px] text-zinc-400">
-                                                                                {
-                                                                                    material.category
-                                                                                }
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </td>
 
                                                         <td className="px-5 py-4">
-                                                            <div className="space-y-1">
-                                                                <div className="flex items-center gap-2 text-sm text-zinc-200">
-                                                                    <Building2 className="h-3.5 w-3.5 text-zinc-500" />
-                                                                    <span className="max-w-[180px] truncate">
-                                                                        {material.projectName ||
-                                                                            "-"}
-                                                                    </span>
-                                                                </div>
-
-                                                                <div className="flex items-center gap-2 text-xs text-zinc-500">
-                                                                    <MapPin className="h-3.5 w-3.5" />
-                                                                    <span className="max-w-[180px] truncate">
-                                                                        {material.siteName ||
-                                                                            "-"}
-                                                                    </span>
-                                                                </div>
+                                                            <div className="text-lg font-bold text-white">
+                                                                {formatNumber(material.quantity ?? material.currentStock)} {material.unit || ""}
                                                             </div>
-                                                        </td>
-
-                                                        <td className="px-5 py-4">
-                                                            <div className="min-w-[130px]">
-                                                                <div className="mb-1.5 flex items-center justify-between gap-3">
-                                                                    <span
-                                                                        className={`text-sm font-semibold ${
-                                                                            isLowStock
-                                                                                ? "text-red-400"
-                                                                                : "text-white"
-                                                                        }`}
-                                                                    >
-                                                                        {formatNumber(
-                                                                            material.currentStock
-                                                                        )}{" "}
-                                                                        {material.unit ||
-                                                                            ""}
-                                                                    </span>
-
-                                                                    <span
-                                                                        className={`text-[11px] ${
-                                                                            isLowStock
-                                                                                ? "text-red-400"
-                                                                                : "text-emerald-400"
-                                                                        }`}
-                                                                    >
-                                                                        {stockStatus}
-                                                                    </span>
-                                                                </div>
-
-                                                                <div className="h-1.5 overflow-hidden rounded-full bg-zinc-800">
-                                                                    <div
-                                                                        className={`h-full rounded-full ${
-                                                                            isLowStock
-                                                                                ? "bg-red-500"
-                                                                                : "bg-emerald-500"
-                                                                        }`}
-                                                                        style={{
-                                                                            width: `${stockPercentage}%`,
-                                                                        }}
-                                                                    />
-                                                                </div>
-
-                                                                <p className="mt-1 text-[11px] text-zinc-600">
-                                                                    Min:{" "}
-                                                                    {formatNumber(
-                                                                        material.minimumStock
-                                                                    )}{" "}
-                                                                    {material.unit ||
-                                                                        ""}
-                                                                </p>
-                                                            </div>
-                                                        </td>
-
-                                                        <td className="px-5 py-4">
-                                                            <div className="text-sm font-medium text-zinc-200">
-                                                                {formatCurrency(
-                                                                    material.unitPrice
-                                                                )}
-                                                            </div>
-
-                                                            <div className="mt-1 text-xs text-zinc-500">
-                                                                Total:{" "}
-                                                                {formatCurrency(
-                                                                    material.totalValue ??
-                                                                        Number(
-                                                                            material.currentStock ??
-                                                                                0
-                                                                        ) *
-                                                                            Number(
-                                                                                material.unitPrice ??
-                                                                                    0
-                                                                            )
-                                                                )}
-                                                            </div>
-                                                        </td>
-
-                                                        <td className="px-5 py-4">
-                                                            <div className="max-w-[160px]">
-                                                                <p className="truncate text-sm text-zinc-300">
-                                                                    {material.supplier ||
-                                                                        material.supplierName ||
-                                                                        "-"}
-                                                                </p>
-
-                                                                {material.supplierContact && (
-                                                                    <p className="mt-1 text-xs text-zinc-500">
-                                                                        {
-                                                                            material.supplierContact
-                                                                        }
-                                                                    </p>
-                                                                )}
-                                                            </div>
-                                                        </td>
-
-                                                        <td className="px-5 py-4">
-                                                            {material.status ===
-                                                            "Inactive" ? (
-                                                                <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700 bg-zinc-800 px-2.5 py-1 text-xs font-medium text-zinc-400">
-                                                                    <XCircle className="h-3.5 w-3.5" />
-                                                                    Inactive
-                                                                </span>
-                                                            ) : (
-                                                                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-400">
-                                                                    <CheckCircle2 className="h-3.5 w-3.5" />
-                                                                    Active
-                                                                </span>
-                                                            )}
                                                         </td>
 
                                                         <td className="px-5 py-4">
                                                             <div className="flex items-center justify-end gap-1">
-                                                                <Link
-                                                                    href={`/DriWE-Construction/materials/${material.materialId}`}
-                                                                    title="View"
-                                                                    className="rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-white"
-                                                                >
-                                                                    <Eye className="h-4 w-4" />
-                                                                </Link>
-
                                                                 <Link
                                                                     href={`/DriWE-Construction/materials/${material.materialId}/edit`}
                                                                     title="Edit"
@@ -971,15 +555,6 @@ export default function MaterialsPage() {
                         {/* Mobile / Tablet cards */}
                         <div className="grid grid-cols-1 gap-4 lg:hidden">
                             {filteredMaterials.map((material) => {
-                                const stockStatus =
-                                    getStockStatus(material);
-
-                                const stockPercentage =
-                                    getStockPercentage(material);
-
-                                const isLowStock =
-                                    stockStatus === "Low Stock";
-
                                 return (
                                     <div
                                         key={material.materialId}
@@ -992,197 +567,25 @@ export default function MaterialsPage() {
                                                 </div>
 
                                                 <div className="min-w-0">
-                                                    <Link
-                                                        href={`/DriWE-Construction/materials/${material.materialId}`}
-                                                        className="block truncate font-semibold text-white hover:text-yellow-400"
-                                                    >
+                                                    <span className="block truncate font-semibold text-white">
                                                         {
                                                             material.materialName
                                                         }
-                                                    </Link>
+                                                    </span>
 
-                                                    {material.category && (
-                                                        <span className="mt-1 inline-block rounded-full border border-zinc-700 bg-zinc-800 px-2 py-0.5 text-[11px] text-zinc-400">
-                                                            {
-                                                                material.category
-                                                            }
-                                                        </span>
-                                                    )}
                                                 </div>
-                                            </div>
-
-                                            {material.status ===
-                                            "Inactive" ? (
-                                                <span className="shrink-0 rounded-full bg-zinc-800 px-2 py-1 text-[11px] text-zinc-500">
-                                                    Inactive
-                                                </span>
-                                            ) : (
-                                                <span className="shrink-0 rounded-full bg-emerald-500/10 px-2 py-1 text-[11px] text-emerald-400">
-                                                    Active
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        <div className="mt-4 grid grid-cols-2 gap-3">
-                                            <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
-                                                <p className="text-[11px] uppercase tracking-wide text-zinc-600">
-                                                    Project
-                                                </p>
-
-                                                <p className="mt-1 truncate text-sm text-zinc-300">
-                                                    {material.projectName ||
-                                                        "-"}
-                                                </p>
-                                            </div>
-
-                                            <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
-                                                <p className="text-[11px] uppercase tracking-wide text-zinc-600">
-                                                    Site
-                                                </p>
-
-                                                <p className="mt-1 truncate text-sm text-zinc-300">
-                                                    {material.siteName ||
-                                                        "-"}
-                                                </p>
                                             </div>
                                         </div>
 
                                         <div className="mt-4 rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <p className="text-[11px] uppercase tracking-wide text-zinc-600">
-                                                        Current Stock
-                                                    </p>
-
-                                                    <p
-                                                        className={`mt-1 text-lg font-bold ${
-                                                            isLowStock
-                                                                ? "text-red-400"
-                                                                : "text-white"
-                                                        }`}
-                                                    >
-                                                        {formatNumber(
-                                                            material.currentStock
-                                                        )}{" "}
-                                                        {material.unit ||
-                                                            ""}
-                                                    </p>
-                                                </div>
-
-                                                <div className="text-right">
-                                                    <p className="text-[11px] uppercase tracking-wide text-zinc-600">
-                                                        Minimum
-                                                    </p>
-
-                                                    <p className="mt-1 text-sm text-zinc-400">
-                                                        {formatNumber(
-                                                            material.minimumStock
-                                                        )}{" "}
-                                                        {material.unit ||
-                                                            ""}
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-zinc-800">
-                                                <div
-                                                    className={`h-full rounded-full ${
-                                                        isLowStock
-                                                            ? "bg-red-500"
-                                                            : "bg-emerald-500"
-                                                    }`}
-                                                    style={{
-                                                        width: `${stockPercentage}%`,
-                                                    }}
-                                                />
-                                            </div>
-
-                                            <p
-                                                className={`mt-2 text-xs ${
-                                                    isLowStock
-                                                        ? "text-red-400"
-                                                        : "text-emerald-400"
-                                                }`}
-                                            >
-                                                {stockStatus}
+                                            <p className="text-[11px] uppercase tracking-wide text-zinc-500">Quantity</p>
+                                            <p className="mt-1 text-xl font-bold text-white">
+                                                {formatNumber(material.quantity ?? material.currentStock)} {material.unit || ""}
                                             </p>
                                         </div>
-
-                                        <div className="mt-4 grid grid-cols-2 gap-3">
-                                            <div>
-                                                <p className="text-xs text-zinc-600">
-                                                    Unit Price
-                                                </p>
-
-                                                <p className="mt-1 text-sm font-medium text-zinc-300">
-                                                    {formatCurrency(
-                                                        material.unitPrice
-                                                    )}
-                                                </p>
-                                            </div>
-
-                                            <div>
-                                                <p className="text-xs text-zinc-600">
-                                                    Stock Value
-                                                </p>
-
-                                                <p className="mt-1 text-sm font-medium text-yellow-400">
-                                                    {formatCurrency(
-                                                        material.totalValue ??
-                                                            Number(
-                                                                material.currentStock ??
-                                                                    0
-                                                            ) *
-                                                                Number(
-                                                                    material.unitPrice ??
-                                                                        0
-                                                                )
-                                                    )}
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        {(
-                                            material.supplier ||
-                                            material.supplierName
-                                        ) && (
-                                            <div className="mt-4 border-t border-zinc-800 pt-4">
-                                                <p className="text-xs text-zinc-600">
-                                                    Supplier
-                                                </p>
-
-                                                <p className="mt-1 text-sm text-zinc-300">
-                                                    {material.supplier ||
-                                                        material.supplierName}
-                                                </p>
-
-                                                {material.supplierContact && (
-                                                    <p className="mt-1 text-xs text-zinc-500">
-                                                        {
-                                                            material.supplierContact
-                                                        }
-                                                    </p>
-                                                )}
-                                            </div>
-                                        )}
 
                                         <div className="mt-4 flex items-center justify-between border-t border-zinc-800 pt-4">
-                                            <p className="text-xs text-zinc-600">
-                                                Added{" "}
-                                                {formatDate(
-                                                    material.createdAt
-                                                )}
-                                            </p>
-
                                             <div className="flex items-center gap-1">
-                                                <Link
-                                                    href={`/DriWE-Construction/materials/${material.materialId}`}
-                                                    className="rounded-lg p-2 text-zinc-400 hover:bg-zinc-800 hover:text-white"
-                                                    title="View"
-                                                >
-                                                    <Eye className="h-4 w-4" />
-                                                </Link>
-
                                                 <Link
                                                     href={`/DriWE-Construction/materials/${material.materialId}/edit`}
                                                     className="rounded-lg p-2 text-zinc-400 hover:bg-zinc-800 hover:text-yellow-400"

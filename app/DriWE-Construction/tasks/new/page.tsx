@@ -63,17 +63,10 @@ export default function NewConstructionTaskPage() {
     const [sites, setSites] = useState<Site[]>([]);
     const [workers, setWorkers] = useState<Worker[]>([]);
 
-    const [loadingProjects, setLoadingProjects] =
-        useState(true);
-
-    const [loadingSites, setLoadingSites] =
-        useState(false);
-
-    const [loadingWorkers, setLoadingWorkers] =
-        useState(false);
-
+    const [loadingProjects, setLoadingProjects] = useState(true);
+    const [loadingSites, setLoadingSites] = useState(false);
+    const [loadingWorkers, setLoadingWorkers] = useState(false);
     const [saving, setSaving] = useState(false);
-
     const [error, setError] = useState("");
 
     const [formData, setFormData] = useState<FormData>({
@@ -89,51 +82,31 @@ export default function NewConstructionTaskPage() {
         remarks: "",
     });
 
-    // =========================================================
-    // LOAD PROJECTS
-    // =========================================================
-
+    // Load projects
     useEffect(() => {
         async function loadProjects() {
             try {
                 setLoadingProjects(true);
                 setError("");
 
-                const res = await fetch(
-                    "/api/construction/projects",
-                    {
-                        method: "GET",
-                        cache: "no-store",
-                        credentials: "include",
-                    }
-                );
+                const res = await fetch("/api/construction/projects", {
+                    method: "GET",
+                    cache: "no-store",
+                    credentials: "include",
+                });
 
                 const data = await res.json();
 
                 if (!res.ok) {
-                    throw new Error(
-                        data?.error ||
-                            "Failed to load projects"
-                    );
+                    throw new Error(data?.error || "Failed to load projects");
                 }
 
-                setProjects(
-                    Array.isArray(data?.projects)
-                        ? data.projects
-                        : []
-                );
+                setProjects(Array.isArray(data?.projects) ? data.projects : []);
             } catch (err) {
-                console.error(
-                    "Failed to load projects:",
-                    err
-                );
-
+                console.error("Failed to load projects:", err);
                 setError(
-                    err instanceof Error
-                        ? err.message
-                        : "Failed to load projects"
+                    err instanceof Error ? err.message : "Failed to load projects"
                 );
-
                 setProjects([]);
             } finally {
                 setLoadingProjects(false);
@@ -143,10 +116,7 @@ export default function NewConstructionTaskPage() {
         loadProjects();
     }, []);
 
-    // =========================================================
-    // LOAD SITES WHEN PROJECT CHANGES
-    // =========================================================
-
+    // Load sites when project changes
     useEffect(() => {
         if (!formData.projectId) {
             setSites([]);
@@ -162,9 +132,7 @@ export default function NewConstructionTaskPage() {
                 setError("");
 
                 const res = await fetch(
-                    `/api/construction/sites?projectId=${encodeURIComponent(
-                        formData.projectId
-                    )}`,
+                    `/api/construction/sites?projectId=${encodeURIComponent(formData.projectId)}`,
                     {
                         method: "GET",
                         cache: "no-store",
@@ -175,34 +143,17 @@ export default function NewConstructionTaskPage() {
                 const data = await res.json();
 
                 if (!res.ok) {
-                    throw new Error(
-                        data?.error ||
-                            "Failed to load sites"
-                    );
+                    throw new Error(data?.error || "Failed to load sites");
                 }
 
-                setSites(
-                    Array.isArray(data?.sites)
-                        ? data.sites
-                        : []
-                );
-
-                // Worker list must be cleared
-                // when project changes.
+                setSites(Array.isArray(data?.sites) ? data.sites : []);
                 setWorkers([]);
             } catch (err) {
-                console.error(
-                    "Failed to load sites:",
-                    err
-                );
-
+                console.error("Failed to load sites:", err);
                 setSites([]);
                 setWorkers([]);
-
                 setError(
-                    err instanceof Error
-                        ? err.message
-                        : "Failed to load sites"
+                    err instanceof Error ? err.message : "Failed to load sites"
                 );
             } finally {
                 setLoadingSites(false);
@@ -212,10 +163,7 @@ export default function NewConstructionTaskPage() {
         loadSites();
     }, [formData.projectId]);
 
-    // =========================================================
-    // LOAD WORKERS WHEN SITE CHANGES
-    // =========================================================
-
+    // Load workers when site changes
     useEffect(() => {
         if (!formData.siteId) {
             setWorkers([]);
@@ -229,9 +177,7 @@ export default function NewConstructionTaskPage() {
                 setError("");
 
                 const res = await fetch(
-                    `/api/construction/workers?siteId=${encodeURIComponent(
-                        formData.siteId
-                    )}`,
+                    `/api/construction/workers?siteId=${encodeURIComponent(formData.siteId)}`,
                     {
                         method: "GET",
                         cache: "no-store",
@@ -242,58 +188,26 @@ export default function NewConstructionTaskPage() {
                 const data = await res.json();
 
                 if (!res.ok) {
-                    throw new Error(
-                        data?.error ||
-                            "Failed to load workers"
-                    );
+                    throw new Error(data?.error || "Failed to load workers");
                 }
 
-                const loadedWorkers: Worker[] =
-                    Array.isArray(data?.workers)
-                        ? data.workers
-                        : [];
+                const loadedWorkers: Worker[] = Array.isArray(data?.workers)
+                    ? data.workers
+                    : [];
 
-                /*
-                 * Only workers belonging to the selected
-                 * site are allowed.
-                 *
-                 * This additional frontend filter makes sure
-                 * that even if the API accidentally returns
-                 * workers from another site, they will not
-                 * appear in this dropdown.
-                 */
-                const siteWorkers =
-                    loadedWorkers.filter(
-                        (worker) =>
-                            worker.siteId ===
-                            formData.siteId
-                    );
-
-                /*
-                 * Show active workers only.
-                 *
-                 * If active is not present in an old record,
-                 * the worker is still allowed.
-                 */
-                const activeWorkers =
-                    siteWorkers.filter(
-                        (worker) =>
-                            worker.active !== false
-                    );
-
-                setWorkers(activeWorkers);
-            } catch (err) {
-                console.error(
-                    "Failed to load workers:",
-                    err
+                const siteWorkers = loadedWorkers.filter(
+                    (worker) => worker.siteId === formData.siteId
                 );
 
+                // Keep active workers; legacy records without active remain eligible.
+                setWorkers(
+                    siteWorkers.filter((worker) => worker.active !== false)
+                );
+            } catch (err) {
+                console.error("Failed to load workers:", err);
                 setWorkers([]);
-
                 setError(
-                    err instanceof Error
-                        ? err.message
-                        : "Failed to load workers"
+                    err instanceof Error ? err.message : "Failed to load workers"
                 );
             } finally {
                 setLoadingWorkers(false);
@@ -303,15 +217,9 @@ export default function NewConstructionTaskPage() {
         loadWorkers();
     }, [formData.siteId]);
 
-    // =========================================================
-    // INPUT CHANGE
-    // =========================================================
-
     function handleChange(
         e: React.ChangeEvent<
-            HTMLInputElement |
-                HTMLTextAreaElement |
-                HTMLSelectElement
+            HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
         >
     ) {
         const { name, value } = e.target;
@@ -321,18 +229,10 @@ export default function NewConstructionTaskPage() {
             [name]: value,
         }));
 
-        if (error) {
-            setError("");
-        }
+        if (error) setError("");
     }
 
-    // =========================================================
-    // PROJECT CHANGE
-    // =========================================================
-
-    function handleProjectChange(
-        e: React.ChangeEvent<HTMLSelectElement>
-    ) {
+    function handleProjectChange(e: React.ChangeEvent<HTMLSelectElement>) {
         const projectId = e.target.value;
 
         setFormData((prev) => ({
@@ -347,13 +247,7 @@ export default function NewConstructionTaskPage() {
         setError("");
     }
 
-    // =========================================================
-    // SITE CHANGE
-    // =========================================================
-
-    function handleSiteChange(
-        e: React.ChangeEvent<HTMLSelectElement>
-    ) {
+    function handleSiteChange(e: React.ChangeEvent<HTMLSelectElement>) {
         const siteId = e.target.value;
 
         setFormData((prev) => ({
@@ -366,36 +260,25 @@ export default function NewConstructionTaskPage() {
         setError("");
     }
 
-    // =========================================================
-    // SUBMIT
-    // =========================================================
-
-    async function handleSubmit(
-        e: React.FormEvent<HTMLFormElement>
-    ) {
+    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-
         setError("");
 
-        // Project validation
         if (!formData.projectId) {
             setError("Please select a project.");
             return;
         }
 
-        // Site validation
         if (!formData.siteId) {
             setError("Please select a site.");
             return;
         }
 
-        // Task title validation
         if (!formData.title.trim()) {
             setError("Please enter a task title.");
             return;
         }
 
-        // Worker validation
         if (!formData.assignedTo) {
             setError("Please select a worker.");
             return;
@@ -404,56 +287,32 @@ export default function NewConstructionTaskPage() {
         try {
             setSaving(true);
 
-            // Find selected project
             const selectedProject = projects.find(
-                (project) =>
-                    project.projectId ===
-                    formData.projectId
+                (project) => project.projectId === formData.projectId
             );
-
-            // Find selected site
             const selectedSite = sites.find(
-                (site) =>
-                    site.siteId ===
-                    formData.siteId
+                (site) => site.siteId === formData.siteId
             );
-
-            // Find selected worker
             const selectedWorker = workers.find(
-                (worker) =>
-                    worker.workerId ===
-                    formData.assignedTo
+                (worker) => worker.workerId === formData.assignedTo
             );
 
             if (!selectedProject) {
-                setError(
-                    "Selected project could not be found."
-                );
+                setError("Selected project could not be found.");
                 return;
             }
 
             if (!selectedSite) {
-                setError(
-                    "Selected site could not be found."
-                );
+                setError("Selected site could not be found.");
                 return;
             }
 
             if (!selectedWorker) {
-                setError(
-                    "Selected worker could not be found."
-                );
+                setError("Selected worker could not be found.");
                 return;
             }
 
-            /*
-             * Final safety check:
-             * worker must belong to selected site.
-             */
-            if (
-                selectedWorker.siteId !==
-                formData.siteId
-            ) {
+            if (selectedWorker.siteId !== formData.siteId) {
                 setError(
                     "Selected worker does not belong to the selected site."
                 );
@@ -461,123 +320,62 @@ export default function NewConstructionTaskPage() {
             }
 
             const payload = {
-                projectId:
-                    selectedProject.projectId,
-
-                projectName:
-                    selectedProject.projectName,
-
-                siteId:
-                    selectedSite.siteId,
-
-                siteName:
-                    selectedSite.siteName,
-
-                title:
-                    formData.title.trim(),
-
-                description:
-                    formData.description.trim() ||
-                    undefined,
-
-                /*
-                 * Worker ID is stored internally.
-                 * User only sees worker name.
-                 */
-                assignedTo:
-                    selectedWorker.workerId,
-
-                /*
-                 * Worker name is automatically taken
-                 * from the selected worker.
-                 */
-                assignedToName:
-                    selectedWorker.name,
-
-                priority:
-                    formData.priority,
-
-                status:
-                    formData.status,
-
-                startDate:
-                    formData.startDate ||
-                    undefined,
-
-                dueDate:
-                    formData.dueDate ||
-                    undefined,
-
-                remarks:
-                    formData.remarks.trim() ||
-                    undefined,
+                projectId: selectedProject.projectId,
+                projectName: selectedProject.projectName,
+                siteId: selectedSite.siteId,
+                siteName: selectedSite.siteName,
+                title: formData.title.trim(),
+                description: formData.description.trim() || undefined,
+                assignedTo: selectedWorker.workerId,
+                assignedToName: selectedWorker.name,
+                priority: formData.priority,
+                status: formData.status,
+                startDate: formData.startDate || undefined,
+                dueDate: formData.dueDate || undefined,
+                remarks: formData.remarks.trim() || undefined,
             };
 
-            console.log(
-                "Creating construction task:",
-                payload
-            );
+            console.log("Creating construction task:", payload);
 
-            const res = await fetch(
-                "/api/construction/tasks",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type":
-                            "application/json",
-                    },
-                    credentials: "include",
-                    body: JSON.stringify(payload),
-                }
-            );
+            const res = await fetch("/api/construction/tasks", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify(payload),
+            });
 
             const data = await res.json();
 
             if (!res.ok) {
-                throw new Error(
-                    data?.error ||
-                        "Failed to create task"
-                );
+                throw new Error(data?.error || "Failed to create task");
             }
 
-            router.push(
-                "/DriWE-Construction/tasks"
-            );
-
+            router.push("/DriWE-Construction/tasks");
             router.refresh();
         } catch (err) {
-            console.error(
-                "Failed to create task:",
-                err
-            );
-
+            console.error("Failed to create task:", err);
             setError(
-                err instanceof Error
-                    ? err.message
-                    : "Failed to create task"
+                err instanceof Error ? err.message : "Failed to create task"
             );
         } finally {
             setSaving(false);
         }
     }
 
-    // =========================================================
-    // UI
-    // =========================================================
+    const inputClassName =
+        "w-full rounded-lg border border-zinc-700 bg-black px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/30 disabled:cursor-not-allowed disabled:opacity-50";
+    const labelClassName = "mb-2 block text-sm font-medium text-zinc-300";
+    const sectionClassName =
+        "rounded-xl border border-zinc-800 bg-black p-6 shadow-lg shadow-black/20";
 
     return (
-        <div className="min-h-screen bg-zinc-950 p-6 text-white md:p-8">
+        <div className="min-h-screen bg-black p-6 text-white md:p-8">
             <div className="mx-auto max-w-5xl">
-
-                {/* =====================================================
-                    HEADER
-                ====================================================== */}
-
                 <div className="mb-8 flex items-center gap-4">
-
                     <Link
                         href="/DriWE-Construction/tasks"
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-300 transition hover:border-yellow-500/50 hover:text-yellow-400"
+                        aria-label="Back to construction tasks"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950 text-zinc-300 transition hover:border-yellow-500/50 hover:text-yellow-400"
                     >
                         <ArrowLeft size={20} />
                     </Link>
@@ -588,468 +386,263 @@ export default function NewConstructionTaskPage() {
                                 size={24}
                                 className="text-yellow-400"
                             />
-
-                            <h1 className="text-2xl font-bold">
+                            <h1 className="text-2xl font-bold text-white">
                                 Create Construction Task
                             </h1>
                         </div>
-
                         <p className="mt-1 text-sm text-zinc-400">
-                            Create and assign a task to a
-                            worker under a specific site.
+                            Create and assign a task to a worker under a specific site.
                         </p>
                     </div>
                 </div>
 
-                {/* =====================================================
-                    ERROR
-                ====================================================== */}
-
                 {error && (
-                    <div className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                    <div
+                        role="alert"
+                        className="mb-6 rounded-lg border border-red-500/30 bg-red-950/40 px-4 py-3 text-sm text-red-300"
+                    >
                         {error}
                     </div>
                 )}
 
-                <form
-                    onSubmit={handleSubmit}
-                    className="space-y-6"
-                >
-
-                    {/* =================================================
-                        ASSIGNMENT
-                    ================================================== */}
-
-                    <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-6">
-
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <section className={sectionClassName}>
                         <h2 className="mb-6 text-lg font-semibold text-yellow-400">
                             Assignment
                         </h2>
 
                         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-
-                            {/* ================================
-                                PROJECT
-                            ================================= */}
-
                             <div>
-                                <label
-                                    htmlFor="projectId"
-                                    className="mb-2 block text-sm font-medium text-zinc-300"
-                                >
-                                    Project
-                                    <span className="ml-1 text-red-400">
-                                        *
-                                    </span>
+                                <label htmlFor="projectId" className={labelClassName}>
+                                    Project <span className="ml-1 text-red-400">*</span>
                                 </label>
-
                                 <select
                                     id="projectId"
                                     name="projectId"
-                                    value={
-                                        formData.projectId
-                                    }
-                                    onChange={
-                                        handleProjectChange
-                                    }
-                                    disabled={
-                                        loadingProjects ||
-                                        saving
-                                    }
-                                    className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white outline-none transition focus:border-yellow-500 disabled:cursor-not-allowed disabled:opacity-50"
+                                    value={formData.projectId}
+                                    onChange={handleProjectChange}
+                                    disabled={loadingProjects || saving}
+                                    className={inputClassName}
                                 >
-                                    <option value="">
+                                    <option value="" className="bg-black text-white">
                                         {loadingProjects
                                             ? "Loading projects..."
                                             : "Select Project"}
                                     </option>
-
-                                    {projects.map(
-                                        (project) => (
-                                            <option
-                                                key={
-                                                    project.projectId
-                                                }
-                                                value={
-                                                    project.projectId
-                                                }
-                                            >
-                                                {
-                                                    project.projectName
-                                                }
-                                            </option>
-                                        )
-                                    )}
+                                    {projects.map((project) => (
+                                        <option
+                                            key={project.projectId}
+                                            value={project.projectId}
+                                            className="bg-black text-white"
+                                        >
+                                            {project.projectName}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
 
-                            {/* ================================
-                                SITE
-                            ================================= */}
-
                             <div>
-                                <label
-                                    htmlFor="siteId"
-                                    className="mb-2 block text-sm font-medium text-zinc-300"
-                                >
-                                    Site
-                                    <span className="ml-1 text-red-400">
-                                        *
-                                    </span>
+                                <label htmlFor="siteId" className={labelClassName}>
+                                    Site <span className="ml-1 text-red-400">*</span>
                                 </label>
-
                                 <select
                                     id="siteId"
                                     name="siteId"
-                                    value={
-                                        formData.siteId
-                                    }
-                                    onChange={
-                                        handleSiteChange
-                                    }
-                                    disabled={
-                                        !formData.projectId ||
-                                        loadingSites ||
-                                        saving
-                                    }
-                                    className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white outline-none transition focus:border-yellow-500 disabled:cursor-not-allowed disabled:opacity-50"
+                                    value={formData.siteId}
+                                    onChange={handleSiteChange}
+                                    disabled={!formData.projectId || loadingSites || saving}
+                                    className={inputClassName}
                                 >
-                                    <option value="">
+                                    <option value="" className="bg-black text-white">
                                         {!formData.projectId
                                             ? "Select project first"
                                             : loadingSites
                                             ? "Loading sites..."
-                                            : sites.length ===
-                                              0
+                                            : sites.length === 0
                                             ? "No sites found"
                                             : "Select Site"}
                                     </option>
-
-                                    {sites.map(
-                                        (site) => (
-                                            <option
-                                                key={
-                                                    site.siteId
-                                                }
-                                                value={
-                                                    site.siteId
-                                                }
-                                            >
-                                                {
-                                                    site.siteName
-                                                }
-                                            </option>
-                                        )
-                                    )}
+                                    {sites.map((site) => (
+                                        <option
+                                            key={site.siteId}
+                                            value={site.siteId}
+                                            className="bg-black text-white"
+                                        >
+                                            {site.siteName}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
 
-                            {/* ================================
-                                WORKER
-                            ================================= */}
-
                             <div>
-                                <label
-                                    htmlFor="assignedTo"
-                                    className="mb-2 block text-sm font-medium text-zinc-300"
-                                >
-                                    Assign Worker
-                                    <span className="ml-1 text-red-400">
-                                        *
-                                    </span>
+                                <label htmlFor="assignedTo" className={labelClassName}>
+                                    Assign Worker <span className="ml-1 text-red-400">*</span>
                                 </label>
-
                                 <select
                                     id="assignedTo"
                                     name="assignedTo"
-                                    value={
-                                        formData.assignedTo
-                                    }
-                                    onChange={
-                                        handleChange
-                                    }
-                                    disabled={
-                                        !formData.siteId ||
-                                        loadingWorkers ||
-                                        saving
-                                    }
-                                    className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white outline-none transition focus:border-yellow-500 disabled:cursor-not-allowed disabled:opacity-50"
+                                    value={formData.assignedTo}
+                                    onChange={handleChange}
+                                    disabled={!formData.siteId || loadingWorkers || saving}
+                                    className={inputClassName}
                                 >
-                                    <option value="">
+                                    <option value="" className="bg-black text-white">
                                         {!formData.siteId
                                             ? "Select site first"
                                             : loadingWorkers
                                             ? "Loading workers..."
-                                            : workers.length ===
-                                              0
+                                            : workers.length === 0
                                             ? "No workers found"
                                             : "Select Worker"}
                                     </option>
-
-                                    {workers.map(
-                                        (worker) => (
-                                            <option
-                                                key={
-                                                    worker.workerId
-                                                }
-                                                value={
-                                                    worker.workerId
-                                                }
-                                            >
-                                                {worker.name}
-                                            </option>
-                                        )
-                                    )}
+                                    {workers.map((worker) => (
+                                        <option
+                                            key={worker.workerId}
+                                            value={worker.workerId}
+                                            className="bg-black text-white"
+                                        >
+                                            {worker.name}
+                                        </option>
+                                    ))}
                                 </select>
-
                                 <p className="mt-2 text-xs text-zinc-500">
-                                    Only workers from the
-                                    selected site are shown.
+                                    Only workers from the selected site are shown.
                                 </p>
                             </div>
                         </div>
-                    </div>
+                    </section>
 
-                    {/* =================================================
-                        TASK DETAILS
-                    ================================================== */}
-
-                    <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-6">
-
+                    <section className={sectionClassName}>
                         <h2 className="mb-6 text-lg font-semibold text-yellow-400">
                             Task Details
                         </h2>
 
                         <div className="space-y-6">
-
-                            {/* TASK TITLE */}
-
                             <div>
-                                <label
-                                    htmlFor="title"
-                                    className="mb-2 block text-sm font-medium text-zinc-300"
-                                >
-                                    Task Title
-                                    <span className="ml-1 text-red-400">
-                                        *
-                                    </span>
+                                <label htmlFor="title" className={labelClassName}>
+                                    Task Title <span className="ml-1 text-red-400">*</span>
                                 </label>
-
                                 <input
                                     id="title"
                                     name="title"
                                     type="text"
-                                    value={
-                                        formData.title
-                                    }
-                                    onChange={
-                                        handleChange
-                                    }
+                                    value={formData.title}
+                                    onChange={handleChange}
                                     placeholder="Enter task title"
                                     disabled={saving}
-                                    className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition focus:border-yellow-500 disabled:opacity-50"
+                                    className={inputClassName}
                                 />
                             </div>
 
-                            {/* DESCRIPTION */}
-
                             <div>
-                                <label
-                                    htmlFor="description"
-                                    className="mb-2 block text-sm font-medium text-zinc-300"
-                                >
+                                <label htmlFor="description" className={labelClassName}>
                                     Description
                                 </label>
-
                                 <textarea
                                     id="description"
                                     name="description"
-                                    value={
-                                        formData.description
-                                    }
-                                    onChange={
-                                        handleChange
-                                    }
+                                    value={formData.description}
+                                    onChange={handleChange}
                                     placeholder="Describe the task..."
                                     rows={4}
                                     disabled={saving}
-                                    className="w-full resize-none rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition focus:border-yellow-500 disabled:opacity-50"
+                                    className={`${inputClassName} resize-none`}
                                 />
                             </div>
 
-                            {/* PRIORITY + STATUS */}
-
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-
-                                {/* PRIORITY */}
-
                                 <div>
-                                    <label
-                                        htmlFor="priority"
-                                        className="mb-2 block text-sm font-medium text-zinc-300"
-                                    >
+                                    <label htmlFor="priority" className={labelClassName}>
                                         Priority
                                     </label>
-
                                     <select
                                         id="priority"
                                         name="priority"
-                                        value={
-                                            formData.priority
-                                        }
-                                        onChange={
-                                            handleChange
-                                        }
+                                        value={formData.priority}
+                                        onChange={handleChange}
                                         disabled={saving}
-                                        className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white outline-none transition focus:border-yellow-500 disabled:opacity-50"
+                                        className={inputClassName}
                                     >
-                                        <option value="Low">
-                                            Low
-                                        </option>
-
-                                        <option value="Medium">
-                                            Medium
-                                        </option>
-
-                                        <option value="High">
-                                            High
-                                        </option>
+                                        <option value="Low" className="bg-black text-white">Low</option>
+                                        <option value="Medium" className="bg-black text-white">Medium</option>
+                                        <option value="High" className="bg-black text-white">High</option>
                                     </select>
                                 </div>
 
-                                {/* STATUS */}
-
                                 <div>
-                                    <label
-                                        htmlFor="status"
-                                        className="mb-2 block text-sm font-medium text-zinc-300"
-                                    >
+                                    <label htmlFor="status" className={labelClassName}>
                                         Status
                                     </label>
-
                                     <select
                                         id="status"
                                         name="status"
-                                        value={
-                                            formData.status
-                                        }
-                                        onChange={
-                                            handleChange
-                                        }
+                                        value={formData.status}
+                                        onChange={handleChange}
                                         disabled={saving}
-                                        className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white outline-none transition focus:border-yellow-500 disabled:opacity-50"
+                                        className={inputClassName}
                                     >
-                                        <option value="Pending">
-                                            Pending
-                                        </option>
-
-                                        <option value="In Progress">
-                                            In Progress
-                                        </option>
-
-                                        <option value="Completed">
-                                            Completed
-                                        </option>
-
-                                        <option value="Delayed">
-                                            Delayed
-                                        </option>
+                                        <option value="Pending" className="bg-black text-white">Pending</option>
+                                        <option value="In Progress" className="bg-black text-white">In Progress</option>
+                                        <option value="Completed" className="bg-black text-white">Completed</option>
+                                        <option value="Delayed" className="bg-black text-white">Delayed</option>
                                     </select>
                                 </div>
                             </div>
 
-                            {/* DATES */}
-
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-
-                                {/* START DATE */}
-
                                 <div>
-                                    <label
-                                        htmlFor="startDate"
-                                        className="mb-2 block text-sm font-medium text-zinc-300"
-                                    >
+                                    <label htmlFor="startDate" className={labelClassName}>
                                         Start Date
                                     </label>
-
                                     <input
                                         id="startDate"
                                         name="startDate"
                                         type="date"
-                                        value={
-                                            formData.startDate
-                                        }
-                                        onChange={
-                                            handleChange
-                                        }
+                                        value={formData.startDate}
+                                        onChange={handleChange}
                                         disabled={saving}
-                                        className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white outline-none transition focus:border-yellow-500 disabled:opacity-50"
+                                        className={inputClassName}
                                     />
                                 </div>
 
-                                {/* DUE DATE */}
-
                                 <div>
-                                    <label
-                                        htmlFor="dueDate"
-                                        className="mb-2 block text-sm font-medium text-zinc-300"
-                                    >
+                                    <label htmlFor="dueDate" className={labelClassName}>
                                         Due Date
                                     </label>
-
                                     <input
                                         id="dueDate"
                                         name="dueDate"
                                         type="date"
-                                        value={
-                                            formData.dueDate
-                                        }
-                                        onChange={
-                                            handleChange
-                                        }
+                                        value={formData.dueDate}
+                                        onChange={handleChange}
                                         disabled={saving}
-                                        className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white outline-none transition focus:border-yellow-500 disabled:opacity-50"
+                                        className={inputClassName}
                                     />
                                 </div>
                             </div>
 
-                            {/* REMARKS */}
-
                             <div>
-                                <label
-                                    htmlFor="remarks"
-                                    className="mb-2 block text-sm font-medium text-zinc-300"
-                                >
+                                <label htmlFor="remarks" className={labelClassName}>
                                     Remarks
                                 </label>
-
                                 <textarea
                                     id="remarks"
                                     name="remarks"
-                                    value={
-                                        formData.remarks
-                                    }
-                                    onChange={
-                                        handleChange
-                                    }
+                                    value={formData.remarks}
+                                    onChange={handleChange}
                                     placeholder="Add any additional remarks..."
                                     rows={3}
                                     disabled={saving}
-                                    className="w-full resize-none rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition focus:border-yellow-500 disabled:opacity-50"
+                                    className={`${inputClassName} resize-none`}
                                 />
                             </div>
                         </div>
-                    </div>
-
-                    {/* =================================================
-                        BUTTONS
-                    ================================================== */}
+                    </section>
 
                     <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-
                         <Link
                             href="/DriWE-Construction/tasks"
-                            className="inline-flex items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-5 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+                            className="inline-flex items-center justify-center rounded-lg border border-zinc-700 bg-zinc-950 px-5 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-zinc-600 hover:bg-zinc-900 hover:text-white"
                         >
                             Cancel
                         </Link>
@@ -1061,10 +654,7 @@ export default function NewConstructionTaskPage() {
                         >
                             {saving ? (
                                 <>
-                                    <Loader2
-                                        size={18}
-                                        className="animate-spin"
-                                    />
+                                    <Loader2 size={18} className="animate-spin" />
                                     Creating...
                                 </>
                             ) : (

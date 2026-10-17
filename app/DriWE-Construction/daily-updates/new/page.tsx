@@ -14,6 +14,8 @@ import {
     Users,
     AlertTriangle,
     FileText,
+    Plus,
+    Trash2,
 } from "lucide-react";
 
 interface Project {
@@ -23,10 +25,27 @@ interface Project {
     status?: string;
 }
 
+interface Material {
+    materialId: string;
+    materialName: string;
+    unit?: string;
+    quantity: number;
+    projectId: string;
+    status?: string;
+}
+
+interface MaterialUseEntry {
+    materialId: string;
+    quantity: string;
+}
+
 export default function NewDailyUpdatePage() {
     const router = useRouter();
 
     const [projects, setProjects] = useState<Project[]>([]);
+    const [materials, setMaterials] = useState<Material[]>([]);
+    const [materialsUsed, setMaterialsUsed] = useState<MaterialUseEntry[]>([]);
+    const [loadingMaterials, setLoadingMaterials] = useState(false);
     const [loadingProjects, setLoadingProjects] =
         useState(true);
 
@@ -45,17 +64,12 @@ export default function NewDailyUpdatePage() {
         tasksCompleted: "0",
 
         materialReceived: "0",
-        materialUsed: "0",
 
         issues: "0",
         issueDescription: "",
 
         note: "",
     });
-
-    useEffect(() => {
-        loadProjects();
-    }, []);
 
     async function loadProjects() {
         try {
@@ -87,6 +101,10 @@ export default function NewDailyUpdatePage() {
         }
     }
 
+    useEffect(() => {
+        loadProjects();
+    }, []);
+
     function updateField(
         field: string,
         value: string
@@ -111,6 +129,35 @@ export default function NewDailyUpdatePage() {
             projectName:
                 project?.projectName || "",
         }));
+
+        setMaterialsUsed([]);
+        setMaterials([]);
+        if (projectId) {
+            void loadProjectMaterials(projectId);
+        }
+    }
+
+    async function loadProjectMaterials(projectId: string) {
+        try {
+            setLoadingMaterials(true);
+            const response = await fetch(
+                `/api/construction/materials?projectId=${encodeURIComponent(projectId)}`,
+                { cache: "no-store", credentials: "include" }
+            );
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data?.message || "Failed to load project materials.");
+            }
+            setMaterials(
+                (Array.isArray(data?.materials) ? data.materials : [])
+                    .filter((material: Material) => material.status !== "Inactive")
+            );
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to load project materials.");
+            setMaterials([]);
+        } finally {
+            setLoadingMaterials(false);
+        }
     }
 
     async function handleSubmit(
@@ -128,6 +175,22 @@ export default function NewDailyUpdatePage() {
         if (!form.date) {
             setError("Please select a date.");
             return;
+        }
+
+        const usageTotals = new Map<string, number>();
+        for (const item of materialsUsed) {
+            const quantity = Number(item.quantity);
+            const material = materials.find((candidate) => candidate.materialId === item.materialId);
+            if (!item.materialId || !Number.isFinite(quantity) || quantity <= 0) {
+                setError("Select a material and enter a valid quantity for each material used.");
+                return;
+            }
+            const totalForMaterial = (usageTotals.get(item.materialId) || 0) + quantity;
+            usageTotals.set(item.materialId, totalForMaterial);
+            if (!material || totalForMaterial > Number(material.quantity || 0)) {
+                setError(`${material?.materialName || "Material"} is not available in the requested quantity.`);
+                return;
+            }
         }
 
         try {
@@ -166,10 +229,15 @@ export default function NewDailyUpdatePage() {
                                 form.materialReceived
                             ),
 
-                        materialUsed:
-                            Number(
-                                form.materialUsed
-                            ),
+                        materialUsed: materialsUsed.reduce(
+                            (total, item) => total + Number(item.quantity || 0),
+                            0
+                        ),
+
+                        materialsUsed: materialsUsed.map((item) => ({
+                            materialId: item.materialId,
+                            quantity: Number(item.quantity),
+                        })),
 
                         issues: Number(
                             form.issues
@@ -405,23 +473,47 @@ export default function NewDailyUpdatePage() {
                                 }
                             />
 
-                            <NumberField
-                                label="Material Used"
-                                icon={
-                                    <Package
-                                        size={17}
-                                    />
-                                }
-                                value={
-                                    form.materialUsed
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        "materialUsed",
-                                        value
-                                    )
-                                }
-                            />
+                            <div className="sm:col-span-2 rounded-xl border border-zinc-800 bg-zinc-950/50 p-4">
+                                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                                    <div>
+                                        <h3 className="font-medium text-zinc-200">Materials Used</h3>
+                                        <p className="mt-1 text-xs text-zinc-500">Choose each material and quantity. Stock is deducted when this update is saved.</p>
+                                    </div>
+                                    <button type="button" disabled={!form.projectId || loadingMaterials || materials.length === 0} onClick={() => setMaterialsUsed((items) => [...items, { materialId: "", quantity: "" }])} className="inline-flex items-center gap-2 rounded-lg border border-orange-500/30 px-3 py-2 text-xs font-medium text-orange-300 hover:bg-orange-500/10 disabled:cursor-not-allowed disabled:opacity-50">
+                                        <Plus size={15} /> Add Material
+                                    </button>
+                                </div>
+                                {loadingMaterials ? (
+                                    <p className="text-sm text-zinc-500">Loading project materials...</p>
+                                ) : materials.length === 0 ? (
+                                    <p className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-sm text-amber-300">No materials available for this project.</p>
+                                ) : materialsUsed.length === 0 ? (
+                                    <p className="text-sm text-zinc-500">No materials recorded as used.</p>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {materialsUsed.map((entry, index) => {
+                                            const selectedMaterial = materials.find((material) => material.materialId === entry.materialId);
+                                            return (
+                                                <div key={`${entry.materialId || "material"}-${index}`} className="grid gap-3 sm:grid-cols-[1fr_160px_auto]">
+                                                    <div>
+                                                        <select value={entry.materialId} onChange={(event) => setMaterialsUsed((items) => items.map((item, itemIndex) => itemIndex === index ? { ...item, materialId: event.target.value } : item))} className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-orange-500">
+                                                            <option value="">Select material</option>
+                                                            {materials.map((material) => <option key={material.materialId} value={material.materialId}>{material.materialName} — available {material.quantity} {material.unit || ""}</option>)}
+                                                        </select>
+                                                        {selectedMaterial && Number(selectedMaterial.quantity) <= 0 && (
+                                                            <p className="mt-1 text-xs text-red-400">Material is not available.</p>
+                                                        )}
+                                                    </div>
+                                                    <input type="number" min="0.01" step="any" max={selectedMaterial?.quantity} value={entry.quantity} onChange={(event) => setMaterialsUsed((items) => items.map((item, itemIndex) => itemIndex === index ? { ...item, quantity: event.target.value } : item))} placeholder={`Quantity${selectedMaterial?.unit ? ` (${selectedMaterial.unit})` : ""}`} className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-orange-500" />
+                                                    <button type="button" aria-label="Remove material" onClick={() => setMaterialsUsed((items) => items.filter((_, itemIndex) => itemIndex !== index))} className="inline-flex items-center justify-center rounded-lg border border-zinc-700 px-3 text-zinc-400 hover:border-red-500/40 hover:text-red-400">
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </section>
 

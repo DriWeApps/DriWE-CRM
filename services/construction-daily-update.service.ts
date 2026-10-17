@@ -1,8 +1,8 @@
 import {
-    DeleteCommand,
     GetCommand,
     PutCommand,
     ScanCommand,
+    TransactWriteCommand,
 } from "@aws-sdk/lib-dynamodb";
 
 import { db } from "@/lib/dynamodb";
@@ -12,6 +12,10 @@ import type { DailySiteUpdate } from "@/types/construction";
 const TABLE_NAME =
     process.env.CONSTRUCTION_DAILY_UPDATES_TABLE ||
     "CRM_ConstructionDailyUpdates";
+
+const MATERIALS_TABLE =
+    process.env.CONSTRUCTION_MATERIALS_TABLE ||
+    "CRM_ConstructionMaterials";
 
 /* =========================================================
    GET DAILY UPDATES
@@ -26,7 +30,7 @@ export async function getDailyUpdates(
         "companyId = :companyId",
     ];
 
-    const values: Record<string, any> = {
+    const values: Record<string, string> = {
         ":companyId": companyId,
     };
 
@@ -146,6 +150,10 @@ export interface CreateDailyUpdateInput {
     materialReceived: number;
 
     materialUsed: number;
+    materialsUsed?: Array<{
+        materialId: string;
+        quantity: number;
+    }>;
 
     issues: number;
 
@@ -241,13 +249,89 @@ export async function createDailyUpdate(
             now,
     };
 
-    await db.send(
-        new PutCommand({
-            TableName: TABLE_NAME,
+    const usageByMaterial = new Map<string, number>();
+    for (const usage of input.materialsUsed || []) {
+        const materialId = usage.materialId.trim();
+        const quantity = Number(usage.quantity);
 
+        if (!materialId || !Number.isFinite(quantity) || quantity <= 0) {
+            throw new Error("Enter a valid material and quantity used.");
+        }
+
+        usageByMaterial.set(
+            materialId,
+            (usageByMaterial.get(materialId) || 0) + quantity
+        );
+    }
+
+    const transactionItems = [];
+
+    for (const [materialId, quantity] of usageByMaterial) {
+        const materialResult = await db.send(
+            new GetCommand({
+                TableName: MATERIALS_TABLE,
+                Key: { materialId },
+            })
+        );
+        const material = materialResult.Item as
+            | { companyId?: string; projectId?: string; materialName?: string; unit?: string; quantity?: number }
+            | undefined;
+
+        if (
+            !material ||
+            material.companyId !== companyId ||
+            material.projectId !== input.projectId
+        ) {
+            throw new Error("A selected material is not available for this project.");
+        }
+
+        const available = Number(material.quantity || 0);
+        if (available < quantity) {
+            throw new Error(
+                `${material.materialName || "Material"} is not available in the requested quantity. Available: ${available} ${material.unit || ""}.`
+            );
+        }
+
+        update.materialsUsed = [
+            ...(update.materialsUsed || []),
+            { materialId, materialName: material.materialName || "Material", quantity, unit: material.unit || "" },
+        ];
+
+        transactionItems.push({
+            Update: {
+                TableName: MATERIALS_TABLE,
+                Key: { materialId },
+                UpdateExpression: "SET quantity = quantity - :used, updatedAt = :updatedAt",
+                ConditionExpression:
+                    "companyId = :companyId AND projectId = :projectId AND quantity >= :used",
+                ExpressionAttributeValues: {
+                    ":used": quantity,
+                    ":updatedAt": now,
+                    ":companyId": companyId,
+                    ":projectId": input.projectId,
+                },
+            },
+        });
+    }
+
+    transactionItems.push({
+        Put: {
+            TableName: TABLE_NAME,
             Item: update,
-        })
-    );
+            ConditionExpression: "attribute_not_exists(updateId)",
+        },
+    });
+
+    try {
+        await db.send(new TransactWriteCommand({ TransactItems: transactionItems }));
+    } catch (error) {
+        if (usageByMaterial.size > 0) {
+            throw new Error(
+                "Material stock changed or is insufficient. Refresh the project materials and try again."
+            );
+        }
+        throw error;
+    }
 
     return update;
 }
@@ -398,15 +482,35 @@ export async function deleteDailyUpdate(
         return false;
     }
 
-    await db.send(
-        new DeleteCommand({
-            TableName: TABLE_NAME,
+    const transactionItems = [];
 
-            Key: {
-                updateId,
+    for (const usage of existing.materialsUsed || []) {
+        transactionItems.push({
+            Update: {
+                TableName: MATERIALS_TABLE,
+                Key: { materialId: usage.materialId },
+                UpdateExpression: "SET quantity = if_not_exists(quantity, :zero) + :quantity, updatedAt = :updatedAt",
+                ConditionExpression: "companyId = :companyId",
+                ExpressionAttributeValues: {
+                    ":zero": 0,
+                    ":quantity": usage.quantity,
+                    ":updatedAt": new Date().toISOString(),
+                    ":companyId": companyId,
+                },
             },
-        })
-    );
+        });
+    }
+
+    transactionItems.push({
+        Delete: {
+            TableName: TABLE_NAME,
+            Key: { updateId },
+            ConditionExpression: "companyId = :companyId",
+            ExpressionAttributeValues: { ":companyId": companyId },
+        },
+    });
+
+    await db.send(new TransactWriteCommand({ TransactItems: transactionItems }));
 
     return true;
 }

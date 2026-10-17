@@ -28,14 +28,6 @@ type Project = {
     status?: string;
 };
 
-type Site = {
-    siteId: string;
-    projectId: string;
-    siteName: string;
-    location?: string;
-    active: boolean;
-};
-
 type WorkerType =
     | "Employee"
     | "Contract Worker"
@@ -46,10 +38,8 @@ export default function NewWorkerPage() {
     const router = useRouter();
 
     const [projects, setProjects] = useState<Project[]>([]);
-    const [sites, setSites] = useState<Site[]>([]);
 
     const [loadingProjects, setLoadingProjects] = useState(true);
-    const [loadingSites, setLoadingSites] = useState(false);
     const [saving, setSaving] = useState(false);
 
     const [error, setError] = useState("");
@@ -59,7 +49,6 @@ export default function NewWorkerPage() {
 
     const [formData, setFormData] = useState({
         projectId: "",
-        siteId: "",
         name: "",
         phone: "",
         email: "",
@@ -109,67 +98,14 @@ export default function NewWorkerPage() {
     }, []);
 
     // ------------------------------------------------------------
-    // Load Sites when Project changes
-    // ------------------------------------------------------------
-    useEffect(() => {
-        async function loadSites() {
-            if (!formData.projectId) {
-                setSites([]);
-                return;
-            }
-
-            try {
-                setLoadingSites(true);
-                setError("");
-
-                const res = await fetch(
-                    `/api/construction/sites?projectId=${encodeURIComponent(
-                        formData.projectId
-                    )}`,
-                    {
-                        cache: "no-store",
-                        credentials: "include",
-                    }
-                );
-
-                const data = await res.json();
-
-                if (!res.ok) {
-                    throw new Error(
-                        data?.error || "Failed to load sites"
-                    );
-                }
-
-                setSites(data.sites || []);
-            } catch (err) {
-                console.error(err);
-
-                setSites([]);
-
-                setError(
-                    err instanceof Error
-                        ? err.message
-                        : "Failed to load sites"
-                );
-            } finally {
-                setLoadingSites(false);
-            }
-        }
-
-        loadSites();
-    }, [formData.projectId]);
-
-    // ------------------------------------------------------------
     // Handle Project Change
     // ------------------------------------------------------------
     function handleProjectChange(projectId: string) {
         setFormData((prev) => ({
             ...prev,
             projectId,
-            siteId: "",
         }));
 
-        setSites([]);
         setError("");
     }
 
@@ -205,11 +141,6 @@ export default function NewWorkerPage() {
 
         if (!formData.projectId) {
             setError("Please select a project.");
-            return;
-        }
-
-        if (!formData.siteId) {
-            setError("Please select a site.");
             return;
         }
 
@@ -277,15 +208,6 @@ export default function NewWorkerPage() {
         try {
             setSaving(true);
 
-            const selectedSite = sites.find(
-                (site) => site.siteId === formData.siteId
-            );
-
-            if (!selectedSite) {
-                setError("Selected site was not found.");
-                return;
-            }
-
             // ----------------------------------------------------
             // Create Worker + Login Account
             // ----------------------------------------------------
@@ -298,7 +220,6 @@ export default function NewWorkerPage() {
                 credentials: "include",
                 body: JSON.stringify({
                     projectId: formData.projectId,
-                    siteId: selectedSite.siteId,
 
                     name,
                     phone,
@@ -355,10 +276,6 @@ export default function NewWorkerPage() {
 
     const selectedProject = projects.find(
         (project) => project.projectId === formData.projectId
-    );
-
-    const selectedSite = sites.find(
-        (site) => site.siteId === formData.siteId
     );
 
     return (
@@ -428,7 +345,7 @@ export default function NewWorkerPage() {
                     <div className="space-y-6">
 
                         {/* ------------------------------------------------ */}
-                        {/* Project & Site */}
+                        {/* Project Assignment */}
                         {/* ------------------------------------------------ */}
 
                         <section className="rounded-2xl border border-zinc-800 bg-zinc-900/70 shadow-xl">
@@ -442,11 +359,11 @@ export default function NewWorkerPage() {
 
                                     <div>
                                         <h2 className="font-semibold text-white">
-                                            Project & Site Assignment
+                                            Project Assignment
                                         </h2>
 
                                         <p className="text-sm text-zinc-500">
-                                            Select where this worker will work.
+                                            Assign this worker directly to a project.
                                         </p>
                                     </div>
 
@@ -502,64 +419,6 @@ export default function NewWorkerPage() {
                                     )}
                                 </div>
 
-                                {/* Site */}
-
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium text-zinc-300">
-                                        Site
-                                        <span className="ml-1 text-red-400">
-                                            *
-                                        </span>
-                                    </label>
-
-                                    <select
-                                        value={formData.siteId}
-                                        onChange={(e) =>
-                                            setFormData((prev) => ({
-                                                ...prev,
-                                                siteId:
-                                                    e.target.value,
-                                            }))
-                                        }
-                                        disabled={
-                                            !formData.projectId ||
-                                            loadingSites ||
-                                            saving
-                                        }
-                                        className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-white outline-none transition focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 disabled:cursor-not-allowed disabled:opacity-60"
-                                    >
-                                        <option value="">
-                                            {!formData.projectId
-                                                ? "Select project first"
-                                                : loadingSites
-                                                ? "Loading sites..."
-                                                : sites.length === 0
-                                                ? "No sites available"
-                                                : "Select site"}
-                                        </option>
-
-                                        {sites
-                                            .filter(
-                                                (site) =>
-                                                    site.active
-                                            )
-                                            .map((site) => (
-                                                <option
-                                                    key={site.siteId}
-                                                    value={site.siteId}
-                                                >
-                                                    {site.siteName}
-                                                </option>
-                                            ))}
-                                    </select>
-
-                                    {selectedSite?.location && (
-                                        <p className="mt-2 flex items-center gap-1.5 text-xs text-zinc-500">
-                                            <MapPin className="h-3.5 w-3.5" />
-                                            {selectedSite.location}
-                                        </p>
-                                    )}
-                                </div>
                             </div>
                         </section>
 
@@ -582,7 +441,7 @@ export default function NewWorkerPage() {
                                         </h2>
 
                                         <p className="text-sm text-zinc-500">
-                                            Enter the worker's basic details.
+                                            Enter the worker&apos;s basic details.
                                         </p>
                                     </div>
 
@@ -907,7 +766,7 @@ export default function NewWorkerPage() {
                         {/* Assignment Preview */}
                         {/* ------------------------------------------------ */}
 
-                        {selectedProject && selectedSite && (
+                        {selectedProject && (
                             <section className="rounded-2xl border border-yellow-400/20 bg-yellow-400/5 p-5">
 
                                 <div className="mb-4 flex items-center gap-2">
@@ -927,16 +786,6 @@ export default function NewWorkerPage() {
 
                                         <p className="mt-1 text-sm font-medium text-zinc-200">
                                             {selectedProject.projectName}
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <p className="text-xs uppercase tracking-wider text-zinc-500">
-                                            Site
-                                        </p>
-
-                                        <p className="mt-1 text-sm font-medium text-zinc-200">
-                                            {selectedSite.siteName}
                                         </p>
                                     </div>
 

@@ -31,21 +31,6 @@ type RouteContext = {
     }>;
 };
 
-const VALID_UNITS = [
-    "Kg",
-    "Gram",
-    "Ton",
-    "Litre",
-    "ML",
-    "Piece",
-    "Box",
-    "Bag",
-    "Meter",
-    "Square Feet",
-    "Cubic Feet",
-    "Other",
-] as const;
-
 const VALID_STATUSES = [
     "Active",
     "Inactive",
@@ -243,15 +228,18 @@ export async function PUT(
         if (
             body.unit !==
                 undefined &&
-            !VALID_UNITS.includes(
-                body.unit
+            (
+                typeof body.unit !== "string" ||
+                !body.unit.trim() ||
+                body.unit.trim().length > 50 ||
+                !/[a-zA-Z]/.test(body.unit)
             )
         ) {
             return NextResponse.json(
                 {
                     success: false,
                     message:
-                        "Invalid material unit",
+                        "Enter a valid unit (for example kg, bags, or pieces).",
                 },
                 {
                     status: 400,

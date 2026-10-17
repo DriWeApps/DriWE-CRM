@@ -41,9 +41,13 @@ export interface ConstructionProject {
     projectName: string;
     location: string;
 
+    // Manager account and assignment
     projectManager?: string;
     projectManagerName?: string;
+    projectManagerUserId?: string;
+    projectManagerEmail?: string;
 
+    // Legacy fields retained for existing records
     siteSupervisor?: string;
     siteSupervisorName?: string;
 
@@ -51,7 +55,6 @@ export interface ConstructionProject {
     expectedCompletion: string;
 
     status: ProjectStatus;
-
     description?: string;
 
     createdBy: string;
@@ -65,22 +68,22 @@ export interface ConstructionProject {
    SITE
 ========================================================= */
 
-export interface ConstructionSite {
-    siteId: string;
+// export interface ConstructionSite {
+//     siteId: string;
 
-    companyId: string;
+//     companyId: string;
 
-    projectId: string;
-    projectName?: string;
+//     projectId: string;
+//     projectName?: string;
 
-    siteName: string;
-    location?: string;
+//     siteName: string;
+//     location?: string;
 
-    active: boolean;
+//     active: boolean;
 
-    createdAt: string;
-    updatedAt: string;
-}
+//     createdAt: string;
+//     updatedAt: string;
+// }
 
 /* =========================================================
    WORKER
@@ -89,29 +92,26 @@ export interface ConstructionSite {
 export interface ConstructionWorker {
     workerId: string;
     userId: string;
-
     companyId: string;
 
     projectId: string;
     projectName?: string;
 
-    siteId: string;
+    // Optional only while old database records are being migrated.
+    siteId?: string;
     siteName?: string;
 
     name: string;
     phone: string;
     email: string;
-
-    role?: string;
+    role: string;
 
     workerType: WorkerType;
-
     salary: number;
     dailyWage?: number;
 
     active: boolean;
     loginEnabled: boolean;
-
     createdAt: string;
     updatedAt: string;
 }
@@ -229,6 +229,12 @@ export interface DailySiteUpdate {
     materialReceived: number;
 
     materialUsed: number;
+    materialsUsed?: Array<{
+        materialId: string;
+        materialName: string;
+        quantity: number;
+        unit: string;
+    }>;
 
     issues: number;
 

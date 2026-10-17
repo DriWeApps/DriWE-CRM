@@ -9,10 +9,6 @@ import {
 } from "@/services/construction-worker.service";
 
 import {
-    getSiteById,
-} from "@/services/construction-site.service";
-
-import {
     getProjectById,
 } from "@/services/construction-project.service";
 
@@ -26,12 +22,16 @@ type RouteContext = {
     }>;
 };
 
-function getCompanyId(user: any): string {
+type AuthenticatedUser = NonNullable<
+    Awaited<ReturnType<typeof getUserFromRequest>>
+>;
+
+function getCompanyId(user: AuthenticatedUser): string {
     return user.companyId || user.userId;
 }
 
 function isValidWorkerType(
-    value: string
+    value: unknown
 ): value is WorkerType {
     return (
         value === "Employee" ||
@@ -178,8 +178,35 @@ export async function PUT(
             );
         }
 
-        const body =
-            await req.json();
+        let body: Record<string, unknown>;
+
+        try {
+            const parsedBody: unknown = await req.json();
+
+            if (
+                typeof parsedBody !== "object" ||
+                parsedBody === null ||
+                Array.isArray(parsedBody)
+            ) {
+                return NextResponse.json(
+                    {
+                        success: false,
+                        message: "Request body must be a JSON object.",
+                    },
+                    { status: 400 }
+                );
+            }
+
+            body = parsedBody as Record<string, unknown>;
+        } catch {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: "Invalid JSON request body.",
+                },
+                { status: 400 }
+            );
+        }
 
         /* =====================================================
            BASIC FIELDS
@@ -202,17 +229,15 @@ export async function PUT(
                     : ""
                 : existingWorker.phone;
 
-        const workerType =
+        const workerType: unknown =
             body.workerType !== undefined
                 ? body.workerType
                 : existingWorker.workerType;
 
-        const salary =
-            body.salary !== undefined
-                ? Number(body.salary)
-                : Number(
-                    existingWorker.salary || 0
-                );
+        const salaryInput = body.salary;
+        const salary = salaryInput !== undefined
+            ? Number(salaryInput)
+            : Number(existingWorker.salary || 0);
 
         /* =====================================================
            VALIDATION
@@ -258,9 +283,9 @@ export async function PUT(
         }
 
         if (
-            !Number.isFinite(
-                salary
-            ) ||
+            (salaryInput !== undefined &&
+                (salaryInput === null || String(salaryInput).trim() === "")) ||
+            !Number.isFinite(salary) ||
             salary <= 0
         ) {
             return NextResponse.json(
@@ -273,9 +298,22 @@ export async function PUT(
             );
         }
 
-        /* =====================================================
-           SITE CHANGE
-        ===================================================== */
+        if (
+            body.active !== undefined &&
+            typeof body.active !== "boolean"
+        ) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: "Active must be a boolean value.",
+                },
+                { status: 400 }
+            );
+        }
+
+          /* =====================================================
+              PROJECT CHANGE
+          ===================================================== */
 
         let projectId =
             existingWorker.projectId;
@@ -283,84 +321,46 @@ export async function PUT(
         let projectName =
             existingWorker.projectName;
 
-        let siteId =
-            existingWorker.siteId;
+        if (body.siteId !== undefined) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: "Site-based assignment is no longer supported. Send a projectId instead.",
+                },
+                { status: 400 }
+            );
+        }
 
-        let siteName =
-            existingWorker.siteName;
-
-        /*
-         * If siteId is supplied during editing,
-         * verify that the site belongs to
-         * the logged-in company.
-         */
-        if (
-            body.siteId !== undefined
-        ) {
-            if (
-                typeof body.siteId !==
-                    "string" ||
-                !body.siteId.trim()
-            ) {
+        if (body.projectId !== undefined) {
+            if (typeof body.projectId !== "string" || !body.projectId.trim()) {
                 return NextResponse.json(
                     {
                         success: false,
                         message:
-                            "Valid site is required.",
+                            "Valid project is required.",
                     },
                     { status: 400 }
                 );
             }
 
-            const newSite =
-                await getSiteById(
-                    body.siteId.trim(),
-                    companyId
-                );
+            const newProject = await getProjectById(
+                body.projectId.trim(),
+                companyId
+            );
 
-            if (!newSite) {
+            if (!newProject) {
                 return NextResponse.json(
                     {
                         success: false,
                         message:
-                            "Selected site was not found.",
+                            "Selected project was not found.",
                     },
                     { status: 404 }
                 );
             }
 
-            /*
-             * The project is automatically
-             * derived from the site.
-             */
-            projectId =
-                newSite.projectId;
-
-            siteId =
-                newSite.siteId;
-
-            siteName =
-                newSite.siteName;
-
-            const project =
-                await getProjectById(
-                    newSite.projectId,
-                    companyId
-                );
-
-            if (!project) {
-                return NextResponse.json(
-                    {
-                        success: false,
-                        message:
-                            "Project associated with the selected site was not found.",
-                    },
-                    { status: 404 }
-                );
-            }
-
-            projectName =
-                project.projectName;
+            projectId = newProject.projectId;
+            projectName = newProject.projectName;
         }
 
         /* =====================================================
@@ -394,15 +394,9 @@ export async function PUT(
 
                     projectName,
 
-                    siteId,
-
-                    siteName,
-
                     active:
                         body.active !== undefined
-                            ? Boolean(
-                                body.active
-                            )
+                            ? body.active
                             : existingWorker.active,
                 }
             );

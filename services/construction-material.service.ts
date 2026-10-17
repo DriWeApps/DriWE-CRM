@@ -27,19 +27,7 @@ const TABLE =
    TYPES
 ============================================================ */
 
-export type MaterialUnit =
-    | "Kg"
-    | "Gram"
-    | "Ton"
-    | "Litre"
-    | "ML"
-    | "Piece"
-    | "Box"
-    | "Bag"
-    | "Meter"
-    | "Square Feet"
-    | "Cubic Feet"
-    | "Other";
+export type MaterialUnit = string;
 
 export type MaterialStatus =
     | "Active"
@@ -54,7 +42,7 @@ export interface ConstructionMaterial {
     projectId: string;
     projectName?: string;
 
-    siteId: string;
+    siteId?: string;
     siteName?: string;
 
     materialName: string;
@@ -206,7 +194,7 @@ export async function createMaterial(data: {
     projectId: string;
     projectName?: string;
 
-    siteId: string;
+    siteId?: string;
     siteName?: string;
 
     materialName: string;
@@ -258,11 +246,9 @@ export async function createMaterial(data: {
         projectName:
             data.projectName,
 
-        siteId:
-            data.siteId,
+        ...(data.siteId ? { siteId: data.siteId } : {}),
 
-        siteName:
-            data.siteName,
+        ...(data.siteName ? { siteName: data.siteName } : {}),
 
         materialName:
             data.materialName,

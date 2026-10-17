@@ -29,6 +29,12 @@ interface DailySiteUpdate {
 
     materialReceived: number;
     materialUsed: number;
+    materialsUsed?: Array<{
+        materialId: string;
+        materialName: string;
+        quantity: number;
+        unit: string;
+    }>;
 
     issues: number;
     issueDescription?: string;
@@ -360,6 +366,20 @@ export default function DailyUpdatesPage() {
                                         }
                                     />
                                 </div>
+
+                                {update.materialsUsed && update.materialsUsed.length > 0 && (
+                                    <div className="mt-4 rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+                                        <p className="mb-3 text-xs font-medium uppercase tracking-wide text-zinc-500">Materials Used</p>
+                                        <ul className="space-y-2">
+                                            {update.materialsUsed.map((item, index) => (
+                                                <li key={`${item.materialId}-${index}`} className="flex items-center justify-between gap-4 text-sm">
+                                                    <span className="text-zinc-300">{item.materialName}</span>
+                                                    <span className="shrink-0 font-medium text-white">{item.quantity} {item.unit}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
 
                                 {update.note && (
                                     <div className="mt-4 rounded-xl border border-zinc-800 bg-zinc-950 p-4">

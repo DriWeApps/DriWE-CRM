@@ -90,14 +90,7 @@ export async function GET(req: Request) {
 
     const labourCost = attendance.reduce(
       (total: number, item: any) => {
-        /*
-         * We use labourCost stored in attendance.
-         *
-         * This already allows:
-         * Present  = full wage
-         * Half Day = half wage
-         * Absent   = zero
-         */
+       
         return (
           total +
           Number(item.labourCost || 0)

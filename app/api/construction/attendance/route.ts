@@ -1,18 +1,18 @@
 import { NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";
-
 import {
     getAttendance,
     getAttendanceByProject,
-    getAttendanceBySite,
     getAttendanceByWorker,
     createAttendance,
 } from "@/services/construction-attendance.service";
-
-import { getProjectById } from "@/services/construction-project.service";
-import { getSiteById } from "@/services/construction-site.service";
-import { getWorkerById } from "@/services/construction-worker.service";
-
+import {
+    getProjectById,
+    getProjects,
+} from "@/services/construction-project.service";
+import {
+    getWorkerById,
+} from "@/services/construction-worker.service";
 import type { AttendanceStatus } from "@/types/construction";
 
 type ConstructionUser = {
@@ -26,203 +26,294 @@ type ConstructionUser = {
     companyId?: string;
 };
 
-// ============================================================
-// GET
-//
-// Supported:
-//
-// GET /api/construction/attendance
-//
-// GET /api/construction/attendance?projectId=PROJECT_ID
-//
-// GET /api/construction/attendance?siteId=SITE_ID
-//
-// GET /api/construction/attendance?workerId=WORKER_ID
-// ============================================================
+type AssignedProject = {
+    projectId: string;
+    projectName: string;
+    companyId: string;
+    projectManagerUserId?: string;
+};
 
+function normalizedRole(user: ConstructionUser) {
+    return user.role?.trim().toLowerCase() ?? "";
+}
+
+function isAdmin(user: ConstructionUser) {
+    return ["admin", "constructionadmin"].includes(
+        normalizedRole(user)
+    );
+}
+
+function isProjectManager(user: ConstructionUser) {
+    return normalizedRole(user) === "constructionprojectmanager";
+}
+
+function isWorker(user: ConstructionUser) {
+    return normalizedRole(user) === "constructionemployee";
+}
+
+function getCompanyId(user: ConstructionUser) {
+    return user.companyId || user.userId;
+}
+
+function unauthorized() {
+    return NextResponse.json(
+        { success: false, message: "Unauthorized." },
+        { status: 401 }
+    );
+}
+
+function forbidden() {
+    return NextResponse.json(
+        {
+            success: false,
+            message: "You do not have permission to access this attendance.",
+        },
+        { status: 403 }
+    );
+}
+
+function badRequest(message: string) {
+    return NextResponse.json(
+        { success: false, message },
+        { status: 400 }
+    );
+}
+
+function notFound(message: string) {
+    return NextResponse.json(
+        { success: false, message },
+        { status: 404 }
+    );
+}
+
+function serverError(message: string) {
+    return NextResponse.json(
+        { success: false, message },
+        { status: 500 }
+    );
+}
+
+/**
+ * Admins can access any project in their company.
+ * Project managers can access only projects assigned to them.
+ */
+async function getAuthorizedProject(
+    user: ConstructionUser,
+    projectId: string
+): Promise<AssignedProject | null> {
+    if (!isAdmin(user) && !isProjectManager(user)) {
+        return null;
+    }
+
+    const project = await getProjectById(
+        projectId,
+        getCompanyId(user)
+    );
+
+    if (!project) {
+        return null;
+    }
+
+    const assignedProject = project as AssignedProject;
+
+    if (
+        isProjectManager(user) &&
+        assignedProject.projectManagerUserId !== user.userId
+    ) {
+        return null;
+    }
+
+    return assignedProject;
+}
+
+/**
+ * Resolve the logged-in worker's worker record.
+ *
+ * This supports setups where employeeId equals workerId,
+ * or where userId equals workerId.
+ */
+async function getLoggedInWorker(user: ConstructionUser) {
+    const companyId = getCompanyId(user);
+    const possibleIds = [
+        user.employeeId,
+        user.userId,
+    ].filter((id): id is string => Boolean(id));
+
+    for (const workerId of [...new Set(possibleIds)]) {
+        const worker = await getWorkerById(workerId, companyId);
+
+        if (worker && worker.userId === user.userId) {
+            return worker;
+        }
+    }
+
+    return null;
+}
+
+function sortAttendance<
+    T extends { date: string; createdAt: string }
+>(records: T[]) {
+    return records.sort((a, b) => {
+        const dateDifference =
+            new Date(b.date).getTime() -
+            new Date(a.date).getTime();
+
+        if (dateDifference !== 0) {
+            return dateDifference;
+        }
+
+        return (
+            new Date(b.createdAt).getTime() -
+            new Date(a.createdAt).getTime()
+        );
+    });
+}
+
+/**
+ * GET:
+ * Admin: company-wide attendance, or filtered by project/worker.
+ * Project manager: attendance for assigned projects only.
+ * Worker: their own attendance only.
+ */
 export async function GET(req: Request) {
     try {
-        // ----------------------------------------------------
-        // Authentication
-        // ----------------------------------------------------
-
-        const user =
-            await getUserFromRequest(req);
+        const user = await getUserFromRequest(req) as
+            | ConstructionUser
+            | null;
 
         if (!user) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: "Unauthorized",
-                },
-                {
-                    status: 401,
-                }
-            );
+            return unauthorized();
         }
 
-        const constructionUser =
-            user as ConstructionUser;
+        if (
+            !isAdmin(user) &&
+            !isProjectManager(user) &&
+            !isWorker(user)
+        ) {
+            return forbidden();
+        }
 
-        const companyId =
-            constructionUser.companyId ||
-            constructionUser.userId;
+        const companyId = getCompanyId(user);
+        const { searchParams } = new URL(req.url);
+        const requestedProjectId =
+            searchParams.get("projectId")?.trim();
+        const requestedWorkerId =
+            searchParams.get("workerId")?.trim();
 
-        // ----------------------------------------------------
-        // Query parameters
-        // ----------------------------------------------------
+        let attendance: Awaited<
+            ReturnType<typeof getAttendance>
+        > = [];
 
-        const { searchParams } =
-            new URL(req.url);
-
-        const projectId =
-            searchParams.get("projectId");
-
-        const siteId =
-            searchParams.get("siteId");
-
-        const workerId =
-            searchParams.get("workerId");
-
-        let attendance;
-
-        // ----------------------------------------------------
-        // Filter by Worker
-        // ----------------------------------------------------
-
-        if (workerId) {
-            const worker =
-                await getWorkerById(
-                    workerId,
-                    companyId
-                );
+        // Workers can never query another worker or project.
+        if (isWorker(user)) {
+            const worker = await getLoggedInWorker(user);
 
             if (!worker) {
-                return NextResponse.json(
-                    {
-                        success: false,
-                        error: "Worker not found",
-                    },
-                    {
-                        status: 404,
-                    }
+                return notFound(
+                    "Your worker account could not be found. Please contact your administrator."
                 );
             }
 
-            attendance =
-                await getAttendanceByWorker(
-                    workerId,
-                    companyId
-                );
-        }
+            attendance = await getAttendanceByWorker(
+                worker.workerId,
+                companyId
+            );
 
-        // ----------------------------------------------------
-        // Filter by Site
-        // ----------------------------------------------------
-
-        else if (siteId) {
-            const site =
-                await getSiteById(
-                    siteId,
-                    companyId
-                );
-
-            if (!site) {
-                return NextResponse.json(
-                    {
-                        success: false,
-                        error: "Site not found",
-                    },
-                    {
-                        status: 404,
-                    }
-                );
-            }
-
-            attendance =
-                await getAttendanceBySite(
-                    siteId,
-                    companyId
-                );
-        }
-
-        // ----------------------------------------------------
-        // Filter by Project
-        // ----------------------------------------------------
-
-        else if (projectId) {
-            const project =
-                await getProjectById(
-                    projectId,
-                    companyId
-                );
+            // Ignore all requested IDs and enforce ownership.
+            attendance = attendance.filter(
+                (record) => record.workerId === worker.workerId
+            );
+        } else if (requestedProjectId) {
+            const project = await getAuthorizedProject(
+                user,
+                requestedProjectId
+            );
 
             if (!project) {
-                return NextResponse.json(
-                    {
-                        success: false,
-                        error: "Project not found",
-                    },
-                    {
-                        status: 404,
-                    }
-                );
+                return forbidden();
             }
 
-            attendance =
-                await getAttendanceByProject(
-                    projectId,
+            if (requestedWorkerId) {
+                const worker = await getWorkerById(
+                    requestedWorkerId,
                     companyId
                 );
-        }
 
-        // ----------------------------------------------------
-        // Get all company attendance
-        // ----------------------------------------------------
+                if (!worker) {
+                    return notFound("Worker not found.");
+                }
 
-        else {
-            attendance =
-                await getAttendance(
-                    companyId
-                );
-        }
-
-        // ----------------------------------------------------
-        // Sort newest date first
-        // ----------------------------------------------------
-
-        attendance.sort(
-            (a, b) => {
-                const dateA =
-                    new Date(
-                        a.date
-                    ).getTime();
-
-                const dateB =
-                    new Date(
-                        b.date
-                    ).getTime();
-
-                if (
-                    dateA !==
-                    dateB
-                ) {
-                    return (
-                        dateB -
-                        dateA
+                if (worker.projectId !== project.projectId) {
+                    return badRequest(
+                        "The selected worker does not belong to this project."
                     );
                 }
 
-                return (
-                    new Date(
-                        b.createdAt
-                    ).getTime() -
-                    new Date(
-                        a.createdAt
-                    ).getTime()
+                attendance = await getAttendanceByWorker(
+                    worker.workerId,
+                    companyId
+                );
+
+                attendance = attendance.filter(
+                    (record) =>
+                        record.projectId === project.projectId
+                );
+            } else {
+                attendance = await getAttendanceByProject(
+                    project.projectId,
+                    companyId
                 );
             }
-        );
+        } else if (requestedWorkerId) {
+            const worker = await getWorkerById(
+                requestedWorkerId,
+                companyId
+            );
+
+            if (!worker) {
+                return notFound("Worker not found.");
+            }
+
+            if (isProjectManager(user)) {
+                const project = await getAuthorizedProject(
+                    user,
+                    worker.projectId
+                );
+
+                if (!project) {
+                    return forbidden();
+                }
+            }
+
+            attendance = await getAttendanceByWorker(
+                worker.workerId,
+                companyId
+            );
+        } else if (isProjectManager(user)) {
+            const projects = await getProjects(companyId);
+
+            const assignedProjects = (
+                projects as AssignedProject[]
+            ).filter(
+                (project) =>
+                    project.projectManagerUserId === user.userId
+            );
+
+            const records = await Promise.all(
+                assignedProjects.map((project) =>
+                    getAttendanceByProject(
+                        project.projectId,
+                        companyId
+                    )
+                )
+            );
+
+            attendance = records.flat();
+        } else {
+            attendance = await getAttendance(companyId);
+        }
+
+        sortAttendance(attendance);
 
         return NextResponse.json({
             success: true,
@@ -235,402 +326,257 @@ export async function GET(req: Request) {
             error
         );
 
-        return NextResponse.json(
-            {
-                success: false,
-                error:
-                    "Failed to fetch attendance",
-            },
-            {
-                status: 500,
-            }
-        );
+        return serverError("Failed to fetch attendance.");
     }
 }
 
-// ============================================================
-// POST
-//
-// Expected body:
-//
-// {
-//   "projectId": "PROJECT_ID",
-//   "projectName": "ABC Project",
-//   "siteId": "SITE_ID",
-//   "siteName": "Main Site",
-//   "workerId": "WORKER_ID",
-//   "workerName": "Rahul",
-//   "date": "2026-09-24",
-//   "status": "Present",
-//   "remarks": "On site"
-// }
-// ============================================================
-
+/**
+ * POST:
+ * Admin: can mark attendance for any project in their company.
+ * Project manager: can mark attendance only for assigned projects.
+ * Worker: cannot mark attendance.
+ */
 export async function POST(req: Request) {
     try {
-        // ----------------------------------------------------
-        // Authentication
-        // ----------------------------------------------------
-
-        const user =
-            await getUserFromRequest(req);
+        const user = await getUserFromRequest(req) as
+            | ConstructionUser
+            | null;
 
         if (!user) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: "Unauthorized",
-                },
-                {
-                    status: 401,
-                }
-            );
+            return unauthorized();
         }
 
-        const constructionUser =
-            user as ConstructionUser;
+        if (!isAdmin(user) && !isProjectManager(user)) {
+            return forbidden();
+        }
 
-        const companyId =
-            constructionUser.companyId ||
-            constructionUser.userId;
+        const companyId = getCompanyId(user);
+        const body = await req.json();
 
-        // ----------------------------------------------------
-        // Read request body
-        // ----------------------------------------------------
+            if (Array.isArray(body?.records)) {
+                const projectId =
+                    typeof body.projectId === "string"
+                        ? body.projectId.trim()
+                        : "";
+                const date =
+                    typeof body.date === "string"
+                        ? body.date.trim()
+                        : "";
 
-        const body =
-            await req.json();
+                if (!projectId) {
+                    return badRequest("Project is required.");
+                }
+
+                if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+                    return badRequest("Invalid attendance date. Use YYYY-MM-DD.");
+                }
+
+                const parsedDate = new Date(`${date}T00:00:00.000Z`);
+                if (
+                    Number.isNaN(parsedDate.getTime()) ||
+                    parsedDate.toISOString().slice(0, 10) !== date
+                ) {
+                    return badRequest("Invalid attendance date.");
+                }
+
+                const project = await getAuthorizedProject(user, projectId);
+                if (!project) {
+                    return forbidden();
+                }
+
+                const validStatuses: AttendanceStatus[] = [
+                    "Present",
+                    "Absent",
+                    "Half Day",
+                ];
+                const submittedRecords = body.records as unknown[];
+
+                if (submittedRecords.length === 0) {
+                    return badRequest("At least one worker attendance record is required.");
+                }
+
+                const workerIds = new Set<string>();
+                const recordsToCreate = [];
+
+                for (const record of submittedRecords) {
+                    if (
+                        typeof record !== "object" ||
+                        record === null ||
+                        Array.isArray(record)
+                    ) {
+                        return badRequest("Invalid attendance record.");
+                    }
+
+                    const recordData = record as Record<string, unknown>;
+                    const recordWorkerId =
+                        typeof recordData.workerId === "string"
+                            ? recordData.workerId.trim()
+                            : "";
+                    const status = recordData.status;
+
+                    if (!recordWorkerId) {
+                        return badRequest("Worker is required for each attendance record.");
+                    }
+
+                    if (workerIds.has(recordWorkerId)) {
+                        return badRequest("A worker can appear only once in an attendance submission.");
+                    }
+                    workerIds.add(recordWorkerId);
+
+                    if (
+                        typeof status !== "string" ||
+                        !validStatuses.includes(status as AttendanceStatus)
+                    ) {
+                        return badRequest("Invalid attendance status.");
+                    }
+
+                    const worker = await getWorkerById(recordWorkerId, companyId);
+                    if (!worker) {
+                        return notFound("Worker not found.");
+                    }
+
+                    if (worker.projectId !== project.projectId) {
+                        return badRequest(
+                            "A selected worker does not belong to this project."
+                        );
+                    }
+
+                    recordsToCreate.push({
+                        companyId,
+                        projectId: project.projectId,
+                        projectName: project.projectName,
+                        workerId: worker.workerId,
+                        workerName: worker.name,
+                        date,
+                        status: status as AttendanceStatus,
+                        createdBy: user.userId,
+                        createdByName: user.name || user.email,
+                    });
+                }
+
+                const attendanceRecords = await Promise.all(
+                    recordsToCreate.map((record) => createAttendance(record))
+                );
+
+                return NextResponse.json(
+                    {
+                        success: true,
+                        message: "Attendance saved successfully.",
+                        attendance: attendanceRecords,
+                        count: attendanceRecords.length,
+                    },
+                    { status: 201 }
+                );
+            }
 
         const projectId =
-            String(
-                body.projectId || ""
-            ).trim();
-
-        const siteId =
-            String(
-                body.siteId || ""
-            ).trim();
-
-        const workerId =
-            String(
-                body.workerId || ""
-            ).trim();
-
-        const date =
-            String(
-                body.date || ""
-            ).trim();
-
-        const status =
-            String(
-                body.status || ""
-            ).trim();
-
-        const remarks =
-            body.remarks !== undefined
-                ? String(
-                      body.remarks
-                  ).trim()
+            typeof body.projectId === "string"
+                ? body.projectId.trim()
                 : "";
 
-        // ----------------------------------------------------
-        // Validate required fields
-        // ----------------------------------------------------
+        const workerId =
+            typeof body.workerId === "string"
+                ? body.workerId.trim()
+                : "";
+
+        const date =
+            typeof body.date === "string"
+                ? body.date.trim()
+                : "";
+
+        const status =
+            typeof body.status === "string"
+                ? body.status.trim()
+                : "";
+
+        const remarks =
+            typeof body.remarks === "string"
+                ? body.remarks.trim()
+                : "";
 
         if (!projectId) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error:
-                        "Project is required",
-                },
-                {
-                    status: 400,
-                }
-            );
-        }
-
-        if (!siteId) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error:
-                        "Site is required",
-                },
-                {
-                    status: 400,
-                }
-            );
+            return badRequest("Project is required.");
         }
 
         if (!workerId) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error:
-                        "Worker is required",
-                },
-                {
-                    status: 400,
-                }
-            );
+            return badRequest("Worker is required.");
         }
 
         if (!date) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error:
-                        "Attendance date is required",
-                },
-                {
-                    status: 400,
-                }
+            return badRequest("Attendance date is required.");
+        }
+
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            return badRequest(
+                "Invalid date format. Use YYYY-MM-DD."
             );
         }
 
-        if (!status) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error:
-                        "Attendance status is required",
-                },
-                {
-                    status: 400,
-                }
-            );
-        }
-
-        // ----------------------------------------------------
-        // Validate date
-        // ----------------------------------------------------
+        const parsedDate = new Date(`${date}T00:00:00.000Z`);
 
         if (
-            !/^\d{4}-\d{2}-\d{2}$/.test(
-                date
-            )
+            Number.isNaN(parsedDate.getTime()) ||
+            parsedDate.toISOString().slice(0, 10) !== date
         ) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error:
-                        "Invalid date format. Use YYYY-MM-DD",
-                },
-                {
-                    status: 400,
-                }
+            return badRequest("Invalid attendance date.");
+        }
+
+        const validStatuses: AttendanceStatus[] = [
+            "Present",
+            "Absent",
+            "Half Day",
+        ];
+
+        if (!validStatuses.includes(status as AttendanceStatus)) {
+            return badRequest(
+                "Invalid attendance status. Use Present, Absent or Half Day."
             );
         }
 
-        // ----------------------------------------------------
-        // Validate attendance status
-        // ----------------------------------------------------
-
-        const validStatuses: AttendanceStatus[] =
-            [
-                "Present",
-                "Absent",
-                "Half Day",
-            ];
-
-        if (
-            !validStatuses.includes(
-                status as AttendanceStatus
-            )
-        ) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error:
-                        "Invalid attendance status. Use Present, Absent or Half Day.",
-                },
-                {
-                    status: 400,
-                }
-            );
-        }
-
-        // ----------------------------------------------------
-        // Verify Project
-        // ----------------------------------------------------
-
-        const project =
-            await getProjectById(
-                projectId,
-                companyId
-            );
+        const project = await getAuthorizedProject(
+            user,
+            projectId
+        );
 
         if (!project) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error:
-                        "Project not found",
-                },
-                {
-                    status: 404,
-                }
-            );
+            return forbidden();
         }
 
-        // ----------------------------------------------------
-        // Verify Site
-        // ----------------------------------------------------
-
-        const site =
-            await getSiteById(
-                siteId,
-                companyId
-            );
-
-        if (!site) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error:
-                        "Site not found",
-                },
-                {
-                    status: 404,
-                }
-            );
-        }
-
-        // ----------------------------------------------------
-        // Make sure site belongs to selected project
-        // ----------------------------------------------------
-
-        if (
-            site.projectId !==
-            projectId
-        ) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error:
-                        "Selected site does not belong to the selected project",
-                },
-                {
-                    status: 400,
-                }
-            );
-        }
-
-        // ----------------------------------------------------
-        // Verify Worker
-        // ----------------------------------------------------
-
-        const worker =
-            await getWorkerById(
-                workerId,
-                companyId
-            );
+        const worker = await getWorkerById(
+            workerId,
+            companyId
+        );
 
         if (!worker) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error:
-                        "Worker not found",
-                },
-                {
-                    status: 404,
-                }
+            return notFound("Worker not found.");
+        }
+
+        if (worker.projectId !== project.projectId) {
+            return badRequest(
+                "The selected worker does not belong to the selected project."
             );
         }
 
-        // ----------------------------------------------------
-        // Make sure worker belongs to selected site
-        // ----------------------------------------------------
-
-        if (
-            worker.siteId !==
-            siteId
-        ) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error:
-                        "Selected worker does not belong to the selected site",
-                },
-                {
-                    status: 400,
-                }
-            );
-        }
-
-        // ----------------------------------------------------
-        // Make sure worker belongs to selected project
-        // ----------------------------------------------------
-
-        if (
-            worker.projectId !==
-            projectId
-        ) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error:
-                        "Selected worker does not belong to the selected project",
-                },
-                {
-                    status: 400,
-                }
-            );
-        }
-
-        // ----------------------------------------------------
-        // Create attendance
-        // ----------------------------------------------------
-
-        const attendance =
-            await createAttendance({
-                companyId,
-
-                projectId:
-                    project.projectId,
-
-                projectName:
-                    project.projectName,
-
-                siteId:
-                    site.siteId,
-
-                siteName:
-                    site.siteName,
-
-                workerId:
-                    worker.workerId,
-
-                workerName:
-                    worker.name,
-
-                date,
-
-                status:
-                    status as AttendanceStatus,
-
-                remarks,
-
-                createdBy:
-                    constructionUser.userId,
-
-                createdByName:
-                    constructionUser.name ||
-                    constructionUser.email,
-            });
+        const attendance = await createAttendance({
+            companyId,
+            projectId: project.projectId,
+            projectName: project.projectName,
+            workerId: worker.workerId,
+            workerName: worker.name,
+            date,
+            status: status as AttendanceStatus,
+            remarks,
+            createdBy: user.userId,
+            createdByName: user.name || user.email,
+        });
 
         return NextResponse.json(
             {
                 success: true,
-                message:
-                    "Attendance marked successfully",
+                message: "Attendance marked successfully.",
                 attendance,
             },
-            {
-                status: 201,
-            }
+            { status: 201 }
         );
     } catch (error) {
         console.error(
@@ -638,15 +584,6 @@ export async function POST(req: Request) {
             error
         );
 
-        return NextResponse.json(
-            {
-                success: false,
-                error:
-                    "Failed to create attendance",
-            },
-            {
-                status: 500,
-            }
-        );
+        return serverError("Failed to create attendance.");
     }
 }

@@ -2,11 +2,9 @@ import { NextResponse } from "next/server";
 
 import { getUserFromRequest } from "@/lib/auth";
 import { hashPassword } from "@/lib/password";
+import { getUserById, updateUserPassword } from "@/services/auth.service";
+import { getProjectById } from "@/services/construction-project.service";
 import { getWorkerById } from "@/services/construction-worker.service";
-import {
-    getUserById,
-    updateUserPassword,
-} from "@/services/auth.service";
 
 type RouteContext = {
     params: Promise<{
@@ -15,100 +13,81 @@ type RouteContext = {
 };
 
 export async function PATCH(
-    req: Request,
+    request: Request,
     context: RouteContext
 ) {
     try {
-        // --------------------------------------------------
-        // 1. Check logged-in user
-        // --------------------------------------------------
-        const currentUser = await getUserFromRequest(req);
+        const currentUser = await getUserFromRequest(request);
 
         if (!currentUser) {
             return NextResponse.json(
-                {
-                    success: false,
-                    message: "Unauthorized",
-                },
+                { success: false, message: "Unauthorized." },
                 { status: 401 }
             );
         }
 
-        // IMPORTANT:
-        // ?? "" guarantees this is always a string
-        const currentRole = (currentUser.role ?? "")
-            .trim()
-            .toLowerCase();
-
-        // --------------------------------------------------
-        // 2. Get worker ID
-        // --------------------------------------------------
         const { workerId } = await context.params;
 
         if (!workerId) {
             return NextResponse.json(
-                {
-                    success: false,
-                    message: "Worker ID is required.",
-                },
+                { success: false, message: "Worker ID is required." },
                 { status: 400 }
             );
         }
 
-        // --------------------------------------------------
-        // 3. Check permission
-        // --------------------------------------------------
-        if (
-            currentRole !== "admin" &&
-            currentRole !== "manager"
-        ) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        "You do not have permission to reset worker passwords.",
-                },
-                { status: 403 }
-            );
-        }
-
-        // --------------------------------------------------
-        // 4. Determine company
-        // --------------------------------------------------
-        const companyId =
-            currentUser.companyId || currentUser.userId;
+        const companyId = currentUser.companyId || currentUser.userId;
 
         if (!companyId) {
             return NextResponse.json(
-                {
-                    success: false,
-                    message: "Company information is missing.",
-                },
+                { success: false, message: "Company information is missing." },
                 { status: 400 }
             );
         }
 
-        // --------------------------------------------------
-        // 5. Find worker
-        // --------------------------------------------------
-        const worker = await getWorkerById(
-            workerId,
-            companyId
-        );
+        const worker = await getWorkerById(workerId, companyId);
 
         if (!worker) {
             return NextResponse.json(
-                {
-                    success: false,
-                    message: "Worker not found.",
-                },
+                { success: false, message: "Worker not found." },
                 { status: 404 }
             );
         }
 
-        // --------------------------------------------------
-        // 6. Worker must have linked CRM user
-        // --------------------------------------------------
+        const currentRole = (currentUser.role ?? "")
+            .trim()
+            .toLowerCase();
+
+        const hasCompanyWideAccess = [
+            "admin",
+            "manager",
+            "constructionadmin",
+        ].includes(currentRole);
+
+        if (!hasCompanyWideAccess) {
+            const project = await getProjectById(
+                worker.projectId,
+                companyId
+            );
+
+            const isProjectManager =
+                currentRole === "constructionprojectmanager" &&
+                project?.projectManagerUserId === currentUser.userId;
+
+            const isProjectCreator =
+                project?.createdBy === currentUser.userId;
+
+            if (!isProjectManager && !isProjectCreator) {
+                return NextResponse.json(
+                    {
+                        success: false,
+                        message:
+                            "You can reset passwords only for workers in projects you manage or created.",
+                    },
+                    { status: 403 }
+                );
+            }
+        }
+
         if (!worker.userId) {
             return NextResponse.json(
                 {
@@ -120,30 +99,37 @@ export async function PATCH(
             );
         }
 
-        // --------------------------------------------------
-        // 7. Read request body
-        // --------------------------------------------------
-        const body = await req.json();
+        let body: unknown;
+
+        try {
+            body = await request.json();
+        } catch {
+            return NextResponse.json(
+                { success: false, message: "Invalid JSON request body." },
+                { status: 400 }
+            );
+        }
+
+        if (typeof body !== "object" || body === null || Array.isArray(body)) {
+            return NextResponse.json(
+                { success: false, message: "Invalid password details." },
+                { status: 400 }
+            );
+        }
 
         const password =
-            typeof body.password === "string"
+            "password" in body && typeof body.password === "string"
                 ? body.password
                 : "";
-
         const confirmPassword =
+            "confirmPassword" in body &&
             typeof body.confirmPassword === "string"
                 ? body.confirmPassword
                 : "";
 
-        // --------------------------------------------------
-        // 8. Validate password
-        // --------------------------------------------------
         if (!password) {
             return NextResponse.json(
-                {
-                    success: false,
-                    message: "New password is required.",
-                },
+                { success: false, message: "New password is required." },
                 { status: 400 }
             );
         }
@@ -152,8 +138,7 @@ export async function PATCH(
             return NextResponse.json(
                 {
                     success: false,
-                    message:
-                        "Password must be at least 6 characters.",
+                    message: "Password must be at least 6 characters.",
                 },
                 { status: 400 }
             );
@@ -161,60 +146,35 @@ export async function PATCH(
 
         if (confirmPassword && password !== confirmPassword) {
             return NextResponse.json(
-                {
-                    success: false,
-                    message: "Passwords do not match.",
-                },
+                { success: false, message: "Passwords do not match." },
                 { status: 400 }
             );
         }
 
-        // --------------------------------------------------
-        // 9. Verify linked CRM user exists
-        // --------------------------------------------------
         const linkedUser = await getUserById(worker.userId);
 
         if (!linkedUser) {
             return NextResponse.json(
                 {
                     success: false,
-                    message:
-                        "Linked login account was not found.",
+                    message: "Linked login account was not found.",
                 },
                 { status: 404 }
             );
         }
 
-        // --------------------------------------------------
-        // 10. Hash new password
-        // --------------------------------------------------
-        const hashedPassword =
-            await hashPassword(password);
+        const hashedPassword = await hashPassword(password);
+        await updateUserPassword(worker.userId, hashedPassword);
 
-        // --------------------------------------------------
-        // 11. Update CRM user password
-        // --------------------------------------------------
-        await updateUserPassword(
-            worker.userId,
-            hashedPassword
-        );
-
-        // --------------------------------------------------
-        // 12. Success
-        // --------------------------------------------------
         return NextResponse.json(
             {
                 success: true,
-                message:
-                    "Worker password updated successfully.",
+                message: "Worker password updated successfully.",
             },
             { status: 200 }
         );
     } catch (error) {
-        console.error(
-            "PATCH construction worker password error:",
-            error
-        );
+        console.error("PATCH construction worker password error:", error);
 
         return NextResponse.json(
             {

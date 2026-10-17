@@ -27,6 +27,12 @@ interface DailySiteUpdate {
 
     materialReceived: number;
     materialUsed: number;
+    materialsUsed?: Array<{
+        materialId: string;
+        materialName: string;
+        quantity: number;
+        unit: string;
+    }>;
 
     issues: number;
     issueDescription?: string;
@@ -251,10 +257,21 @@ export default function DailyUpdateDetailPage() {
                             value={`${update.materialReceived}`}
                         />
 
-                        <InfoBox
-                            label="Material Used"
-                            value={`${update.materialUsed}`}
-                        />
+                        <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+                            <p className="text-xs uppercase tracking-wide text-zinc-500">Materials Used</p>
+                            {update.materialsUsed?.length ? (
+                                <ul className="mt-3 space-y-2">
+                                    {update.materialsUsed.map((item, index) => (
+                                        <li key={`${item.materialId}-${index}`} className="flex justify-between gap-3 text-sm">
+                                            <span className="text-zinc-300">{item.materialName}</span>
+                                            <span className="shrink-0 font-medium text-white">{item.quantity} {item.unit}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="mt-2 text-lg font-semibold text-white">{update.materialUsed || 0}</p>
+                            )}
+                        </div>
                     </div>
                 </section>
 

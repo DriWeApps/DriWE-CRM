@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";
 import {
@@ -5,12 +6,8 @@ import {
     updateAttendance,
     deleteAttendance,
 } from "@/services/construction-attendance.service";
-
-type RouteContext = {
-    params: Promise<{
-        attendanceId: string;
-    }>;
-};
+import { getProjectById } from "@/services/construction-project.service";
+import type { AttendanceStatus } from "@/types/construction";
 
 type ConstructionUser = {
     userId: string;
@@ -18,268 +15,196 @@ type ConstructionUser = {
     email: string;
     name?: string;
     role?: string;
-    pageAccess?: string[];
-    portal?: "crm" | "construction" | "both";
     companyId?: string;
 };
 
-type AttendanceStatus =
-    | "Present"
-    | "Absent"
-    | "Half Day";
+type AssignedProject = {
+    projectId: string;
+    projectManagerUserId?: string;
+};
 
-// ============================================================
-// GET - Get Attendance Record by ID
-// ============================================================
+type RouteContext = {
+    params: Promise<{ attendanceId: string }>;
+};
 
-export async function GET(
-    req: Request,
-    context: RouteContext
-) {
-    try {
-        const user = await getUserFromRequest(req);
-
-        if (!user) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: "Unauthorized",
-                },
-                { status: 401 }
-            );
-        }
-
-        const { attendanceId } = await context.params;
-
-        if (!attendanceId) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: "Attendance ID is required",
-                },
-                { status: 400 }
-            );
-        }
-
-        const constructionUser =
-            user as ConstructionUser;
-
-        const companyId =
-            constructionUser.companyId ||
-            constructionUser.userId;
-
-        const attendance =
-            await getAttendanceById(
-                attendanceId,
-                companyId
-            );
-
-        if (!attendance) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: "Attendance record not found",
-                },
-                { status: 404 }
-            );
-        }
-
-        return NextResponse.json({
-            success: true,
-            attendance,
-        });
-    } catch (error) {
-        console.error(
-            "GET /api/construction/attendance/[attendanceId] error:",
-            error
-        );
-
-        return NextResponse.json(
-            {
-                success: false,
-                error: "Failed to fetch attendance record",
-            },
-            { status: 500 }
-        );
-    }
+function roleOf(user: ConstructionUser) {
+    return user.role?.trim().toLowerCase() ?? "";
 }
 
-// ============================================================
-// PUT - Update Attendance Record
-// ============================================================
+function isAdmin(user: ConstructionUser) {
+    return ["admin", "constructionadmin"].includes(roleOf(user));
+}
+
+function isManager(user: ConstructionUser) {
+    return roleOf(user) === "constructionprojectmanager";
+}
+
+function companyOf(user: ConstructionUser) {
+    return user.companyId || user.userId;
+}
+
+function unauthorized() {
+    return NextResponse.json(
+        { success: false, message: "Unauthorized." },
+        { status: 401 }
+    );
+}
+
+function forbidden() {
+    return NextResponse.json(
+        { success: false, message: "You do not have permission to modify this attendance." },
+        { status: 403 }
+    );
+}
+
+function notFound() {
+    return NextResponse.json(
+        { success: false, message: "Attendance record not found." },
+        { status: 404 }
+    );
+}
+
+function badRequest(message: string) {
+    return NextResponse.json(
+        { success: false, message },
+        { status: 400 }
+    );
+}
+
+async function authorizeAttendance(
+    user: ConstructionUser,
+    attendanceId: string
+) {
+    if (!isAdmin(user) && !isManager(user)) {
+        return { response: forbidden() };
+    }
+
+    const companyId = companyOf(user);
+    const attendance = await getAttendanceById(
+        attendanceId,
+        companyId
+    );
+
+    if (!attendance) {
+        return { response: notFound() };
+    }
+
+    if (isManager(user)) {
+        const project = await getProjectById(
+            attendance.projectId,
+            companyId
+        );
+
+        if (
+            !project ||
+            (project as AssignedProject).projectManagerUserId !== user.userId
+        ) {
+            return { response: forbidden() };
+        }
+    }
+
+    return { attendance, companyId };
+}
+
+function isValidDate(date: string) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return false;
+    }
+
+    const parsed = new Date(`${date}T00:00:00.000Z`);
+
+    return (
+        !Number.isNaN(parsed.getTime()) &&
+        parsed.toISOString().slice(0, 10) === date
+    );
+}
+
+const validStatuses: AttendanceStatus[] = [
+    "Present",
+    "Absent",
+    "Half Day",
+];
 
 export async function PUT(
     req: Request,
     context: RouteContext
 ) {
     try {
-        const user = await getUserFromRequest(req);
+        const user = await getUserFromRequest(req) as
+            | ConstructionUser
+            | null;
 
-        if (!user) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: "Unauthorized",
-                },
-                { status: 401 }
-            );
-        }
+        if (!user) return unauthorized();
 
         const { attendanceId } = await context.params;
+        const authorization = await authorizeAttendance(
+            user,
+            attendanceId
+        );
 
-        if (!attendanceId) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: "Attendance ID is required",
-                },
-                { status: 400 }
-            );
+        if ("response" in authorization) {
+            return authorization.response;
         }
-
-        const constructionUser =
-            user as ConstructionUser;
-
-        const companyId =
-            constructionUser.companyId ||
-            constructionUser.userId;
-
-        // ----------------------------------------------------
-        // Get existing attendance
-        // ----------------------------------------------------
-
-        const existingAttendance =
-            await getAttendanceById(
-                attendanceId,
-                companyId
-            );
-
-        if (!existingAttendance) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: "Attendance record not found",
-                },
-                { status: 404 }
-            );
-        }
-
-        // ----------------------------------------------------
-        // Read body
-        // ----------------------------------------------------
 
         const body = await req.json();
+        const update: Partial<{
+            date: string;
+            status: AttendanceStatus;
+            remarks: string;
+        }> = {};
 
-        // ----------------------------------------------------
-        // Allowed fields
-        // ----------------------------------------------------
+        if (body.date !== undefined) {
+            if (
+                typeof body.date !== "string" ||
+                !isValidDate(body.date.trim())
+            ) {
+                return badRequest(
+                    "Invalid attendance date. Use YYYY-MM-DD."
+                );
+            }
 
-        const date =
-            body.date !== undefined
-                ? String(body.date).trim()
-                : existingAttendance.date;
+            update.date = body.date.trim();
+        }
 
-        const status =
-            body.status !== undefined
-                ? String(body.status).trim()
-                : existingAttendance.status;
+        if (body.status !== undefined) {
+            if (
+                typeof body.status !== "string" ||
+                !validStatuses.includes(body.status as AttendanceStatus)
+            ) {
+                return badRequest(
+                    "Invalid status. Use Present, Absent or Half Day."
+                );
+            }
 
-        const remarks =
-            body.remarks !== undefined
-                ? String(body.remarks).trim()
-                : existingAttendance.remarks || "";
+            update.status = body.status as AttendanceStatus;
+        }
 
-        // ----------------------------------------------------
-        // Validate date
-        // ----------------------------------------------------
+        if (body.remarks !== undefined) {
+            if (typeof body.remarks !== "string") {
+                return badRequest("Remarks must be a string.");
+            }
 
-        if (!date) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: "Attendance date is required",
-                },
-                { status: 400 }
+            update.remarks = body.remarks.trim();
+        }
+
+        if (Object.keys(update).length === 0) {
+            return badRequest(
+                "Provide at least one field to update: date, status or remarks."
             );
         }
 
-        // ----------------------------------------------------
-        // Validate date format
-        // ----------------------------------------------------
+        const attendance = await updateAttendance(
+            attendanceId,
+            authorization.companyId,
+            update
+        );
 
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: "Invalid date format. Use YYYY-MM-DD",
-                },
-                { status: 400 }
-            );
-        }
-
-        // ----------------------------------------------------
-        // Validate status
-        // ----------------------------------------------------
-
-        const validStatuses: AttendanceStatus[] = [
-            "Present",
-            "Absent",
-            "Half Day",
-        ];
-
-        if (
-            !validStatuses.includes(
-                status as AttendanceStatus
-            )
-        ) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error:
-                        "Invalid attendance status. Use Present, Absent or Half Day.",
-                },
-                { status: 400 }
-            );
-        }
-
-        // ----------------------------------------------------
-        // Update attendance
-        //
-        // Project, site and worker relationships are NOT
-        // changed here.
-        //
-        // This keeps the attendance record attached to the
-        // original worker/site/project.
-        // ----------------------------------------------------
-
-        const updatedAttendance =
-            await updateAttendance(
-                attendanceId,
-                companyId,
-                {
-                    date,
-                    status:
-                        status as AttendanceStatus,
-                    remarks,
-                }
-            );
-
-        if (!updatedAttendance) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error:
-                        "Failed to update attendance record",
-                },
-                { status: 500 }
-            );
-        }
+        if (!attendance) return notFound();
 
         return NextResponse.json({
             success: true,
-            message:
-                "Attendance updated successfully",
-            attendance: updatedAttendance,
+            message: "Attendance updated successfully.",
+            attendance,
         });
     } catch (error) {
         console.error(
@@ -288,101 +213,43 @@ export async function PUT(
         );
 
         return NextResponse.json(
-            {
-                success: false,
-                error: "Failed to update attendance record",
-            },
+            { success: false, message: "Failed to update attendance." },
             { status: 500 }
         );
     }
 }
-
-// ============================================================
-// DELETE - Delete Attendance Record
-// ============================================================
 
 export async function DELETE(
     req: Request,
     context: RouteContext
 ) {
     try {
-        const user = await getUserFromRequest(req);
+        const user = await getUserFromRequest(req) as
+            | ConstructionUser
+            | null;
 
-        if (!user) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: "Unauthorized",
-                },
-                { status: 401 }
-            );
-        }
+        if (!user) return unauthorized();
 
         const { attendanceId } = await context.params;
+        const authorization = await authorizeAttendance(
+            user,
+            attendanceId
+        );
 
-        if (!attendanceId) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: "Attendance ID is required",
-                },
-                { status: 400 }
-            );
+        if ("response" in authorization) {
+            return authorization.response;
         }
 
-        const constructionUser =
-            user as ConstructionUser;
+        const deleted = await deleteAttendance(
+            attendanceId,
+            authorization.companyId
+        );
 
-        const companyId =
-            constructionUser.companyId ||
-            constructionUser.userId;
-
-        // ----------------------------------------------------
-        // Check attendance exists
-        // ----------------------------------------------------
-
-        const existingAttendance =
-            await getAttendanceById(
-                attendanceId,
-                companyId
-            );
-
-        if (!existingAttendance) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: "Attendance record not found",
-                },
-                { status: 404 }
-            );
-        }
-
-        // ----------------------------------------------------
-        // Delete attendance
-        // ----------------------------------------------------
-
-        const deleted =
-            await deleteAttendance(
-                attendanceId,
-                companyId
-            );
-
-        if (!deleted) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error:
-                        "Failed to delete attendance record",
-                },
-                { status: 500 }
-            );
-        }
+        if (!deleted) return notFound();
 
         return NextResponse.json({
             success: true,
-            message:
-                "Attendance deleted successfully",
-            attendanceId,
+            message: "Attendance deleted successfully.",
         });
     } catch (error) {
         console.error(
@@ -391,11 +258,7 @@ export async function DELETE(
         );
 
         return NextResponse.json(
-            {
-                success: false,
-                error:
-                    "Failed to delete attendance record",
-            },
+            { success: false, message: "Failed to delete attendance." },
             { status: 500 }
         );
     }

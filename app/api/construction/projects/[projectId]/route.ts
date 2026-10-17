@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 
 import { getUserFromRequest } from "@/lib/auth";
@@ -8,14 +9,48 @@ import {
     deleteProject,
 } from "@/services/construction-project.service";
 
+import type { ProjectStatus } from "@/types/construction";
+
 type RouteContext = {
     params: Promise<{
         projectId: string;
     }>;
 };
 
-function getCompanyId(user: any): string {
+function normalizeRole(role?: string): string {
+    return role?.trim().toLowerCase() ?? "";
+}
+
+function isConstructionAdmin(user: { role?: string }): boolean {
+    const role = normalizeRole(user.role);
+
+    return role === "admin" || role === "constructionadmin";
+}
+
+function isProjectManager(user: { role?: string }): boolean {
+    return normalizeRole(user.role) === "constructionprojectmanager";
+}
+
+function getCompanyId(user: {
+    companyId?: string;
+    userId: string;
+}): string {
     return user.companyId || user.userId;
+}
+
+const validStatuses: ProjectStatus[] = [
+    "Planning",
+    "Active",
+    "On Hold",
+    "Completed",
+    "Cancelled",
+];
+
+function forbidden(message: string) {
+    return NextResponse.json(
+        { success: false, message },
+        { status: 403 }
+    );
 }
 
 // GET SINGLE PROJECT
@@ -36,13 +71,22 @@ export async function GET(
             );
         }
 
+        const admin = isConstructionAdmin(user);
+        const manager = isProjectManager(user);
+
+        if (!admin && !manager) {
+            return forbidden(
+                "You are not allowed to view project details."
+            );
+        }
+
         const { projectId } = await params;
 
         if (!projectId) {
             return NextResponse.json(
                 {
                     success: false,
-                    message: "Project ID is required",
+                    message: "Project ID is required.",
                 },
                 { status: 400 }
             );
@@ -59,9 +103,19 @@ export async function GET(
             return NextResponse.json(
                 {
                     success: false,
-                    message: "Project not found",
+                    message: "Project not found.",
                 },
                 { status: 404 }
+            );
+        }
+
+        // Managers can view only projects assigned to their account.
+        if (
+            manager &&
+            project.projectManagerUserId !== user.userId
+        ) {
+            return forbidden(
+                "You can only view projects assigned to you."
             );
         }
 
@@ -78,7 +132,7 @@ export async function GET(
         return NextResponse.json(
             {
                 success: false,
-                message: "Failed to fetch project",
+                message: "Failed to fetch project.",
             },
             { status: 500 }
         );
@@ -103,13 +157,19 @@ export async function PUT(
             );
         }
 
+        if (!isConstructionAdmin(user)) {
+            return forbidden(
+                "Only a Construction Admin can update project details."
+            );
+        }
+
         const { projectId } = await params;
 
         if (!projectId) {
             return NextResponse.json(
                 {
                     success: false,
-                    message: "Project ID is required",
+                    message: "Project ID is required.",
                 },
                 { status: 400 }
             );
@@ -117,7 +177,6 @@ export async function PUT(
 
         const companyId = getCompanyId(user);
 
-        // Check that the project belongs to this company
         const existingProject = await getProjectById(
             projectId,
             companyId
@@ -127,13 +186,27 @@ export async function PUT(
             return NextResponse.json(
                 {
                     success: false,
-                    message: "Project not found",
+                    message: "Project not found.",
                 },
                 { status: 404 }
             );
         }
 
         const body = await req.json();
+
+        if (
+            !body ||
+            typeof body !== "object" ||
+            Array.isArray(body)
+        ) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: "Invalid project details.",
+                },
+                { status: 400 }
+            );
+        }
 
         const projectName =
             typeof body.projectName === "string"
@@ -146,12 +219,19 @@ export async function PUT(
                 : existingProject.location;
 
         const startDate =
-            body.startDate ||
-            existingProject.startDate;
+            typeof body.startDate === "string"
+                ? body.startDate.trim()
+                : existingProject.startDate;
 
         const expectedCompletion =
-            body.expectedCompletion ||
-            existingProject.expectedCompletion;
+            typeof body.expectedCompletion === "string"
+                ? body.expectedCompletion.trim()
+                : existingProject.expectedCompletion;
+
+        const status =
+            body.status !== undefined
+                ? body.status
+                : existingProject.status;
 
         if (
             !projectName ||
@@ -169,6 +249,19 @@ export async function PUT(
             );
         }
 
+        if (
+            typeof status !== "string" ||
+            !validStatuses.includes(status as ProjectStatus)
+        ) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: "Invalid project status.",
+                },
+                { status: 400 }
+            );
+        }
+
         const updatedProject = await updateProject(
             projectId,
             companyId,
@@ -176,29 +269,28 @@ export async function PUT(
                 projectName,
                 location,
 
+                // Preserve the existing manager assignment.
                 projectManager:
-                    body.projectManager ||
                     existingProject.projectManager,
 
                 projectManagerName:
-                    body.projectManagerName ||
                     existingProject.projectManagerName,
 
+                projectManagerUserId:
+                    existingProject.projectManagerUserId,
+
+                projectManagerEmail:
+                    existingProject.projectManagerEmail,
+
                 siteSupervisor:
-                    body.siteSupervisor ||
                     existingProject.siteSupervisor,
 
                 siteSupervisorName:
-                    body.siteSupervisorName ||
                     existingProject.siteSupervisorName,
 
                 startDate,
-
                 expectedCompletion,
-
-                status:
-                    body.status ||
-                    existingProject.status,
+                status: status as ProjectStatus,
 
                 description:
                     body.description !== undefined
@@ -209,6 +301,7 @@ export async function PUT(
 
         return NextResponse.json({
             success: true,
+            message: "Project updated successfully.",
             project: updatedProject,
         });
     } catch (error) {
@@ -220,7 +313,7 @@ export async function PUT(
         return NextResponse.json(
             {
                 success: false,
-                message: "Failed to update project",
+                message: "Failed to update project.",
             },
             { status: 500 }
         );
@@ -245,13 +338,19 @@ export async function DELETE(
             );
         }
 
+        if (!isConstructionAdmin(user)) {
+            return forbidden(
+                "Only a Construction Admin can delete projects."
+            );
+        }
+
         const { projectId } = await params;
 
         if (!projectId) {
             return NextResponse.json(
                 {
                     success: false,
-                    message: "Project ID is required",
+                    message: "Project ID is required.",
                 },
                 { status: 400 }
             );
@@ -268,20 +367,17 @@ export async function DELETE(
             return NextResponse.json(
                 {
                     success: false,
-                    message: "Project not found",
+                    message: "Project not found.",
                 },
                 { status: 404 }
             );
         }
 
-        await deleteProject(
-            projectId,
-            companyId
-        );
+        await deleteProject(projectId, companyId);
 
         return NextResponse.json({
             success: true,
-            message: "Project deleted successfully",
+            message: "Project deleted successfully.",
         });
     } catch (error) {
         console.error(
@@ -292,7 +388,7 @@ export async function DELETE(
         return NextResponse.json(
             {
                 success: false,
-                message: "Failed to delete project",
+                message: "Failed to delete project.",
             },
             { status: 500 }
         );
