@@ -291,10 +291,20 @@ export async function PUT(
 
                 // Do not allow a builder to change ownership,
                 // company, or assigned project manager.
-                projectManager: existingProject.projectManager,
-                projectManagerName: existingProject.projectManagerName,
-                projectManagerUserId:
-                    existingProject.projectManagerUserId,
+               projectManager:
+  typeof existingProject.projectManager === "string"
+    ? existingProject.projectManager
+    : undefined,
+
+projectManagerName:
+  typeof existingProject.projectManagerName === "string"
+    ? existingProject.projectManagerName
+    : undefined,
+
+projectManagerUserId:
+  typeof existingProject.projectManagerUserId === "string"
+    ? existingProject.projectManagerUserId
+    : undefined,
                 projectManagerEmail: existingProject.projectManagerEmail,
                 siteSupervisor: existingProject.siteSupervisor,
                 siteSupervisorName: existingProject.siteSupervisorName,
