@@ -305,9 +305,20 @@ projectManagerUserId:
   typeof existingProject.projectManagerUserId === "string"
     ? existingProject.projectManagerUserId
     : undefined,
-                projectManagerEmail: existingProject.projectManagerEmail,
-                siteSupervisor: existingProject.siteSupervisor,
-                siteSupervisorName: existingProject.siteSupervisorName,
+               projectManagerEmail:
+    typeof existingProject.projectManagerEmail === "string"
+        ? existingProject.projectManagerEmail
+        : undefined,
+
+siteSupervisor:
+    typeof existingProject.siteSupervisor === "string"
+        ? existingProject.siteSupervisor
+        : undefined,
+
+siteSupervisorName:
+    typeof existingProject.siteSupervisorName === "string"
+        ? existingProject.siteSupervisorName
+        : undefined,
 
                 startDate,
                 expectedCompletion,
