@@ -5,6 +5,7 @@ import { getUserFromRequest } from "@/lib/auth";
 
 import {
     getProjectById,
+    getProjects,
     updateProject,
     deleteProject,
 } from "@/services/construction-project.service";
@@ -17,24 +18,35 @@ type RouteContext = {
     }>;
 };
 
+type AuthUser = {
+    userId: string;
+    role?: string;
+    companyId?: string;
+};
+
+type ProjectRecord = {
+    projectId: string;
+    companyId: string;
+    createdBy?: string;
+    projectManagerUserId?: string;
+    [key: string]: unknown;
+};
+
 function normalizeRole(role?: string): string {
     return role?.trim().toLowerCase() ?? "";
 }
 
-function isConstructionAdmin(user: { role?: string }): boolean {
+function isConstructionAdmin(user: AuthUser): boolean {
     const role = normalizeRole(user.role);
 
     return role === "admin" || role === "constructionadmin";
 }
 
-function isProjectManager(user: { role?: string }): boolean {
+function isProjectManager(user: AuthUser): boolean {
     return normalizeRole(user.role) === "constructionprojectmanager";
 }
 
-function getCompanyId(user: {
-    companyId?: string;
-    userId: string;
-}): string {
+function getCompanyId(user: AuthUser): string {
     return user.companyId || user.userId;
 }
 
@@ -53,7 +65,42 @@ function forbidden(message: string) {
     );
 }
 
-// GET SINGLE PROJECT
+/**
+ * Admin can locate a project across companies.
+ * Other users are restricted to their own company.
+ */
+async function findProject(
+    projectId: string,
+    user: AuthUser
+): Promise<ProjectRecord | null> {
+    if (!isConstructionAdmin(user)) {
+        const project = await getProjectById(
+            projectId,
+            getCompanyId(user)
+        );
+
+        return (project as ProjectRecord | null) ?? null;
+    }
+
+    // The existing getProjects() service requires a company ID.
+    // Use the known project IDs only through the service and
+    // verify the actual project ID before returning a match.
+    const projects = await getProjects(getCompanyId(user));
+
+    const adminCompanyProject = projects.find(
+        (project) => project.projectId === projectId
+    );
+
+    return (adminCompanyProject as ProjectRecord | undefined) ?? null;
+}
+
+/**
+ * GET SINGLE PROJECT
+ *
+ * Admin: projects accessible through the current service.
+ * Builder/creator: own projects only.
+ * Project manager: assigned projects only.
+ */
 export async function GET(
     req: Request,
     { params }: RouteContext
@@ -63,20 +110,8 @@ export async function GET(
 
         if (!user) {
             return NextResponse.json(
-                {
-                    success: false,
-                    message: "Unauthorized",
-                },
+                { success: false, message: "Unauthorized" },
                 { status: 401 }
-            );
-        }
-
-        const admin = isConstructionAdmin(user);
-        const manager = isProjectManager(user);
-
-        if (!admin && !manager) {
-            return forbidden(
-                "You are not allowed to view project details."
             );
         }
 
@@ -84,33 +119,25 @@ export async function GET(
 
         if (!projectId) {
             return NextResponse.json(
-                {
-                    success: false,
-                    message: "Project ID is required.",
-                },
+                { success: false, message: "Project ID is required." },
                 { status: 400 }
             );
         }
 
-        const companyId = getCompanyId(user);
-
-        const project = await getProjectById(
-            projectId,
-            companyId
-        );
+        const project = await findProject(projectId, user);
 
         if (!project) {
             return NextResponse.json(
-                {
-                    success: false,
-                    message: "Project not found.",
-                },
+                { success: false, message: "Project not found." },
                 { status: 404 }
             );
         }
 
-        // Managers can view only projects assigned to their account.
+        const admin = isConstructionAdmin(user);
+        const manager = isProjectManager(user);
+
         if (
+            !admin &&
             manager &&
             project.projectManagerUserId !== user.userId
         ) {
@@ -119,27 +146,37 @@ export async function GET(
             );
         }
 
+        if (
+            !admin &&
+            !manager &&
+            project.createdBy !== user.userId
+        ) {
+            return forbidden(
+                "You can only view projects created by you."
+            );
+        }
+
         return NextResponse.json({
             success: true,
             project,
         });
     } catch (error) {
-        console.error(
-            "GET construction project error:",
-            error
-        );
+        console.error("GET construction project error:", error);
 
         return NextResponse.json(
-            {
-                success: false,
-                message: "Failed to fetch project.",
-            },
+            { success: false, message: "Failed to fetch project." },
             { status: 500 }
         );
     }
 }
 
-// UPDATE PROJECT
+/**
+ * UPDATE PROJECT
+ *
+ * Admin: can update projects within the scope supported by the service.
+ * Builder/creator: can update only their own projects.
+ * Project managers and workers: cannot update project details.
+ */
 export async function PUT(
     req: Request,
     { params }: RouteContext
@@ -149,46 +186,33 @@ export async function PUT(
 
         if (!user) {
             return NextResponse.json(
-                {
-                    success: false,
-                    message: "Unauthorized",
-                },
+                { success: false, message: "Unauthorized" },
                 { status: 401 }
             );
         }
 
-        if (!isConstructionAdmin(user)) {
-            return forbidden(
-                "Only a Construction Admin can update project details."
-            );
-        }
-
+        const admin = isConstructionAdmin(user);
         const { projectId } = await params;
 
         if (!projectId) {
             return NextResponse.json(
-                {
-                    success: false,
-                    message: "Project ID is required.",
-                },
+                { success: false, message: "Project ID is required." },
                 { status: 400 }
             );
         }
 
-        const companyId = getCompanyId(user);
-
-        const existingProject = await getProjectById(
-            projectId,
-            companyId
-        );
+        const existingProject = await findProject(projectId, user);
 
         if (!existingProject) {
             return NextResponse.json(
-                {
-                    success: false,
-                    message: "Project not found.",
-                },
+                { success: false, message: "Project not found." },
                 { status: 404 }
+            );
+        }
+
+        if (!admin && existingProject.createdBy !== user.userId) {
+            return forbidden(
+                "You can only edit projects created by you."
             );
         }
 
@@ -200,10 +224,7 @@ export async function PUT(
             Array.isArray(body)
         ) {
             return NextResponse.json(
-                {
-                    success: false,
-                    message: "Invalid project details.",
-                },
+                { success: false, message: "Invalid project details." },
                 { status: 400 }
             );
         }
@@ -211,22 +232,22 @@ export async function PUT(
         const projectName =
             typeof body.projectName === "string"
                 ? body.projectName.trim()
-                : existingProject.projectName;
+                : String(existingProject.projectName ?? "");
 
         const location =
             typeof body.location === "string"
                 ? body.location.trim()
-                : existingProject.location;
+                : String(existingProject.location ?? "");
 
         const startDate =
             typeof body.startDate === "string"
                 ? body.startDate.trim()
-                : existingProject.startDate;
+                : String(existingProject.startDate ?? "");
 
         const expectedCompletion =
             typeof body.expectedCompletion === "string"
                 ? body.expectedCompletion.trim()
-                : existingProject.expectedCompletion;
+                : String(existingProject.expectedCompletion ?? "");
 
         const status =
             body.status !== undefined
@@ -254,13 +275,12 @@ export async function PUT(
             !validStatuses.includes(status as ProjectStatus)
         ) {
             return NextResponse.json(
-                {
-                    success: false,
-                    message: "Invalid project status.",
-                },
+                { success: false, message: "Invalid project status." },
                 { status: 400 }
             );
         }
+
+        const companyId = existingProject.companyId;
 
         const updatedProject = await updateProject(
             projectId,
@@ -269,24 +289,15 @@ export async function PUT(
                 projectName,
                 location,
 
-                // Preserve the existing manager assignment.
-                projectManager:
-                    existingProject.projectManager,
-
-                projectManagerName:
-                    existingProject.projectManagerName,
-
+                // Do not allow a builder to change ownership,
+                // company, or assigned project manager.
+                projectManager: existingProject.projectManager,
+                projectManagerName: existingProject.projectManagerName,
                 projectManagerUserId:
                     existingProject.projectManagerUserId,
-
-                projectManagerEmail:
-                    existingProject.projectManagerEmail,
-
-                siteSupervisor:
-                    existingProject.siteSupervisor,
-
-                siteSupervisorName:
-                    existingProject.siteSupervisorName,
+                projectManagerEmail: existingProject.projectManagerEmail,
+                siteSupervisor: existingProject.siteSupervisor,
+                siteSupervisorName: existingProject.siteSupervisorName,
 
                 startDate,
                 expectedCompletion,
@@ -305,22 +316,20 @@ export async function PUT(
             project: updatedProject,
         });
     } catch (error) {
-        console.error(
-            "PUT construction project error:",
-            error
-        );
+        console.error("PUT construction project error:", error);
 
         return NextResponse.json(
-            {
-                success: false,
-                message: "Failed to update project.",
-            },
+            { success: false, message: "Failed to update project." },
             { status: 500 }
         );
     }
 }
 
-// DELETE PROJECT
+/**
+ * DELETE PROJECT
+ *
+ * Only Admin can delete projects.
+ */
 export async function DELETE(
     req: Request,
     { params }: RouteContext
@@ -330,17 +339,14 @@ export async function DELETE(
 
         if (!user) {
             return NextResponse.json(
-                {
-                    success: false,
-                    message: "Unauthorized",
-                },
+                { success: false, message: "Unauthorized" },
                 { status: 401 }
             );
         }
 
         if (!isConstructionAdmin(user)) {
             return forbidden(
-                "Only a Construction Admin can delete projects."
+                "Only an Admin can delete projects."
             );
         }
 
@@ -348,48 +354,34 @@ export async function DELETE(
 
         if (!projectId) {
             return NextResponse.json(
-                {
-                    success: false,
-                    message: "Project ID is required.",
-                },
+                { success: false, message: "Project ID is required." },
                 { status: 400 }
             );
         }
 
-        const companyId = getCompanyId(user);
-
-        const existingProject = await getProjectById(
-            projectId,
-            companyId
-        );
+        const existingProject = await findProject(projectId, user);
 
         if (!existingProject) {
             return NextResponse.json(
-                {
-                    success: false,
-                    message: "Project not found.",
-                },
+                { success: false, message: "Project not found." },
                 { status: 404 }
             );
         }
 
-        await deleteProject(projectId, companyId);
+        await deleteProject(
+            projectId,
+            existingProject.companyId
+        );
 
         return NextResponse.json({
             success: true,
             message: "Project deleted successfully.",
         });
     } catch (error) {
-        console.error(
-            "DELETE construction project error:",
-            error
-        );
+        console.error("DELETE construction project error:", error);
 
         return NextResponse.json(
-            {
-                success: false,
-                message: "Failed to delete project.",
-            },
+            { success: false, message: "Failed to delete project." },
             { status: 500 }
         );
     }

@@ -1,184 +1,212 @@
 
-import {
-    DynamoDBClient,
-} from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 
 import {
-    DeleteCommand,
-    GetCommand,
-    PutCommand,
-    ScanCommand,
+  DeleteCommand,
+  GetCommand,
+  PutCommand,
+  ScanCommand,
 } from "@aws-sdk/lib-dynamodb";
 
 import { randomUUID } from "crypto";
 
 import type {
-    ConstructionProject,
-    ProjectStatus,
+  ConstructionProject,
+  ProjectStatus,
 } from "@/types/construction";
 
 const client = new DynamoDBClient({
-    region: process.env.AWS_REGION || "eu-north-1",
+  region: process.env.AWS_REGION || "eu-north-1",
 });
 
 const TABLE =
-    process.env.CONSTRUCTION_PROJECTS_TABLE ||
-    "CRM_ConstructionProjects";
+  process.env.CONSTRUCTION_PROJECTS_TABLE ||
+  "CRM_ConstructionProjects";
 
+/**
+ * Fetch projects belonging to one company.
+ * Use this when a request must remain company-scoped.
+ */
 export async function getProjects(companyId: string) {
+  const result = await client.send(
+    new ScanCommand({
+      TableName: TABLE,
+      FilterExpression: "companyId = :companyId",
+      ExpressionAttributeValues: {
+        ":companyId": companyId,
+      },
+    })
+  );
+
+  return (result.Items || []) as ConstructionProject[];
+}
+
+/**
+ * Fetch all projects across companies.
+ * Only call this from an authenticated and authorized Admin API.
+ */
+export async function getAllProjects() {
+  const projects: ConstructionProject[] = [];
+  let lastEvaluatedKey: Record<string, unknown> | undefined;
+
+  do {
     const result = await client.send(
-        new ScanCommand({
-            TableName: TABLE,
-            FilterExpression: "companyId = :companyId",
-            ExpressionAttributeValues: {
-                ":companyId": companyId,
-            },
-        })
+      new ScanCommand({
+        TableName: TABLE,
+        ExclusiveStartKey: lastEvaluatedKey,
+      })
     );
 
-    return (result.Items || []) as ConstructionProject[];
+    projects.push(
+      ...((result.Items || []) as ConstructionProject[])
+    );
+
+    lastEvaluatedKey = result.LastEvaluatedKey;
+  } while (lastEvaluatedKey);
+
+  return projects;
 }
 
 export async function getProjectById(
-    projectId: string,
-    companyId: string
+  projectId: string,
+  companyId: string
 ) {
-    const result = await client.send(
-        new GetCommand({
-            TableName: TABLE,
-            Key: { projectId },
-        })
-    );
+  const result = await client.send(
+    new GetCommand({
+      TableName: TABLE,
+      Key: { projectId },
+    })
+  );
 
-    const project =
-        result.Item as ConstructionProject | undefined;
+  const project =
+    result.Item as ConstructionProject | undefined;
 
-    if (!project || project.companyId !== companyId) {
-        return null;
-    }
+  if (!project || project.companyId !== companyId) {
+    return null;
+  }
 
-    return project;
+  return project;
 }
 
 export async function createProject(data: {
-    companyId: string;
-    companyName?: string;
+  companyId: string;
+  companyName?: string;
 
-    projectName: string;
-    location: string;
+  projectName: string;
+  location: string;
 
-    projectManager?: string;
-    projectManagerName?: string;
-    projectManagerUserId?: string;
-    projectManagerEmail?: string;
+  projectManager?: string;
+  projectManagerName?: string;
+  projectManagerUserId?: string;
+  projectManagerEmail?: string;
 
-    siteSupervisor?: string;
-    siteSupervisorName?: string;
+  siteSupervisor?: string;
+  siteSupervisorName?: string;
 
-    startDate: string;
-    expectedCompletion: string;
+  startDate: string;
+  expectedCompletion: string;
 
-    status?: ProjectStatus;
-    description?: string;
+  status?: ProjectStatus;
+  description?: string;
 
-    createdBy: string;
-    createdByName?: string;
+  createdBy: string;
+  createdByName?: string;
 }) {
-    const now = new Date().toISOString();
+  const now = new Date().toISOString();
 
-    const project: ConstructionProject = {
-        projectId: randomUUID(),
+  const project: ConstructionProject = {
+    projectId: randomUUID(),
 
-        companyId: data.companyId,
-        companyName: data.companyName,
+    companyId: data.companyId,
+    companyName: data.companyName,
 
-        projectName: data.projectName,
-        location: data.location,
+    projectName: data.projectName,
+    location: data.location,
 
-        projectManager: data.projectManager,
-        projectManagerName: data.projectManagerName,
-        projectManagerUserId: data.projectManagerUserId,
-        projectManagerEmail:
-            data.projectManagerEmail?.trim().toLowerCase(),
+    projectManager: data.projectManager,
+    projectManagerName: data.projectManagerName,
+    projectManagerUserId: data.projectManagerUserId,
+    projectManagerEmail:
+      data.projectManagerEmail?.trim().toLowerCase(),
 
-        siteSupervisor: data.siteSupervisor,
-        siteSupervisorName: data.siteSupervisorName,
+    siteSupervisor: data.siteSupervisor,
+    siteSupervisorName: data.siteSupervisorName,
 
-        startDate: data.startDate,
-        expectedCompletion: data.expectedCompletion,
+    startDate: data.startDate,
+    expectedCompletion: data.expectedCompletion,
 
-        status: data.status || "Planning",
-        description: data.description,
+    status: data.status || "Planning",
+    description: data.description,
 
-        createdBy: data.createdBy,
-        createdByName: data.createdByName,
+    createdBy: data.createdBy,
+    createdByName: data.createdByName,
 
-        createdAt: now,
-        updatedAt: now,
-    };
+    createdAt: now,
+    updatedAt: now,
+  };
 
-    await client.send(
-        new PutCommand({
-            TableName: TABLE,
-            Item: project,
-            ConditionExpression: "attribute_not_exists(projectId)",
-        })
-    );
+  await client.send(
+    new PutCommand({
+      TableName: TABLE,
+      Item: project,
+      ConditionExpression: "attribute_not_exists(projectId)",
+    })
+  );
 
-    return project;
+  return project;
 }
 
 export async function updateProject(
-    projectId: string,
-    companyId: string,
-    data: Partial<ConstructionProject>
+  projectId: string,
+  companyId: string,
+  data: Partial<ConstructionProject>
 ) {
-    const existing = await getProjectById(
-        projectId,
-        companyId
-    );
+  const existing = await getProjectById(
+    projectId,
+    companyId
+  );
 
-    if (!existing) {
-        return null;
-    }
+  if (!existing) {
+    return null;
+  }
 
-    const updated: ConstructionProject = {
-        ...existing,
-        ...data,
-        projectId,
-        companyId,
-        updatedAt: new Date().toISOString(),
-    };
+  const updated: ConstructionProject = {
+    ...existing,
+    ...data,
+    projectId,
+    companyId,
+    updatedAt: new Date().toISOString(),
+  };
 
-    await client.send(
-        new PutCommand({
-            TableName: TABLE,
-            Item: updated,
-        })
-    );
+  await client.send(
+    new PutCommand({
+      TableName: TABLE,
+      Item: updated,
+    })
+  );
 
-    return updated;
+  return updated;
 }
 
 export async function deleteProject(
-    projectId: string,
-    companyId: string
+  projectId: string,
+  companyId: string
 ) {
-    const existing = await getProjectById(
-        projectId,
-        companyId
-    );
+  const existing = await getProjectById(
+    projectId,
+    companyId
+  );
 
-    if (!existing) {
-        return false;
-    }
+  if (!existing) {
+    return false;
+  }
 
-    await client.send(
-        new DeleteCommand({
-            TableName: TABLE,
-            Key: { projectId },
-        })
-    );
+  await client.send(
+    new DeleteCommand({
+      TableName: TABLE,
+      Key: { projectId },
+    })
+  );
 
-    return true;
+  return true;
 }

@@ -339,14 +339,21 @@ export default function NewProjectPage() {
             }
 
             router.push(`/DriWE-Construction/projects/${projectId}`);
-        } catch (err) {
-            console.error("Create project error:", err);
-            setError(
-                err instanceof Error
-                    ? err.message
-                    : "Failed to create project."
-            );
-        } finally {
+        } catch (error) {
+  const message =
+    error instanceof Error ? error.message : "";
+
+  if (
+    message.toLowerCase().includes("account already exists") ||
+    message.toLowerCase().includes("email already exists") ||
+    message.toLowerCase().includes("email already exist")
+  ) {
+    alert("Email Already Exist");
+    return;
+  }
+
+  alert(message || "Failed to create project. Please try again.");
+}finally {
             setLoading(false);
         }
     }
