@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
@@ -239,24 +240,24 @@ export default function ConstructionTaskDetailsPage() {
     function getStatusClasses(status?: TaskStatus) {
         switch (status) {
             case "Completed":
-                return "border-emerald-500/30 bg-emerald-500/10 text-emerald-400";
+                return "border-emerald-200 bg-emerald-50 text-emerald-700";
             case "In Progress":
-                return "border-blue-500/30 bg-blue-500/10 text-blue-400";
+                return "border-blue-200 bg-blue-50 text-blue-700";
             case "Delayed":
-                return "border-red-500/30 bg-red-500/10 text-red-400";
+                return "border-red-200 bg-red-50 text-red-700";
             default:
-                return "border-yellow-500/30 bg-yellow-500/10 text-yellow-400";
+                return "border-amber-200 bg-amber-50 text-amber-800";
         }
     }
 
     function getPriorityClasses(priority?: TaskPriority) {
         switch (priority) {
             case "High":
-                return "border-red-500/30 bg-red-500/10 text-red-400";
+                return "border-red-200 bg-red-50 text-red-700";
             case "Low":
-                return "border-zinc-700 bg-zinc-900 text-zinc-300";
+                return "border-gray-200 bg-gray-50 text-gray-700";
             default:
-                return "border-yellow-500/30 bg-yellow-500/10 text-yellow-400";
+                return "border-amber-200 bg-amber-50 text-amber-800";
         }
     }
 
@@ -275,9 +276,9 @@ export default function ConstructionTaskDetailsPage() {
 
     if (loading || !authLoaded) {
         return (
-            <div className="min-h-screen bg-black text-white">
+            <div className="min-h-screen bg-white text-black">
                 <div className="flex min-h-[70vh] items-center justify-center">
-                    <div className="flex items-center gap-3 text-zinc-400">
+                    <div className="flex items-center gap-3 text-gray-600">
                         <Loader2 className="h-5 w-5 animate-spin" />
                         <span>Loading task...</span>
                     </div>
@@ -288,21 +289,21 @@ export default function ConstructionTaskDetailsPage() {
 
     if (!task) {
         return (
-            <div className="min-h-screen bg-black text-white">
+            <div className="min-h-screen bg-white text-black">
                 <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
                     <Link
                         href="/DriWE-Construction/tasks"
-                        className="mb-6 inline-flex items-center gap-2 text-sm text-zinc-400 transition hover:text-yellow-400"
+                        className="mb-6 inline-flex items-center gap-2 text-sm text-gray-600 transition hover:text-black"
                     >
                         <ArrowLeft className="h-4 w-4" />
                         Back to Tasks
                     </Link>
-                    <div className="rounded-xl border border-red-500/30 bg-zinc-950 p-6">
+                    <div className="rounded-xl border border-red-200 bg-white p-6 shadow-sm">
                         <div className="flex items-start gap-3">
-                            <AlertCircle className="mt-0.5 h-5 w-5 text-red-400" />
+                            <AlertCircle className="mt-0.5 h-5 w-5 text-red-600" />
                             <div>
-                                <h2 className="font-semibold text-red-300">Task not found</h2>
-                                <p className="mt-1 text-sm text-zinc-400">
+                                <h2 className="font-semibold text-red-700">Task not found</h2>
+                                <p className="mt-1 text-sm text-gray-600">
                                     {error || "The requested task could not be found."}
                                 </p>
                             </div>
@@ -316,26 +317,31 @@ export default function ConstructionTaskDetailsPage() {
     const status = task.status || "Pending";
     const priority = task.priority || "Medium";
     const assignedWorkerName = task.assignedToName || workerName || "Unassigned";
+
     const cardClass =
-        "rounded-xl border border-zinc-800 bg-black p-5 shadow-lg shadow-black/20";
-    const insetClass = "rounded-lg border border-zinc-800 bg-zinc-950 p-4";
+        "rounded-xl border border-gray-200 bg-white p-5 shadow-sm";
+    const insetClass =
+        "rounded-lg border border-gray-200 bg-gray-50 p-4";
 
     return (
-        <div className="min-h-screen bg-black text-white">
+        <div className="min-h-screen bg-white text-black">
             <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
                 <Link
                     href="/DriWE-Construction/tasks"
-                    className="mb-5 inline-flex items-center gap-2 text-sm text-zinc-400 transition hover:text-yellow-400"
+                    className="mb-5 inline-flex items-center gap-2 text-sm text-gray-600 transition hover:text-black"
                 >
                     <ArrowLeft className="h-4 w-4" />
                     Back to Tasks
                 </Link>
 
                 {error && (
-                    <div role="alert" className="mb-5 rounded-lg border border-red-500/30 bg-red-950/40 px-4 py-3">
+                    <div
+                        role="alert"
+                        className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3"
+                    >
                         <div className="flex items-center gap-3">
-                            <AlertCircle className="h-5 w-5 text-red-400" />
-                            <p className="text-sm text-red-300">{error}</p>
+                            <AlertCircle className="h-5 w-5 text-red-600" />
+                            <p className="text-sm text-red-700">{error}</p>
                         </div>
                     </div>
                 )}
@@ -343,20 +349,28 @@ export default function ConstructionTaskDetailsPage() {
                 <header className={`${cardClass} mb-6`}>
                     <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                         <div className="flex min-w-0 gap-4">
-                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-yellow-500/10">
-                                <ClipboardList className="h-6 w-6 text-yellow-400" />
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gray-100">
+                                <ClipboardList className="h-6 w-6 text-black" />
                             </div>
                             <div className="min-w-0">
                                 <div className="mb-2 flex flex-wrap items-center gap-2">
-                                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${getStatusClasses(status)}`}>
+                                    <span
+                                        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${getStatusClasses(status)}`}
+                                    >
                                         {getStatusIcon(status)} {status}
                                     </span>
-                                    <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${getPriorityClasses(priority)}`}>
+                                    <span
+                                        className={`rounded-full border px-2.5 py-1 text-xs font-medium ${getPriorityClasses(priority)}`}
+                                    >
                                         {priority} Priority
                                     </span>
                                 </div>
-                                <h1 className="break-words text-2xl font-bold text-white">{task.title}</h1>
-                                <p className="mt-1 break-all text-sm text-zinc-500">Task ID: {task.taskId}</p>
+                                <h1 className="break-words text-2xl font-bold text-black">
+                                    {task.title}
+                                </h1>
+                                <p className="mt-1 break-all text-sm text-gray-500">
+                                    Task ID: {task.taskId}
+                                </p>
                             </div>
                         </div>
 
@@ -364,27 +378,34 @@ export default function ConstructionTaskDetailsPage() {
                             <div className="flex shrink-0 gap-2">
                                 <Link
                                     href={`/DriWE-Construction/tasks/${taskId}/edit`}
-                                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-yellow-500/50 hover:text-yellow-400"
+                                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-black transition hover:bg-gray-100"
                                 >
-                                    <Pencil className="h-4 w-4" /> Edit
+                                    <Pencil className="h-4 w-4" />
+                                    Edit
                                 </Link>
                                 <button
                                     type="button"
                                     onClick={handleDelete}
                                     disabled={deleting}
-                                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-500/30 bg-red-950/40 px-4 py-2.5 text-sm font-medium text-red-300 transition hover:bg-red-950 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                    {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                    {deleting ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Trash2 className="h-4 w-4" />
+                                    )}
                                     Delete
                                 </button>
                             </div>
                         )}
+
                         {isConstructionWorker && (
                             <Link
                                 href={`/DriWE-Construction/tasks/${taskId}/edit`}
-                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-yellow-500 px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-yellow-400"
+                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-black px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-800"
                             >
-                                <Pencil className="h-4 w-4" /> Update Progress
+                                <Pencil className="h-4 w-4" />
+                                Update Progress
                             </Link>
                         )}
                     </div>
@@ -394,75 +415,101 @@ export default function ConstructionTaskDetailsPage() {
                     <div className="space-y-6 lg:col-span-2">
                         <section className={cardClass}>
                             <div className="mb-5 flex items-center gap-3">
-                                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-yellow-500/10">
-                                    <Building2 className="h-4 w-4 text-yellow-400" />
+                                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100">
+                                    <Building2 className="h-4 w-4 text-black" />
                                 </div>
                                 <div>
-                                    <h2 className="font-semibold text-white">Project & Site</h2>
-                                    <p className="text-xs text-zinc-500">Location assigned to this task</p>
+                                    <h2 className="font-semibold text-black">Project & Site</h2>
+                                    <p className="text-xs text-gray-500">
+                                        Location assigned to this task
+                                    </p>
                                 </div>
                             </div>
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div className={insetClass}>
-                                    <p className="mb-1 text-xs uppercase tracking-wide text-zinc-500">Project</p>
-                                    <p className="font-medium text-white">{task.projectName || "—"}</p>
+                                    <p className="mb-1 text-xs uppercase tracking-wide text-gray-500">
+                                        Project
+                                    </p>
+                                    <p className="font-medium text-black">
+                                        {task.projectName || "—"}
+                                    </p>
                                 </div>
                                 <div className={insetClass}>
-                                    <p className="mb-1 flex items-center gap-1 text-xs uppercase tracking-wide text-zinc-500">
+                                    <p className="mb-1 flex items-center gap-1 text-xs uppercase tracking-wide text-gray-500">
                                         <MapPin className="h-3 w-3" /> Site
                                     </p>
-                                    <p className="font-medium text-white">{task.siteName || "No site assigned"}</p>
+                                    <p className="font-medium text-black">
+                                        {task.siteName || "No site assigned"}
+                                    </p>
                                 </div>
                             </div>
                         </section>
 
                         <section className={cardClass}>
-                            <h2 className="mb-4 font-semibold text-white">Task Description</h2>
+                            <h2 className="mb-4 font-semibold text-black">Task Description</h2>
                             <div className={insetClass}>
                                 {task.description ? (
-                                    <p className="whitespace-pre-wrap text-sm leading-6 text-zinc-300">{task.description}</p>
+                                    <p className="whitespace-pre-wrap text-sm leading-6 text-gray-700">
+                                        {task.description}
+                                    </p>
                                 ) : (
-                                    <p className="text-sm italic text-zinc-500">No description provided.</p>
+                                    <p className="text-sm italic text-gray-500">
+                                        No description provided.
+                                    </p>
                                 )}
                             </div>
                         </section>
 
                         <section className={cardClass}>
-                            <h2 className="mb-4 font-semibold text-white">Remarks</h2>
+                            <h2 className="mb-4 font-semibold text-black">Remarks</h2>
                             <div className={insetClass}>
                                 {task.remarks ? (
-                                    <p className="whitespace-pre-wrap text-sm leading-6 text-zinc-300">{task.remarks}</p>
+                                    <p className="whitespace-pre-wrap text-sm leading-6 text-gray-700">
+                                        {task.remarks}
+                                    </p>
                                 ) : (
-                                    <p className="text-sm italic text-zinc-500">No remarks added.</p>
+                                    <p className="text-sm italic text-gray-500">
+                                        No remarks added.
+                                    </p>
                                 )}
                             </div>
                         </section>
 
                         {(task.completionDescription || task.completionLink || task.completedAt) && (
-                            <section className={`${cardClass} border-emerald-500/20`}>
+                            <section className={`${cardClass} border-emerald-200`}>
                                 <div className="mb-4 flex items-center gap-3">
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10">
-                                        <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50">
+                                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                                     </div>
                                     <div>
-                                        <h2 className="font-semibold text-white">Completion Details</h2>
-                                        <p className="text-xs text-zinc-500">Submitted completion information</p>
+                                        <h2 className="font-semibold text-black">
+                                            Completion Details
+                                        </h2>
+                                        <p className="text-xs text-gray-500">
+                                            Submitted completion information
+                                        </p>
                                     </div>
                                 </div>
                                 {task.completionDescription && (
                                     <div className="mb-4">
-                                        <p className="mb-2 text-xs uppercase tracking-wide text-zinc-500">Completion Description</p>
-                                        <p className={`${insetClass} whitespace-pre-wrap text-sm leading-6 text-zinc-300`}>{task.completionDescription}</p>
+                                        <p className="mb-2 text-xs uppercase tracking-wide text-gray-500">
+                                            Completion Description
+                                        </p>
+                                        <p className={`${insetClass} whitespace-pre-wrap text-sm leading-6 text-gray-700`}>
+                                            {task.completionDescription}
+                                        </p>
                                     </div>
                                 )}
                                 {task.completionLink && (
                                     <div className="mb-4">
-                                        <p className="mb-2 text-xs uppercase tracking-wide text-zinc-500">Completion Link</p>
+                                        <p className="mb-2 text-xs uppercase tracking-wide text-gray-500">
+                                            Completion Link
+                                        </p>
                                         <a
                                             href={task.completionLink}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="block break-all rounded-lg border border-zinc-800 bg-zinc-950 p-4 text-sm text-yellow-400 transition hover:underline"
+                                            className="block break-all rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-black transition hover:bg-gray-100 hover:underline"
                                         >
                                             {task.completionLink}
                                         </a>
@@ -470,8 +517,12 @@ export default function ConstructionTaskDetailsPage() {
                                 )}
                                 {task.completedAt && (
                                     <div>
-                                        <p className="mb-1 text-xs uppercase tracking-wide text-zinc-500">Completed At</p>
-                                        <p className="text-sm text-zinc-300">{formatDateTime(task.completedAt)}</p>
+                                        <p className="mb-1 text-xs uppercase tracking-wide text-gray-500">
+                                            Completed At
+                                        </p>
+                                        <p className="text-sm text-gray-700">
+                                            {formatDateTime(task.completedAt)}
+                                        </p>
                                     </div>
                                 )}
                             </section>
@@ -480,44 +531,52 @@ export default function ConstructionTaskDetailsPage() {
 
                     <aside className="space-y-6">
                         <section className={cardClass}>
-                            <h2 className="mb-4 font-semibold text-white">Task Information</h2>
+                            <h2 className="mb-4 font-semibold text-black">Task Information</h2>
                             <div className="space-y-4">
                                 <div className="flex items-start gap-3">
-                                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-zinc-900">
-                                        <AlertCircle className="h-4 w-4 text-zinc-400" />
+                                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                                        <AlertCircle className="h-4 w-4 text-gray-600" />
                                     </div>
                                     <div>
-                                        <p className="text-xs text-zinc-500">Priority</p>
-                                        <p className="mt-0.5 text-sm font-medium text-white">{priority}</p>
+                                        <p className="text-xs text-gray-500">Priority</p>
+                                        <p className="mt-0.5 text-sm font-medium text-black">
+                                            {priority}
+                                        </p>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-3">
-                                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-zinc-900">
+                                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-black">
                                         {getStatusIcon(status)}
                                     </div>
                                     <div>
-                                        <p className="text-xs text-zinc-500">Status</p>
-                                        <p className="mt-0.5 text-sm font-medium text-white">{status}</p>
+                                        <p className="text-xs text-gray-500">Status</p>
+                                        <p className="mt-0.5 text-sm font-medium text-black">
+                                            {status}
+                                        </p>
                                     </div>
                                 </div>
                                 {task.startDate && (
                                     <div className="flex items-start gap-3">
-                                        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-zinc-900">
-                                            <CalendarDays className="h-4 w-4 text-zinc-400" />
+                                        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                                            <CalendarDays className="h-4 w-4 text-gray-600" />
                                         </div>
                                         <div>
-                                            <p className="text-xs text-zinc-500">Start Date</p>
-                                            <p className="mt-0.5 text-sm font-medium text-white">{formatDate(task.startDate)}</p>
+                                            <p className="text-xs text-gray-500">Start Date</p>
+                                            <p className="mt-0.5 text-sm font-medium text-black">
+                                                {formatDate(task.startDate)}
+                                            </p>
                                         </div>
                                     </div>
                                 )}
                                 <div className="flex items-start gap-3">
-                                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-zinc-900">
-                                        <CalendarDays className="h-4 w-4 text-zinc-400" />
+                                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                                        <CalendarDays className="h-4 w-4 text-gray-600" />
                                     </div>
                                     <div>
-                                        <p className="text-xs text-zinc-500">Due Date</p>
-                                        <p className="mt-0.5 text-sm font-medium text-white">{formatDate(task.dueDate)}</p>
+                                        <p className="text-xs text-gray-500">Due Date</p>
+                                        <p className="mt-0.5 text-sm font-medium text-black">
+                                            {formatDate(task.dueDate)}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -525,46 +584,58 @@ export default function ConstructionTaskDetailsPage() {
 
                         <section className={cardClass}>
                             <div className="mb-4 flex items-center gap-3">
-                                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-yellow-500/10">
-                                    <User className="h-4 w-4 text-yellow-400" />
+                                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100">
+                                    <User className="h-4 w-4 text-black" />
                                 </div>
                                 <div>
-                                    <h2 className="font-semibold text-white">Assignment</h2>
-                                    <p className="text-xs text-zinc-500">Worker assigned to this task</p>
+                                    <h2 className="font-semibold text-black">Assignment</h2>
+                                    <p className="text-xs text-gray-500">
+                                        Worker assigned to this task
+                                    </p>
                                 </div>
                             </div>
                             <div className={`${insetClass} mb-4`}>
-                                <p className="mb-2 text-xs uppercase tracking-wide text-zinc-500">Assigned Worker</p>
+                                <p className="mb-2 text-xs uppercase tracking-wide text-gray-500">
+                                    Assigned Worker
+                                </p>
                                 <div className="flex items-center gap-3">
-                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-yellow-500/10">
-                                        <User className="h-5 w-5 text-yellow-400" />
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white border border-gray-200">
+                                        <User className="h-5 w-5 text-black" />
                                     </div>
-                                    <p className="text-sm font-medium text-white">{assignedWorkerName}</p>
+                                    <p className="text-sm font-medium text-black">
+                                        {assignedWorkerName}
+                                    </p>
                                 </div>
                             </div>
                             {(task.assignedByName || task.createdByName) && (
-                                <div className="border-t border-zinc-800 pt-4">
-                                    <p className="text-xs text-zinc-500">Assigned By</p>
-                                    <p className="mt-1 text-sm text-zinc-300">{task.assignedByName || task.createdByName}</p>
+                                <div className="border-t border-gray-200 pt-4">
+                                    <p className="text-xs text-gray-500">Assigned By</p>
+                                    <p className="mt-1 text-sm text-gray-700">
+                                        {task.assignedByName || task.createdByName}
+                                    </p>
                                 </div>
                             )}
                         </section>
 
                         <section className={cardClass}>
-                            <h2 className="mb-4 font-semibold text-white">Activity</h2>
+                            <h2 className="mb-4 font-semibold text-black">Activity</h2>
                             <div className="space-y-4">
                                 <div className="flex items-start gap-3">
-                                    <Clock className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" />
+                                    <Clock className="mt-0.5 h-4 w-4 shrink-0 text-gray-500" />
                                     <div>
-                                        <p className="text-xs text-zinc-500">Created</p>
-                                        <p className="mt-1 text-sm text-zinc-300">{formatDateTime(task.createdAt)}</p>
+                                        <p className="text-xs text-gray-500">Created</p>
+                                        <p className="mt-1 text-sm text-gray-700">
+                                            {formatDateTime(task.createdAt)}
+                                        </p>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-3">
-                                    <Clock className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" />
+                                    <Clock className="mt-0.5 h-4 w-4 shrink-0 text-gray-500" />
                                     <div>
-                                        <p className="text-xs text-zinc-500">Last Updated</p>
-                                        <p className="mt-1 text-sm text-zinc-300">{formatDateTime(task.updatedAt)}</p>
+                                        <p className="text-xs text-gray-500">Last Updated</p>
+                                        <p className="mt-1 text-sm text-gray-700">
+                                            {formatDateTime(task.updatedAt)}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -575,3 +646,4 @@ export default function ConstructionTaskDetailsPage() {
         </div>
     );
 }
+

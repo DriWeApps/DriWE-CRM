@@ -3,7 +3,7 @@
 
 import { ReactNode, useState } from "react";
 import { usePathname } from "next/navigation";
-import { HardHat, LogOut } from "lucide-react";
+import { HardHat, LogOut, Building2, ChevronRight } from "lucide-react";
 
 export default function ConstructionLayout({
   children,
@@ -31,41 +31,65 @@ export default function ConstructionLayout({
     }
   }
 
-  const isDashboard =
-    pathname === "/DriWE-Construction/dashboard";
-
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
-      {!isDashboard && (
-        <header className="sticky top-0 z-50 border-b border-zinc-800 bg-zinc-950/95 backdrop-blur">
-          <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-orange-400 to-orange-600">
-                <HardHat className="h-5 w-5 text-black" />
+    <div className="min-h-screen bg-white text-black">
+      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 shadow-sm backdrop-blur-md">
+          <div className="flex min-h-[76px] w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+            {/* Brand */}
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-black shadow-sm transition-transform duration-200 hover:scale-105">
+                <HardHat className="h-6 w-6 text-white" />
               </div>
 
-              <div>
-                <p className="font-bold">DriWE Construction</p>
-                <p className="text-xs text-zinc-500">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h1 className="truncate text-base font-bold tracking-tight text-black sm:text-lg">
+                    DriWE Construction
+                  </h1>
+                  <ChevronRight className="hidden h-4 w-4 text-gray-400 sm:block" />
+                  <span className="hidden text-xs font-medium text-gray-500 sm:block">
+                    Portal
+                  </span>
+                </div>
+
+                <p className="mt-0.5 flex items-center gap-1.5 text-xs text-gray-500 sm:text-sm">
+                  <Building2 className="h-3.5 w-3.5 shrink-0" />
                   Construction Management Platform
                 </p>
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={handleLogout}
-              disabled={loggingOut}
-              className="inline-flex items-center gap-2 rounded-xl border border-red-600 bg-red-600 px-3 py-2 text-sm font-semibold text-white transition hover:border-red-500 hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <LogOut className="h-4 w-4" />
-              {loggingOut ? "Logging out..." : "Logout"}
-            </button>
-          </div>
-        </header>
-      )}
+            {/* Actions */}
+            <div className="flex shrink-0 items-center gap-3">
+              <div className="hidden items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 sm:flex">
+                <span className="h-2 w-2 rounded-full bg-green-500" />
+                <span className="text-xs font-medium text-gray-600">
+                  Workspace
+                </span>
+              </div>
 
-      {children}
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="group inline-flex items-center justify-center gap-2 rounded-lg bg-black px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-gray-800 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
+              >
+                {loggingOut ? (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                ) : (
+                  <LogOut className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                )}
+
+                <span>{loggingOut ? "Logging out..." : "Logout"}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Subtle bottom accent */}
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
+      </header>
+
+      <main className="min-h-[calc(100vh-77px)]">{children}</main>
     </div>
   );
 }

@@ -96,17 +96,17 @@ export default function ProjectsPage() {
     function getStatusClass(status: string) {
         switch (status) {
             case "Active":
-                return "border-green-500/30 bg-green-500/10 text-green-400";
+                return "border-green-200 bg-green-50 text-green-700";
             case "Completed":
-                return "border-blue-500/30 bg-blue-500/10 text-blue-400";
+                return "border-blue-200 bg-blue-50 text-blue-700";
             case "On Hold":
-                return "border-yellow-500/30 bg-yellow-500/10 text-yellow-400";
+                return "border-yellow-200 bg-yellow-50 text-yellow-800";
             case "Cancelled":
-                return "border-red-500/30 bg-red-500/10 text-red-400";
+                return "border-red-200 bg-red-50 text-red-700";
             case "Planning":
-                return "border-orange-500/30 bg-orange-500/10 text-orange-400";
+                return "border-orange-200 bg-orange-50 text-orange-700";
             default:
-                return "border-zinc-700 bg-zinc-900 text-zinc-300";
+                return "border-gray-200 bg-gray-100 text-gray-700";
         }
     }
 
@@ -123,7 +123,7 @@ export default function ProjectsPage() {
             case "Planning":
                 return "bg-orange-500";
             default:
-                return "bg-zinc-500";
+                return "bg-gray-400";
         }
     }
 
@@ -199,20 +199,20 @@ export default function ProjectsPage() {
     }
 
     return (
-        <main className="min-h-screen bg-black text-white">
-            <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <main className="min-h-screen bg-white text-black">
+            <div className="w-full px-4 py-8 sm:px-6 lg:px-10 2xl:px-14">
                 {/* Header */}
                 <div className="mb-8 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-orange-500/20 bg-zinc-900">
-                            <Building2 className="h-6 w-6 text-orange-400" />
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-gray-100">
+                            <Building2 className="h-6 w-6 text-black" />
                         </div>
 
                         <div>
-                            <h1 className="text-3xl font-bold tracking-tight text-white">
+                            <h1 className="text-3xl font-bold tracking-tight text-black">
                                 Projects
                             </h1>
-                            <p className="mt-1 text-sm text-zinc-300">
+                            <p className="mt-1 text-sm text-gray-600">
                                 Manage construction projects, workers and tasks.
                             </p>
                         </div>
@@ -220,7 +220,7 @@ export default function ProjectsPage() {
 
                     <Link
                         href="/DriWE-Construction/projects/new"
-                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-semibold text-black transition hover:bg-orange-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2"
                     >
                         <Plus className="h-4 w-4" />
                         New Project
@@ -230,32 +230,32 @@ export default function ProjectsPage() {
                 {/* Statistics */}
                 {!loading && !loadError && projects.length > 0 && (
                     <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                        <div className="rounded-2xl border border-zinc-800 bg-black p-4">
-                            <p className="text-xs font-medium text-zinc-300">
+                        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                            <p className="text-xs font-medium text-gray-600">
                                 Total projects
                             </p>
-                            <p className="mt-2 text-2xl font-bold text-white">
+                            <p className="mt-2 text-2xl font-bold text-black">
                                 {stats.total}
                             </p>
                         </div>
 
-                        <div className="rounded-2xl border border-zinc-800 bg-black p-4">
+                        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
                             <div className="flex items-center gap-2">
                                 <span className="h-2 w-2 rounded-full bg-green-500" />
-                                <p className="text-xs font-medium text-zinc-300">
+                                <p className="text-xs font-medium text-gray-600">
                                     Active
                                 </p>
                             </div>
-                            <p className="mt-2 text-2xl font-bold text-white">
+                            <p className="mt-2 text-2xl font-bold text-black">
                                 {stats.active}
                             </p>
                         </div>
 
-                        <div className="rounded-2xl border border-zinc-800 bg-black p-4">
-                            <p className="text-xs font-medium text-zinc-300">
+                        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                            <p className="text-xs font-medium text-gray-600">
                                 Workers
                             </p>
-                            <p className="mt-2 text-2xl font-bold text-white">
+                            <p className="mt-2 text-2xl font-bold text-black">
                                 {stats.workers}
                             </p>
                         </div>
@@ -267,14 +267,14 @@ export default function ProjectsPage() {
                     <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center">
                         {/* Search */}
                         <div className="relative flex-1">
-                            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
 
                             <input
                                 value={query}
                                 onChange={(event) => setQuery(event.target.value)}
                                 placeholder="Search by project, location or manager"
                                 aria-label="Search projects"
-                                className="w-full rounded-xl border border-zinc-800 bg-black py-3 pl-10 pr-10 text-sm text-white placeholder:text-zinc-500 outline-none transition focus:border-orange-500 focus:ring-1 focus:ring-orange-500/30"
+                                className="w-full rounded-xl border border-gray-300 bg-white py-3 pl-10 pr-10 text-sm text-black placeholder:text-gray-500 outline-none transition focus:border-black focus:ring-1 focus:ring-black"
                             />
 
                             {query && (
@@ -282,7 +282,7 @@ export default function ProjectsPage() {
                                     type="button"
                                     onClick={() => setQuery("")}
                                     aria-label="Clear search"
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 transition hover:text-white"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 transition hover:text-black"
                                 >
                                     <X className="h-4 w-4" />
                                 </button>
@@ -299,8 +299,8 @@ export default function ProjectsPage() {
                                     aria-pressed={statusFilter === status}
                                     className={`rounded-full border px-3.5 py-2 text-xs font-medium transition ${
                                         statusFilter === status
-                                            ? "border-orange-500 bg-orange-500/10 text-orange-300"
-                                            : "border-zinc-800 bg-black text-zinc-300 hover:border-zinc-600 hover:text-white"
+                                            ? "border-black bg-black text-white"
+                                            : "border-gray-300 bg-white text-gray-700 hover:border-black hover:text-black"
                                     }`}
                                 >
                                     {status}
@@ -316,13 +316,13 @@ export default function ProjectsPage() {
                                     setStatusFilter(event.target.value)
                                 }
                                 aria-label="Filter projects by status"
-                                className="w-full appearance-none rounded-xl border border-zinc-800 bg-black px-4 py-3 text-sm text-white outline-none focus:border-orange-500"
+                                className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-black outline-none focus:border-black"
                             >
                                 {STATUS_OPTIONS.map((status) => (
                                     <option
                                         key={status}
                                         value={status}
-                                        className="bg-black text-white"
+                                        className="bg-white text-black"
                                     >
                                         {status === "All"
                                             ? "All statuses"
@@ -340,11 +340,11 @@ export default function ProjectsPage() {
                                     setSortMenuOpen((open) => !open)
                                 }
                                 aria-expanded={sortMenuOpen}
-                                className="flex w-full items-center justify-between gap-2 rounded-xl border border-zinc-800 bg-black px-4 py-3 text-sm text-white transition hover:border-zinc-600 md:w-auto"
+                                className="flex w-full items-center justify-between gap-2 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-black transition hover:border-black md:w-auto"
                             >
-                                <SlidersHorizontal className="h-4 w-4 text-zinc-300" />
+                                <SlidersHorizontal className="h-4 w-4 text-gray-600" />
                                 <span>{SORT_LABELS[sortKey]}</span>
-                                <ChevronDown className="h-4 w-4 text-zinc-300" />
+                                <ChevronDown className="h-4 w-4 text-gray-600" />
                             </button>
 
                             {sortMenuOpen && (
@@ -356,7 +356,7 @@ export default function ProjectsPage() {
                                         onClick={() => setSortMenuOpen(false)}
                                     />
 
-                                    <div className="absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-xl border border-zinc-800 bg-black shadow-2xl">
+                                    <div className="absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
                                         {(
                                             Object.keys(SORT_LABELS) as SortKey[]
                                         ).map((key) => (
@@ -369,8 +369,8 @@ export default function ProjectsPage() {
                                                 }}
                                                 className={`block w-full px-4 py-3 text-left text-sm transition ${
                                                     sortKey === key
-                                                        ? "bg-orange-500/10 text-orange-300"
-                                                        : "text-white hover:bg-zinc-900"
+                                                        ? "bg-gray-100 font-semibold text-black"
+                                                        : "text-gray-700 hover:bg-gray-50 hover:text-black"
                                                 }`}
                                             >
                                                 {SORT_LABELS[key]}
@@ -385,7 +385,7 @@ export default function ProjectsPage() {
 
                 {/* Filter summary */}
                 {!loading && !loadError && filtersActive && (
-                    <div className="mb-6 flex flex-wrap items-center gap-3 text-xs text-zinc-300">
+                    <div className="mb-6 flex flex-wrap items-center gap-3 text-xs text-gray-600">
                         <span>
                             Showing {filteredProjects.length} of{" "}
                             {projects.length} projects
@@ -394,7 +394,7 @@ export default function ProjectsPage() {
                         <button
                             type="button"
                             onClick={clearFilters}
-                            className="font-semibold text-orange-400 transition hover:text-orange-300"
+                            className="font-semibold text-black underline underline-offset-4 transition hover:text-gray-600"
                         >
                             Clear filters
                         </button>
@@ -407,22 +407,22 @@ export default function ProjectsPage() {
                         {Array.from({ length: 6 }).map((_, index) => (
                             <div
                                 key={index}
-                                className="animate-pulse rounded-3xl border border-zinc-800 bg-black p-6"
+                                className="animate-pulse rounded-3xl border border-gray-200 bg-white p-6"
                             >
                                 <div className="flex items-start justify-between">
-                                    <div className="h-12 w-12 rounded-xl bg-zinc-800" />
-                                    <div className="h-5 w-16 rounded-full bg-zinc-800" />
+                                    <div className="h-12 w-12 rounded-xl bg-gray-200" />
+                                    <div className="h-5 w-16 rounded-full bg-gray-200" />
                                 </div>
 
-                                <div className="mt-5 h-5 w-2/3 rounded bg-zinc-800" />
-                                <div className="mt-3 h-4 w-1/2 rounded bg-zinc-800" />
+                                <div className="mt-5 h-5 w-2/3 rounded bg-gray-200" />
+                                <div className="mt-3 h-4 w-1/2 rounded bg-gray-200" />
 
                                 <div className="mt-5 grid grid-cols-2 gap-3">
-                                    <div className="h-20 rounded-xl bg-zinc-900" />
-                                    <div className="h-20 rounded-xl bg-zinc-900" />
+                                    <div className="h-20 rounded-xl bg-gray-100" />
+                                    <div className="h-20 rounded-xl bg-gray-100" />
                                 </div>
 
-                                <div className="mt-3 h-14 rounded-xl bg-zinc-900" />
+                                <div className="mt-3 h-14 rounded-xl bg-gray-100" />
                             </div>
                         ))}
                     </div>
@@ -430,19 +430,19 @@ export default function ProjectsPage() {
 
                 {/* Load error */}
                 {!loading && loadError && (
-                    <div className="rounded-3xl border border-red-500/30 bg-black px-6 py-16 text-center">
-                        <p className="text-sm font-semibold text-red-400">
+                    <div className="rounded-3xl border border-red-200 bg-white px-6 py-16 text-center">
+                        <p className="text-sm font-semibold text-red-700">
                             Couldn&apos;t load projects
                         </p>
 
-                        <p className="mx-auto mt-2 max-w-sm text-sm text-zinc-300">
+                        <p className="mx-auto mt-2 max-w-sm text-sm text-gray-600">
                             Check your connection and try again.
                         </p>
 
                         <button
                             type="button"
                             onClick={loadProjects}
-                            className="mt-5 inline-flex items-center gap-2 rounded-xl border border-zinc-700 px-5 py-2.5 text-sm font-medium text-white transition hover:border-orange-500 hover:text-orange-300"
+                            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800"
                         >
                             Try again
                         </button>
@@ -451,23 +451,23 @@ export default function ProjectsPage() {
 
                 {/* No projects */}
                 {!loading && !loadError && projects.length === 0 && (
-                    <div className="rounded-3xl border border-dashed border-zinc-700 bg-black px-6 py-20 text-center">
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-orange-500/20 bg-zinc-900">
-                            <HardHat className="h-8 w-8 text-orange-400" />
+                    <div className="rounded-3xl border border-dashed border-gray-300 bg-white px-6 py-20 text-center">
+                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-gray-200 bg-gray-100">
+                            <HardHat className="h-8 w-8 text-black" />
                         </div>
 
-                        <h2 className="mt-5 text-xl font-bold text-white">
+                        <h2 className="mt-5 text-xl font-bold text-black">
                             No projects yet
                         </h2>
 
-                        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-300">
+                        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-gray-600">
                             Create your first construction project and start
                             managing workers and tasks.
                         </p>
 
                         <Link
                             href="/DriWE-Construction/projects/new"
-                            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-semibold text-black transition hover:bg-orange-400"
+                            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-800"
                         >
                             <Plus className="h-4 w-4" />
                             Create Project
@@ -480,16 +480,16 @@ export default function ProjectsPage() {
                     !loadError &&
                     projects.length > 0 &&
                     filteredProjects.length === 0 && (
-                        <div className="rounded-3xl border border-dashed border-zinc-700 bg-black px-6 py-16 text-center">
-                            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-900">
-                                <Search className="h-6 w-6 text-zinc-300" />
+                        <div className="rounded-3xl border border-dashed border-gray-300 bg-white px-6 py-16 text-center">
+                            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100">
+                                <Search className="h-6 w-6 text-gray-600" />
                             </div>
 
-                            <h2 className="mt-4 text-lg font-bold text-white">
+                            <h2 className="mt-4 text-lg font-bold text-black">
                                 No matching projects
                             </h2>
 
-                            <p className="mx-auto mt-2 max-w-sm text-sm text-zinc-300">
+                            <p className="mx-auto mt-2 max-w-sm text-sm text-gray-600">
                                 Try a different search term or clear your
                                 filters.
                             </p>
@@ -497,7 +497,7 @@ export default function ProjectsPage() {
                             <button
                                 type="button"
                                 onClick={clearFilters}
-                                className="mt-5 inline-flex items-center gap-2 rounded-xl border border-zinc-700 px-5 py-2.5 text-sm font-medium text-white transition hover:border-orange-500 hover:text-orange-300"
+                                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800"
                             >
                                 Clear filters
                             </button>
@@ -512,12 +512,12 @@ export default function ProjectsPage() {
                             {filteredProjects.map((project) => (
                                 <div
                                     key={project.projectId}
-                                    className="group rounded-3xl border border-zinc-800 bg-black p-6 transition hover:-translate-y-1 hover:border-orange-500/40"
+                                    className="group rounded-3xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-gray-400 hover:shadow-md"
                                 >
                                     {/* Card header */}
                                     <div className="flex items-start justify-between gap-3">
-                                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-orange-500/20 bg-zinc-900">
-                                            <Building2 className="h-6 w-6 text-orange-400" />
+                                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-gray-100">
+                                            <Building2 className="h-6 w-6 text-black" />
                                         </div>
 
                                         <span
@@ -535,13 +535,13 @@ export default function ProjectsPage() {
                                     </div>
 
                                     {/* Project name */}
-                                    <h2 className="mt-5 break-words text-xl font-bold text-white">
+                                    <h2 className="mt-5 break-words text-xl font-bold text-black">
                                         {project.projectName}
                                     </h2>
 
                                     {/* Location */}
-                                    <div className="mt-3 flex items-center gap-2 text-sm text-zinc-300">
-                                        <MapPin className="h-4 w-4 shrink-0 text-zinc-400" />
+                                    <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
+                                        <MapPin className="h-4 w-4 shrink-0 text-gray-500" />
                                         <span className="truncate">
                                             {project.location ||
                                                 "Location not specified"}
@@ -550,17 +550,17 @@ export default function ProjectsPage() {
 
                                     {/* Worker count */}
                                     <div className="mt-5">
-                                        <div className="rounded-xl border border-zinc-800 bg-black p-4">
-                                            <div className="flex items-center gap-2 text-xs text-zinc-300">
-                                                <UserRound className="h-4 w-4 text-orange-400" />
+                                        <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                                            <div className="flex items-center gap-2 text-xs text-gray-600">
+                                                <UserRound className="h-4 w-4 text-black" />
                                                 Workers
                                             </div>
 
-                                            <p className="mt-2 text-2xl font-bold text-white">
+                                            <p className="mt-2 text-2xl font-bold text-black">
                                                 {project.workerCount ?? 0}
                                             </p>
 
-                                            <p className="mt-1 text-xs text-zinc-400">
+                                            <p className="mt-1 text-xs text-gray-500">
                                                 Total workers
                                             </p>
                                         </div>
@@ -568,13 +568,13 @@ export default function ProjectsPage() {
 
                                     {/* Project manager */}
                                     <div className="mt-3">
-                                        <div className="min-w-0 rounded-xl border border-zinc-800 bg-black p-3">
-                                            <div className="flex items-center gap-2 text-xs text-zinc-300">
-                                                <Users className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
+                                        <div className="min-w-0 rounded-xl border border-gray-200 bg-white p-3">
+                                            <div className="flex items-center gap-2 text-xs text-gray-600">
+                                                <Users className="h-3.5 w-3.5 shrink-0 text-gray-500" />
                                                 Project Manager
                                             </div>
 
-                                            <p className="mt-2 truncate text-sm text-white">
+                                            <p className="mt-2 truncate text-sm text-black">
                                                 {project.projectManagerName ||
                                                     "Not assigned"}
                                             </p>
@@ -582,15 +582,15 @@ export default function ProjectsPage() {
                                     </div>
 
                                     {/* Timeline */}
-                                    <div className="mt-4 rounded-xl border border-zinc-800 bg-black p-3">
-                                        <div className="flex items-center gap-2 text-xs text-zinc-300">
-                                            <CalendarDays className="h-3.5 w-3.5 text-zinc-400" />
+                                    <div className="mt-4 rounded-xl border border-gray-200 bg-white p-3">
+                                        <div className="flex items-center gap-2 text-xs text-gray-600">
+                                            <CalendarDays className="h-3.5 w-3.5 text-gray-500" />
                                             Project Timeline
                                         </div>
 
-                                        <p className="mt-2 text-sm text-white">
+                                        <p className="mt-2 text-sm text-black">
                                             {project.startDate || "Not set"}
-                                            <span className="mx-2 text-zinc-500">
+                                            <span className="mx-2 text-gray-400">
                                                 →
                                             </span>
                                             {project.expectedCompletion ||
@@ -602,7 +602,7 @@ export default function ProjectsPage() {
                                     <div className="mt-5 grid grid-cols-1 gap-3">
                                         <Link
                                             href={`/DriWE-Construction/projects/${project.projectId}`}
-                                            className="flex items-center justify-between gap-2 rounded-xl border border-zinc-700 px-4 py-3 text-sm font-medium text-white transition hover:border-orange-500/50 hover:bg-zinc-900 hover:text-orange-300"
+                                            className="flex items-center justify-between gap-2 rounded-xl bg-black px-4 py-3 text-sm font-medium text-white transition hover:bg-gray-800"
                                         >
                                             View Project
                                             <ArrowRight className="h-4 w-4 shrink-0 transition group-hover:translate-x-1" />
@@ -616,3 +616,4 @@ export default function ProjectsPage() {
         </main>
     );
 }
+

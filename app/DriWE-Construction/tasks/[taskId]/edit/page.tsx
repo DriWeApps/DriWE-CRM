@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
@@ -202,10 +203,16 @@ export default function EditConstructionTaskPage() {
             const projectsData = await projectsResponse.json();
 
             if (!taskResponse.ok) {
-                throw new Error(taskData?.error || taskData?.message || "Failed to load task");
+                throw new Error(
+                    taskData?.error || taskData?.message || "Failed to load task"
+                );
             }
             if (!projectsResponse.ok) {
-                throw new Error(projectsData?.error || projectsData?.message || "Failed to load projects");
+                throw new Error(
+                    projectsData?.error ||
+                        projectsData?.message ||
+                        "Failed to load projects"
+                );
             }
 
             const loadedTask: Task = taskData?.task || taskData;
@@ -227,7 +234,9 @@ export default function EditConstructionTaskPage() {
                 description: loadedTask.description || "",
                 priority: loadedTask.priority || "Medium",
                 status: loadedTask.status || "Pending",
-                dueDate: loadedTask.dueDate ? String(loadedTask.dueDate).slice(0, 10) : "",
+                dueDate: loadedTask.dueDate
+                    ? String(loadedTask.dueDate).slice(0, 10)
+                    : "",
                 remarks: loadedTask.remarks || "",
             });
 
@@ -278,7 +287,9 @@ export default function EditConstructionTaskPage() {
     }, [taskId, authLoaded, loadData]);
 
     function handleChange(
-        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+        e: React.ChangeEvent<
+            HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+        >
     ) {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
@@ -339,14 +350,22 @@ export default function EditConstructionTaskPage() {
                 const data = await response.json();
 
                 if (!response.ok) {
-                    throw new Error(data?.error || data?.message || "Failed to update task progress");
+                    throw new Error(
+                        data?.error ||
+                            data?.message ||
+                            "Failed to update task progress"
+                    );
                 }
 
                 router.push(`/DriWE-Construction/tasks/${taskId}`);
                 router.refresh();
             } catch (err) {
                 console.error("Failed to update task progress:", err);
-                setError(err instanceof Error ? err.message : "Failed to update task progress");
+                setError(
+                    err instanceof Error
+                        ? err.message
+                        : "Failed to update task progress"
+                );
             } finally {
                 setSaving(false);
             }
@@ -406,7 +425,10 @@ export default function EditConstructionTaskPage() {
                 assignedTo: selectedWorker.workerId,
                 assignedToName: selectedWorker.name,
                 ...(selectedWorker.email || task?.assignedToEmail
-                    ? { assignedToEmail: selectedWorker.email || task?.assignedToEmail }
+                    ? {
+                          assignedToEmail:
+                              selectedWorker.email || task?.assignedToEmail,
+                      }
                     : {}),
                 dueDate: formData.dueDate,
                 remarks: formData.remarks.trim(),
@@ -424,7 +446,9 @@ export default function EditConstructionTaskPage() {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data?.error || data?.message || "Failed to update task");
+                throw new Error(
+                    data?.error || data?.message || "Failed to update task"
+                );
             }
 
             router.push(`/DriWE-Construction/tasks/${taskId}`);
@@ -438,15 +462,18 @@ export default function EditConstructionTaskPage() {
     }
 
     const inputClassName =
-        "w-full rounded-lg border border-zinc-700 bg-black px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/30 disabled:cursor-not-allowed disabled:opacity-50";
-    const labelClassName = "mb-2 block text-sm font-medium text-zinc-300";
-    const sectionClassName = "rounded-xl border border-zinc-800 bg-black p-5 shadow-lg shadow-black/20";
+        "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-black placeholder-gray-400 outline-none transition focus:border-black focus:ring-1 focus:ring-black/20 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:opacity-60";
+
+    const labelClassName = "mb-2 block text-sm font-medium text-gray-700";
+
+    const sectionClassName =
+        "rounded-xl border border-gray-200 bg-white p-5 shadow-sm";
 
     if (loading || !authLoaded) {
         return (
-            <div className="min-h-screen bg-black text-white">
+            <div className="min-h-screen bg-white text-black">
                 <div className="flex min-h-[70vh] items-center justify-center">
-                    <div className="flex items-center gap-3 text-zinc-400">
+                    <div className="flex items-center gap-3 text-gray-600">
                         <Loader2 className="h-5 w-5 animate-spin" />
                         <span>Loading task...</span>
                     </div>
@@ -457,18 +484,20 @@ export default function EditConstructionTaskPage() {
 
     if (!task) {
         return (
-            <div className="min-h-screen bg-black text-white">
+            <div className="min-h-screen bg-white text-black">
                 <div className="mx-auto max-w-3xl px-4 py-10">
                     <Link
                         href="/DriWE-Construction/tasks"
-                        className="mb-6 inline-flex items-center gap-2 text-sm text-zinc-400 transition hover:text-yellow-400"
+                        className="mb-6 inline-flex items-center gap-2 text-sm text-gray-600 transition hover:text-black"
                     >
-                        <ArrowLeft className="h-4 w-4" /> Back to Tasks
+                        <ArrowLeft className="h-4 w-4" />
+                        Back to Tasks
                     </Link>
-                    <div className="rounded-xl border border-red-500/30 bg-zinc-950 p-6">
+
+                    <div className="rounded-xl border border-red-200 bg-white p-6">
                         <div className="flex items-center gap-3">
-                            <AlertCircle className="h-5 w-5 text-red-400" />
-                            <p className="text-red-300">{error || "Task not found."}</p>
+                            <AlertCircle className="h-5 w-5 text-red-600" />
+                            <p className="text-red-700">{error || "Task not found."}</p>
                         </div>
                     </div>
                 </div>
@@ -477,25 +506,29 @@ export default function EditConstructionTaskPage() {
     }
 
     return (
-        <div className="min-h-screen bg-black text-white">
-            <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-white text-black">
+            <div className="w-full px-4 py-6 sm:px-6 lg:px-10 xl:px-12">
                 <div className="mb-6">
                     <Link
                         href={`/DriWE-Construction/tasks/${taskId}`}
-                        className="mb-4 inline-flex items-center gap-2 text-sm text-zinc-400 transition hover:text-yellow-400"
+                        className="mb-4 inline-flex items-center gap-2 text-sm text-gray-600 transition hover:text-black"
                     >
-                        <ArrowLeft className="h-4 w-4" /> Back to Task
+                        <ArrowLeft className="h-4 w-4" />
+                        Back to Task
                     </Link>
 
                     <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-500/10">
-                            <ClipboardList className="h-5 w-5 text-yellow-400" />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-gray-50">
+                            <ClipboardList className="h-5 w-5 text-black" />
                         </div>
+
                         <div>
-                            <h1 className="text-2xl font-bold text-white">
-                                {isConstructionWorker ? "Update Task Progress" : "Edit Task"}
+                            <h1 className="text-2xl font-bold text-black">
+                                {isConstructionWorker
+                                    ? "Update Task Progress"
+                                    : "Edit Task"}
                             </h1>
-                            <p className="text-sm text-zinc-400">
+                            <p className="text-sm text-gray-600">
                                 {isConstructionWorker
                                     ? "Update the status and remarks for your assigned task."
                                     : "Update construction task details."}
@@ -505,10 +538,13 @@ export default function EditConstructionTaskPage() {
                 </div>
 
                 {error && (
-                    <div role="alert" className="mb-6 rounded-lg border border-red-500/30 bg-red-950/40 px-4 py-3">
+                    <div
+                        role="alert"
+                        className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3"
+                    >
                         <div className="flex items-start gap-3">
-                            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-400" />
-                            <p className="text-sm text-red-300">{error}</p>
+                            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
+                            <p className="text-sm text-red-700">{error}</p>
                         </div>
                     </div>
                 )}
@@ -518,20 +554,30 @@ export default function EditConstructionTaskPage() {
                         {!isConstructionWorker && (
                             <section className={sectionClassName}>
                                 <div className="mb-5 flex items-center gap-3">
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-yellow-500/10">
-                                        <Building2 className="h-4 w-4 text-yellow-400" />
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-gray-50">
+                                        <Building2 className="h-4 w-4 text-black" />
                                     </div>
+
                                     <div>
-                                        <h2 className="font-semibold text-white">Assignment</h2>
-                                        <p className="text-xs text-zinc-500">Select project, site and worker</p>
+                                        <h2 className="font-semibold text-black">
+                                            Assignment
+                                        </h2>
+                                        <p className="text-xs text-gray-500">
+                                            Select project, site and worker
+                                        </p>
                                     </div>
                                 </div>
 
                                 <div className="grid gap-5 md:grid-cols-3">
                                     <div>
-                                        <label htmlFor="projectId" className={labelClassName}>
-                                            Project <span className="ml-1 text-red-400">*</span>
+                                        <label
+                                            htmlFor="projectId"
+                                            className={labelClassName}
+                                        >
+                                            Project{" "}
+                                            <span className="ml-1 text-red-600">*</span>
                                         </label>
+
                                         <select
                                             id="projectId"
                                             name="projectId"
@@ -542,7 +588,10 @@ export default function EditConstructionTaskPage() {
                                         >
                                             <option value="">Select Project</option>
                                             {projects.map((project) => (
-                                                <option key={project.projectId} value={project.projectId}>
+                                                <option
+                                                    key={project.projectId}
+                                                    value={project.projectId}
+                                                >
                                                     {project.projectName}
                                                 </option>
                                             ))}
@@ -550,18 +599,27 @@ export default function EditConstructionTaskPage() {
                                     </div>
 
                                     <div>
-                                        <label htmlFor="siteId" className={labelClassName}>
+                                        <label
+                                            htmlFor="siteId"
+                                            className={labelClassName}
+                                        >
                                             <span className="inline-flex items-center gap-2">
-                                                <MapPin className="h-3.5 w-3.5 text-zinc-500" />
-                                                Site <span className="text-red-400">*</span>
+                                                <MapPin className="h-3.5 w-3.5 text-gray-500" />
+                                                Site{" "}
+                                                <span className="text-red-600">*</span>
                                             </span>
                                         </label>
+
                                         <select
                                             id="siteId"
                                             name="siteId"
                                             value={formData.siteId}
                                             onChange={handleSiteChange}
-                                            disabled={!formData.projectId || loadingSites || saving}
+                                            disabled={
+                                                !formData.projectId ||
+                                                loadingSites ||
+                                                saving
+                                            }
                                             className={inputClassName}
                                         >
                                             <option value="">
@@ -574,7 +632,10 @@ export default function EditConstructionTaskPage() {
                                                     : "Select Site"}
                                             </option>
                                             {sites.map((site) => (
-                                                <option key={site.siteId} value={site.siteId}>
+                                                <option
+                                                    key={site.siteId}
+                                                    value={site.siteId}
+                                                >
                                                     {site.siteName}
                                                 </option>
                                             ))}
@@ -582,18 +643,27 @@ export default function EditConstructionTaskPage() {
                                     </div>
 
                                     <div>
-                                        <label htmlFor="assignedTo" className={labelClassName}>
+                                        <label
+                                            htmlFor="assignedTo"
+                                            className={labelClassName}
+                                        >
                                             <span className="inline-flex items-center gap-2">
-                                                <User className="h-3.5 w-3.5 text-zinc-500" />
-                                                Worker <span className="text-red-400">*</span>
+                                                <User className="h-3.5 w-3.5 text-gray-500" />
+                                                Worker{" "}
+                                                <span className="text-red-600">*</span>
                                             </span>
                                         </label>
+
                                         <select
                                             id="assignedTo"
                                             name="assignedTo"
                                             value={formData.assignedTo}
                                             onChange={handleChange}
-                                            disabled={!formData.siteId || loadingWorkers || saving}
+                                            disabled={
+                                                !formData.siteId ||
+                                                loadingWorkers ||
+                                                saving
+                                            }
                                             className={inputClassName}
                                         >
                                             <option value="">
@@ -606,13 +676,18 @@ export default function EditConstructionTaskPage() {
                                                     : "Select Worker"}
                                             </option>
                                             {workers.map((worker) => (
-                                                <option key={worker.workerId} value={worker.workerId}>
+                                                <option
+                                                    key={worker.workerId}
+                                                    value={worker.workerId}
+                                                >
                                                     {worker.name}
                                                 </option>
                                             ))}
                                         </select>
-                                        <p className="mt-2 text-xs text-zinc-500">
-                                            Only active workers from the selected site are shown.
+
+                                        <p className="mt-2 text-xs text-gray-500">
+                                            Only active workers from the selected site are
+                                            shown.
                                         </p>
                                     </div>
                                 </div>
@@ -621,10 +696,12 @@ export default function EditConstructionTaskPage() {
 
                         <section className={sectionClassName}>
                             <div className="mb-5">
-                                <h2 className="font-semibold text-white">
-                                    {isConstructionWorker ? "Progress Update" : "Task Information"}
+                                <h2 className="font-semibold text-black">
+                                    {isConstructionWorker
+                                        ? "Progress Update"
+                                        : "Task Information"}
                                 </h2>
-                                <p className="text-xs text-zinc-500">
+                                <p className="text-xs text-gray-500">
                                     {isConstructionWorker
                                         ? "You can update the status and remarks for this task."
                                         : "Update the task details and requirements."}
@@ -632,19 +709,29 @@ export default function EditConstructionTaskPage() {
                             </div>
 
                             {isConstructionWorker ? (
-                                <div className="mb-5 rounded-lg border border-zinc-800 bg-zinc-950 p-4">
-                                    <p className="mb-1 text-xs uppercase tracking-wide text-zinc-500">Task</p>
-                                    <p className="font-medium text-white">{task.title}</p>
+                                <div className="mb-5 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                                    <p className="mb-1 text-xs uppercase tracking-wide text-gray-500">
+                                        Task
+                                    </p>
+                                    <p className="font-medium text-black">{task.title}</p>
                                     {task.projectName && (
-                                        <p className="mt-1 text-sm text-zinc-400">{task.projectName}{task.siteName ? ` · ${task.siteName}` : ""}</p>
+                                        <p className="mt-1 text-sm text-gray-600">
+                                            {task.projectName}
+                                            {task.siteName ? ` · ${task.siteName}` : ""}
+                                        </p>
                                     )}
                                 </div>
                             ) : (
                                 <div className="space-y-5">
                                     <div>
-                                        <label htmlFor="title" className={labelClassName}>
-                                            Task Title <span className="ml-1 text-red-400">*</span>
+                                        <label
+                                            htmlFor="title"
+                                            className={labelClassName}
+                                        >
+                                            Task Title{" "}
+                                            <span className="ml-1 text-red-600">*</span>
                                         </label>
+
                                         <input
                                             id="title"
                                             name="title"
@@ -658,7 +745,13 @@ export default function EditConstructionTaskPage() {
                                     </div>
 
                                     <div>
-                                        <label htmlFor="description" className={labelClassName}>Description</label>
+                                        <label
+                                            htmlFor="description"
+                                            className={labelClassName}
+                                        >
+                                            Description
+                                        </label>
+
                                         <textarea
                                             id="description"
                                             name="description"
@@ -673,10 +766,20 @@ export default function EditConstructionTaskPage() {
                                 </div>
                             )}
 
-                            <div className={`grid gap-5 ${isConstructionWorker ? "" : "md:grid-cols-3"}`}>
+                            <div
+                                className={`grid gap-5 ${
+                                    isConstructionWorker ? "" : "md:grid-cols-3"
+                                }`}
+                            >
                                 {!isConstructionWorker && (
                                     <div>
-                                        <label htmlFor="priority" className={labelClassName}>Priority</label>
+                                        <label
+                                            htmlFor="priority"
+                                            className={labelClassName}
+                                        >
+                                            Priority
+                                        </label>
+
                                         <select
                                             id="priority"
                                             name="priority"
@@ -693,7 +796,13 @@ export default function EditConstructionTaskPage() {
                                 )}
 
                                 <div>
-                                    <label htmlFor="status" className={labelClassName}>Status</label>
+                                    <label
+                                        htmlFor="status"
+                                        className={labelClassName}
+                                    >
+                                        Status
+                                    </label>
+
                                     <select
                                         id="status"
                                         name="status"
@@ -711,12 +820,16 @@ export default function EditConstructionTaskPage() {
 
                                 {!isConstructionWorker && (
                                     <div>
-                                        <label htmlFor="dueDate" className={labelClassName}>
+                                        <label
+                                            htmlFor="dueDate"
+                                            className={labelClassName}
+                                        >
                                             <span className="inline-flex items-center gap-2">
-                                                <CalendarDays className="h-3.5 w-3.5 text-zinc-500" />
+                                                <CalendarDays className="h-3.5 w-3.5 text-gray-500" />
                                                 Due Date
                                             </span>
                                         </label>
+
                                         <input
                                             id="dueDate"
                                             name="dueDate"
@@ -731,14 +844,24 @@ export default function EditConstructionTaskPage() {
                             </div>
 
                             <div className="mt-5">
-                                <label htmlFor="remarks" className={labelClassName}>Remarks</label>
+                                <label
+                                    htmlFor="remarks"
+                                    className={labelClassName}
+                                >
+                                    Remarks
+                                </label>
+
                                 <textarea
                                     id="remarks"
                                     name="remarks"
                                     value={formData.remarks}
                                     onChange={handleChange}
                                     rows={4}
-                                    placeholder={isConstructionWorker ? "Add a progress update..." : "Add any additional remarks..."}
+                                    placeholder={
+                                        isConstructionWorker
+                                            ? "Add a progress update..."
+                                            : "Add any additional remarks..."
+                                    }
                                     disabled={saving}
                                     className={`${inputClassName} resize-none`}
                                 />
@@ -748,23 +871,27 @@ export default function EditConstructionTaskPage() {
                         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                             <Link
                                 href={`/DriWE-Construction/tasks/${taskId}`}
-                                className="inline-flex items-center justify-center rounded-lg border border-zinc-700 bg-zinc-950 px-5 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-zinc-600 hover:bg-zinc-900 hover:text-white"
+                                className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-black transition hover:bg-gray-100"
                             >
                                 Cancel
                             </Link>
+
                             <button
                                 type="submit"
                                 disabled={saving}
-                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-yellow-500 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-50"
+                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-black px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 {saving ? (
                                     <>
-                                        <Loader2 className="h-4 w-4 animate-spin" /> Saving...
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        Saving...
                                     </>
                                 ) : (
                                     <>
                                         <Save className="h-4 w-4" />
-                                        {isConstructionWorker ? "Update Progress" : "Save Changes"}
+                                        {isConstructionWorker
+                                            ? "Update Progress"
+                                            : "Save Changes"}
                                     </>
                                 )}
                             </button>

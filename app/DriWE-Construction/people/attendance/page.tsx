@@ -1,3 +1,5 @@
+
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -38,10 +40,7 @@ type Project = {
     status: string;
 };
 
-type AttendanceStatus =
-    | "Present"
-    | "Absent"
-    | "Half Day";
+type AttendanceStatus = "Present" | "Absent" | "Half Day";
 
 type AttendanceRow = {
     workerId: string;
@@ -61,13 +60,11 @@ export default function AttendancePage() {
         Record<string, AttendanceStatus>
     >({});
 
-    const [selectedProject, setSelectedProject] =
-        useState("");
+    const [selectedProject, setSelectedProject] = useState("");
 
-    const [selectedDate, setSelectedDate] =
-        useState(
-            new Date().toISOString().split("T")[0]
-        );
+    const [selectedDate, setSelectedDate] = useState(
+        new Date().toISOString().split("T")[0]
+    );
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -79,56 +76,38 @@ export default function AttendancePage() {
             setLoading(true);
             setError("");
 
-            const [workersRes, projectsRes] =
-                await Promise.all([
-                    fetch(
-                        "/api/construction/workers",
-                        {
-                            credentials: "include",
-                            cache: "no-store",
-                        }
-                    ),
-                    fetch(
-                        "/api/construction/projects",
-                        {
-                            credentials: "include",
-                            cache: "no-store",
-                        }
-                    ),
-                ]);
+            const [workersRes, projectsRes] = await Promise.all([
+                fetch("/api/construction/workers", {
+                    credentials: "include",
+                    cache: "no-store",
+                }),
+                fetch("/api/construction/projects", {
+                    credentials: "include",
+                    cache: "no-store",
+                }),
+            ]);
 
-            const workersData =
-                await workersRes.json();
+            const workersData = await workersRes.json();
+            const projectsData = await projectsRes.json();
 
-            const projectsData =
-                await projectsRes.json();
-
-            if (
-                !workersRes.ok ||
-                !workersData.success
-            ) {
+            if (!workersRes.ok || !workersData.success) {
                 throw new Error(
-                    workersData.message ||
-                        "Failed to load workers"
+                    workersData.message || "Failed to load workers"
                 );
             }
 
-            if (
-                !projectsRes.ok ||
-                !projectsData.success
-            ) {
+            if (!projectsRes.ok || !projectsData.success) {
                 throw new Error(
-                    projectsData.message ||
-                        "Failed to load projects"
+                    projectsData.message || "Failed to load projects"
                 );
             }
 
             const workerEntries = Array.isArray(workersData.workers)
                 ? workersData.workers.filter(
-                    (worker: Worker) =>
-                        worker.personType === "Worker" ||
-                        (!worker.personType && Boolean(worker.workerId))
-                )
+                      (worker: Worker) =>
+                          worker.personType === "Worker" ||
+                          (!worker.personType && Boolean(worker.workerId))
+                  )
                 : [];
 
             setWorkers(
@@ -140,23 +119,13 @@ export default function AttendancePage() {
                     }))
             );
 
-            setProjects(
-                projectsData.projects || []
-            );
+            setProjects(projectsData.projects || []);
 
-            if (
-                !selectedProject &&
-                projectsData.projects?.length
-            ) {
-                setSelectedProject(
-                    projectsData.projects[0].projectId
-                );
+            if (!selectedProject && projectsData.projects?.length) {
+                setSelectedProject(projectsData.projects[0].projectId);
             }
         } catch (err) {
-            console.error(
-                "Load attendance data error:",
-                err
-            );
+            console.error("Load attendance data error:", err);
 
             setError(
                 err instanceof Error
@@ -168,10 +137,7 @@ export default function AttendancePage() {
         }
     }
 
-    async function loadExistingAttendance(
-        projectId: string,
-        date: string
-    ) {
+    async function loadExistingAttendance(projectId: string, date: string) {
         if (!projectId || !date) return;
 
         try {
@@ -185,37 +151,23 @@ export default function AttendancePage() {
                 }
             );
 
-            if (!res.ok) {
-                return;
-            }
+            if (!res.ok) return;
 
             const data = await res.json();
 
-            if (!data.success) {
-                return;
-            }
+            if (!data.success) return;
 
-            const existing =
-                data.attendance || [];
+            const existing = data.attendance || [];
 
-            const mapped: Record<
-                string,
-                AttendanceStatus
-            > = {};
+            const mapped: Record<string, AttendanceStatus> = {};
 
-            existing.forEach(
-                (item: AttendanceRow) => {
-                    mapped[item.workerId] =
-                        item.status;
-                }
-            );
+            existing.forEach((item: AttendanceRow) => {
+                mapped[item.workerId] = item.status;
+            });
 
             setAttendance(mapped);
         } catch (err) {
-            console.error(
-                "Load existing attendance error:",
-                err
-            );
+            console.error("Load existing attendance error:", err);
         }
     }
 
@@ -225,86 +177,55 @@ export default function AttendancePage() {
 
     useEffect(() => {
         if (selectedProject && selectedDate) {
-            loadExistingAttendance(
-                selectedProject,
-                selectedDate
-            );
+            loadExistingAttendance(selectedProject, selectedDate);
         }
     }, [selectedProject, selectedDate]);
 
     const projectWorkers = useMemo(() => {
         return workers.filter(
             (worker) =>
-                worker.active &&
-                worker.projectId ===
-                    selectedProject
+                worker.active && worker.projectId === selectedProject
         );
     }, [workers, selectedProject]);
 
     const presentCount = projectWorkers.filter(
-        (worker) =>
-            attendance[worker.workerId] ===
-            "Present"
+        (worker) => attendance[worker.workerId] === "Present"
     ).length;
 
     const absentCount = projectWorkers.filter(
-        (worker) =>
-            attendance[worker.workerId] ===
-            "Absent"
+        (worker) => attendance[worker.workerId] === "Absent"
     ).length;
 
     const halfDayCount = projectWorkers.filter(
-        (worker) =>
-            attendance[worker.workerId] ===
-            "Half Day"
+        (worker) => attendance[worker.workerId] === "Half Day"
     ).length;
 
-    const labourCost = projectWorkers.reduce(
-        (total, worker) => {
-            const status =
-                attendance[worker.workerId];
+    const labourCost = projectWorkers.reduce((total, worker) => {
+        const status = attendance[worker.workerId];
 
-            if (status === "Present") {
-                return (
-                    total +
-                    Number(worker.dailyWage || 0)
-                );
-            }
+        if (status === "Present") {
+            return total + Number(worker.dailyWage || 0);
+        }
 
-            if (status === "Half Day") {
-                return (
-                    total +
-                    Number(worker.dailyWage || 0) *
-                        0.5
-                );
-            }
+        if (status === "Half Day") {
+            return total + Number(worker.dailyWage || 0) * 0.5;
+        }
 
-            return total;
-        },
-        0
-    );
+        return total;
+    }, 0);
 
-    function setWorkerStatus(
-        workerId: string,
-        status: AttendanceStatus
-    ) {
+    function setWorkerStatus(workerId: string, status: AttendanceStatus) {
         setAttendance((prev) => ({
             ...prev,
             [workerId]: status,
         }));
     }
 
-    function markAll(
-        status: AttendanceStatus
-    ) {
-        const updated: Record<
-            string,
-            AttendanceStatus
-        > = {};
+    function markAll(status: AttendanceStatus) {
+        const updated: Record<string, AttendanceStatus> = {};
 
         projectWorkers.forEach((worker) => {
-            updated[worker.workerId] =
-                status;
+            updated[worker.workerId] = status;
         });
 
         setAttendance(updated);
@@ -333,96 +254,57 @@ export default function AttendancePage() {
             setError("");
             setSuccess("");
 
-            const records = projectWorkers.map(
-                (worker) => {
-                    const status =
-                        attendance[
-                            worker.workerId
-                        ] || "Absent";
+            const records = projectWorkers.map((worker) => {
+                const status = attendance[worker.workerId] || "Absent";
 
-                    let labourCost = 0;
+                let labourCost = 0;
 
-                    if (
-                        status === "Present"
-                    ) {
-                        labourCost =
-                            Number(
-                                worker.dailyWage ||
-                                    0
-                            );
-                    }
-
-                    if (
-                        status === "Half Day"
-                    ) {
-                        labourCost =
-                            Number(
-                                worker.dailyWage ||
-                                    0
-                            ) * 0.5;
-                    }
-
-                    return {
-                        workerId:
-                            worker.workerId,
-                        workerName:
-                            worker.name,
-                        projectId:
-                            worker.projectId,
-                        projectName:
-                            worker.projectName,
-                        date: selectedDate,
-                        status,
-                        dailyWage:
-                            Number(
-                                worker.dailyWage ||
-                                    0
-                            ),
-                        labourCost,
-                    };
+                if (status === "Present") {
+                    labourCost = Number(worker.dailyWage || 0);
                 }
-            );
 
-            const res = await fetch(
-                "/api/construction/attendance",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type":
-                            "application/json",
-                    },
-                    credentials: "include",
-                    body: JSON.stringify({
-                        projectId:
-                            selectedProject,
-                        date: selectedDate,
-                        records,
-                    }),
+                if (status === "Half Day") {
+                    labourCost = Number(worker.dailyWage || 0) * 0.5;
                 }
-            );
+
+                return {
+                    workerId: worker.workerId,
+                    workerName: worker.name,
+                    projectId: worker.projectId,
+                    projectName: worker.projectName,
+                    date: selectedDate,
+                    status,
+                    dailyWage: Number(worker.dailyWage || 0),
+                    labourCost,
+                };
+            });
+
+            const res = await fetch("/api/construction/attendance", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    projectId: selectedProject,
+                    date: selectedDate,
+                    records,
+                }),
+            });
 
             const data = await res.json();
 
             if (!res.ok || !data.success) {
                 throw new Error(
-                    data.message ||
-                        "Failed to save attendance"
+                    data.message || "Failed to save attendance"
                 );
             }
 
-            setSuccess(
-                "Attendance saved successfully."
-            );
+            setSuccess("Attendance saved successfully.");
 
-            await loadExistingAttendance(
-                selectedProject,
-                selectedDate
-            );
+            await loadExistingAttendance(selectedProject, selectedDate);
         } catch (err) {
-            console.error(
-                "Save attendance error:",
-                err
-            );
+            console.error("Save attendance error:", err);
 
             setError(
                 err instanceof Error
@@ -434,32 +316,35 @@ export default function AttendancePage() {
         }
     }
 
-    return (
-        <div className="min-h-screen bg-zinc-950 text-white p-4 md:p-6">
-            <div className="max-w-7xl mx-auto space-y-6">
+    const inputClass =
+        "w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-black focus:ring-1 focus:ring-black";
 
+    const cardClass = "rounded-xl border border-gray-200 bg-white shadow-sm";
+
+    return (
+        <div className="min-h-screen bg-white p-4 text-black md:p-6">
+            <div className="mx-auto max-w-7xl space-y-6">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div>
                         <Link
                             href="/DriWE-Construction/people"
-                            className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white mb-4"
+                            className="mb-4 inline-flex items-center gap-2 text-sm text-gray-600 transition hover:text-black"
                         >
                             <ArrowLeft className="h-4 w-4" />
                             Back to People
                         </Link>
 
                         <div className="flex items-center gap-3">
-                            <div className="h-11 w-11 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
-                                <CalendarCheck className="h-5 w-5 text-yellow-400" />
+                            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 bg-gray-100">
+                                <CalendarCheck className="h-5 w-5 text-black" />
                             </div>
 
                             <div>
-                                <h1 className="text-2xl font-bold">
+                                <h1 className="text-2xl font-bold text-black">
                                     Attendance
                                 </h1>
-
-                                <p className="text-sm text-zinc-400">
+                                <p className="text-sm text-gray-600">
                                     Manage daily workforce attendance
                                 </p>
                             </div>
@@ -468,64 +353,45 @@ export default function AttendancePage() {
                 </div>
 
                 {/* Filters */}
-                <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-5">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
+                <div className={`${cardClass} p-5`}>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div>
-                            <label className="block text-sm text-zinc-400 mb-2">
+                            <label className="mb-2 block text-sm font-medium text-black">
                                 Project
                             </label>
 
                             <select
-                                value={
-                                    selectedProject
-                                }
+                                value={selectedProject}
                                 onChange={(e) =>
-                                    setSelectedProject(
-                                        e.target.value
-                                    )
+                                    setSelectedProject(e.target.value)
                                 }
-                                className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-white outline-none focus:border-yellow-500"
+                                className={inputClass}
                             >
-                                <option value="">
-                                    Select Project
-                                </option>
+                                <option value="">Select Project</option>
 
-                                {projects.map(
-                                    (project) => (
-                                        <option
-                                            key={
-                                                project.projectId
-                                            }
-                                            value={
-                                                project.projectId
-                                            }
-                                        >
-                                            {
-                                                project.projectName
-                                            }
-                                        </option>
-                                    )
-                                )}
+                                {projects.map((project) => (
+                                    <option
+                                        key={project.projectId}
+                                        value={project.projectId}
+                                    >
+                                        {project.projectName}
+                                    </option>
+                                ))}
                             </select>
                         </div>
 
                         <div>
-                            <label className="block text-sm text-zinc-400 mb-2">
+                            <label className="mb-2 block text-sm font-medium text-black">
                                 Attendance Date
                             </label>
 
                             <input
                                 type="date"
-                                value={
-                                    selectedDate
-                                }
+                                value={selectedDate}
                                 onChange={(e) =>
-                                    setSelectedDate(
-                                        e.target.value
-                                    )
+                                    setSelectedDate(e.target.value)
                                 }
-                                className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-white outline-none focus:border-yellow-500"
+                                className={inputClass}
                             />
                         </div>
                     </div>
@@ -533,104 +399,93 @@ export default function AttendancePage() {
 
                 {/* Messages */}
                 {error && (
-                    <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
+                    <div
+                        role="alert"
+                        className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+                    >
                         {error}
                     </div>
                 )}
 
                 {success && (
-                    <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-4 text-sm text-green-300">
+                    <div
+                        role="status"
+                        className="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700"
+                    >
                         {success}
                     </div>
                 )}
 
                 {/* Statistics */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-
-                    <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-5">
-                        <div className="flex items-center justify-between">
+                <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                    <div className={`${cardClass} p-5`}>
+                        <div className="flex items-center justify-between gap-3">
                             <div>
-                                <p className="text-sm text-zinc-400">
+                                <p className="text-sm text-gray-600">
                                     Present
                                 </p>
-
-                                <p className="text-2xl font-bold mt-1">
+                                <p className="mt-1 text-2xl font-bold text-black">
                                     {presentCount}
                                 </p>
                             </div>
-
-                            <CheckCircle2 className="h-6 w-6 text-green-400" />
+                            <CheckCircle2 className="h-6 w-6 text-green-600" />
                         </div>
                     </div>
 
-                    <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-5">
-                        <div className="flex items-center justify-between">
+                    <div className={`${cardClass} p-5`}>
+                        <div className="flex items-center justify-between gap-3">
                             <div>
-                                <p className="text-sm text-zinc-400">
+                                <p className="text-sm text-gray-600">
                                     Half Day
                                 </p>
-
-                                <p className="text-2xl font-bold mt-1">
+                                <p className="mt-1 text-2xl font-bold text-black">
                                     {halfDayCount}
                                 </p>
                             </div>
-
-                            <Clock3 className="h-6 w-6 text-yellow-400" />
+                            <Clock3 className="h-6 w-6 text-amber-600" />
                         </div>
                     </div>
 
-                    <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-5">
-                        <div className="flex items-center justify-between">
+                    <div className={`${cardClass} p-5`}>
+                        <div className="flex items-center justify-between gap-3">
                             <div>
-                                <p className="text-sm text-zinc-400">
+                                <p className="text-sm text-gray-600">
                                     Absent
                                 </p>
-
-                                <p className="text-2xl font-bold mt-1">
+                                <p className="mt-1 text-2xl font-bold text-black">
                                     {absentCount}
                                 </p>
                             </div>
-
-                            <XCircle className="h-6 w-6 text-red-400" />
+                            <XCircle className="h-6 w-6 text-red-600" />
                         </div>
                     </div>
 
-                    <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-5">
-                        <div className="flex items-center justify-between">
+                    <div className={`${cardClass} p-5`}>
+                        <div className="flex items-center justify-between gap-3">
                             <div>
-                                <p className="text-sm text-zinc-400">
+                                <p className="text-sm text-gray-600">
                                     Labour Cost
                                 </p>
-
-                                <p className="text-2xl font-bold mt-1">
+                                <p className="mt-1 text-2xl font-bold text-black">
                                     ₹
-                                    {labourCost.toLocaleString(
-                                        "en-IN"
-                                    )}
+                                    {labourCost.toLocaleString("en-IN")}
                                 </p>
                             </div>
-
-                            <Users className="h-6 w-6 text-blue-400" />
+                            <Users className="h-6 w-6 text-gray-700" />
                         </div>
                     </div>
                 </div>
 
                 {/* Attendance */}
-                <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 overflow-hidden">
-
-                    <div className="px-5 py-4 border-b border-zinc-800 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div className={`${cardClass} overflow-hidden`}>
+                    <div className="flex flex-col gap-3 border-b border-gray-200 px-5 py-4 md:flex-row md:items-center md:justify-between">
                         <div>
-                            <h2 className="font-semibold">
+                            <h2 className="font-semibold text-black">
                                 Daily Attendance
                             </h2>
-
-                            <p className="text-xs text-zinc-500 mt-1">
-                                {projectWorkers.length} active
-                                worker
-                                {projectWorkers.length !==
-                                1
-                                    ? "s"
-                                    : ""}{" "}
+                            <p className="mt-1 text-xs text-gray-600">
+                                {projectWorkers.length} active worker
+                                {projectWorkers.length !== 1 ? "s" : ""}{" "}
                                 assigned to this project
                             </p>
                         </div>
@@ -639,24 +494,16 @@ export default function AttendancePage() {
                             <div className="flex flex-wrap gap-2">
                                 <button
                                     type="button"
-                                    onClick={() =>
-                                        markAll(
-                                            "Present"
-                                        )
-                                    }
-                                    className="rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-2 text-xs font-medium text-green-400 hover:bg-green-500/20"
+                                    onClick={() => markAll("Present")}
+                                    className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-black transition hover:bg-gray-100"
                                 >
                                     Mark All Present
                                 </button>
 
                                 <button
                                     type="button"
-                                    onClick={() =>
-                                        markAll(
-                                            "Absent"
-                                        )
-                                    }
-                                    className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-400 hover:bg-red-500/20"
+                                    onClick={() => markAll("Absent")}
+                                    className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-black transition hover:bg-gray-100"
                                 >
                                     Mark All Absent
                                 </button>
@@ -665,24 +512,21 @@ export default function AttendancePage() {
                     </div>
 
                     {loading ? (
-                        <div className="flex justify-center items-center py-16 text-zinc-400">
-                            <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                        <div className="flex items-center justify-center py-16 text-gray-600">
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                             Loading attendance...
                         </div>
                     ) : !selectedProject ? (
-                        <div className="py-16 text-center text-zinc-500">
+                        <div className="py-16 text-center text-gray-600">
                             Select a project to view workers.
                         </div>
-                    ) : projectWorkers.length ===
-                      0 ? (
+                    ) : projectWorkers.length === 0 ? (
                         <div className="py-16 text-center">
-                            <Users className="h-10 w-10 mx-auto text-zinc-700" />
-
-                            <p className="mt-3 text-zinc-300">
+                            <Users className="mx-auto h-10 w-10 text-gray-400" />
+                            <p className="mt-3 text-gray-800">
                                 No active workers found
                             </p>
-
-                            <p className="text-sm text-zinc-500 mt-1">
+                            <p className="mt-1 text-sm text-gray-600">
                                 Assign workers to this project first.
                             </p>
                         </div>
@@ -691,23 +535,19 @@ export default function AttendancePage() {
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
                                     <thead>
-                                        <tr className="border-b border-zinc-800 text-left text-zinc-500">
+                                        <tr className="border-b border-gray-200 bg-gray-50 text-left text-gray-700">
                                             <th className="px-5 py-3 font-medium">
                                                 Worker
                                             </th>
-
                                             <th className="px-5 py-3 font-medium">
                                                 Role
                                             </th>
-
                                             <th className="px-5 py-3 font-medium">
                                                 Daily Wage
                                             </th>
-
                                             <th className="px-5 py-3 font-medium">
                                                 Attendance
                                             </th>
-
                                             <th className="px-5 py-3 font-medium">
                                                 Labour Cost
                                             </th>
@@ -716,71 +556,49 @@ export default function AttendancePage() {
 
                                     <tbody>
                                         {projectWorkers.map(
-                                            (
-                                                worker,
-                                                index
-                                            ) => {
-                                                const workerId = getWorkerId(worker);
+                                            (worker, index) => {
+                                                const workerId =
+                                                    getWorkerId(worker);
                                                 const status =
-                                                    attendance[
-                                                        workerId
-                                                    ];
+                                                    attendance[workerId];
 
                                                 let cost = 0;
 
-                                                if (
-                                                    status ===
-                                                    "Present"
-                                                ) {
-                                                    cost =
-                                                        Number(
-                                                            worker.dailyWage ||
-                                                                0
-                                                        );
+                                                if (status === "Present") {
+                                                    cost = Number(
+                                                        worker.dailyWage || 0
+                                                    );
                                                 } else if (
-                                                    status ===
-                                                    "Half Day"
+                                                    status === "Half Day"
                                                 ) {
                                                     cost =
                                                         Number(
-                                                            worker.dailyWage ||
-                                                                0
-                                                        ) *
-                                                        0.5;
+                                                            worker.dailyWage || 0
+                                                        ) * 0.5;
                                                 }
 
                                                 return (
                                                     <tr
-                                                        key={
-                                                            `${workerId}-${index}`
-                                                        }
-                                                        className="border-b border-zinc-800/70 last:border-0"
+                                                        key={`${workerId}-${index}`}
+                                                        className="border-b border-gray-100 last:border-0 hover:bg-gray-50"
                                                     >
                                                         <td className="px-5 py-4">
-                                                            <div className="font-medium text-white">
-                                                                {
-                                                                    worker.name
-                                                                }
+                                                            <div className="font-medium text-black">
+                                                                {worker.name}
                                                             </div>
-
-                                                            <div className="text-xs text-zinc-500 mt-1">
-                                                                {
-                                                                    worker.phone
-                                                                }
+                                                            <div className="mt-1 text-xs text-gray-600">
+                                                                {worker.phone}
                                                             </div>
                                                         </td>
 
-                                                        <td className="px-5 py-4 text-zinc-400">
-                                                            {
-                                                                worker.role
-                                                            }
+                                                        <td className="px-5 py-4 text-gray-700">
+                                                            {worker.role}
                                                         </td>
 
-                                                        <td className="px-5 py-4 text-zinc-300">
+                                                        <td className="px-5 py-4 text-gray-800">
                                                             ₹
                                                             {Number(
-                                                                worker.dailyWage ||
-                                                                    0
+                                                                worker.dailyWage || 0
                                                             ).toLocaleString(
                                                                 "en-IN"
                                                             )}
@@ -796,11 +614,15 @@ export default function AttendancePage() {
                                                                             "Present"
                                                                         )
                                                                     }
-                                                                    className={`rounded-lg px-3 py-2 text-xs font-medium border ${
+                                                                    aria-pressed={
                                                                         status ===
                                                                         "Present"
-                                                                            ? "border-green-500 bg-green-500 text-black"
-                                                                            : "border-zinc-700 bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
+                                                                    }
+                                                                    className={`rounded-lg border px-3 py-2 text-xs font-medium transition ${
+                                                                        status ===
+                                                                        "Present"
+                                                                            ? "border-black bg-black text-white"
+                                                                            : "border-gray-300 bg-white text-black hover:bg-gray-100"
                                                                     }`}
                                                                 >
                                                                     Present
@@ -814,11 +636,15 @@ export default function AttendancePage() {
                                                                             "Half Day"
                                                                         )
                                                                     }
-                                                                    className={`rounded-lg px-3 py-2 text-xs font-medium border ${
+                                                                    aria-pressed={
                                                                         status ===
                                                                         "Half Day"
-                                                                            ? "border-yellow-500 bg-yellow-500 text-black"
-                                                                            : "border-zinc-700 bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
+                                                                    }
+                                                                    className={`rounded-lg border px-3 py-2 text-xs font-medium transition ${
+                                                                        status ===
+                                                                        "Half Day"
+                                                                            ? "border-black bg-black text-white"
+                                                                            : "border-gray-300 bg-white text-black hover:bg-gray-100"
                                                                     }`}
                                                                 >
                                                                     Half Day
@@ -832,11 +658,15 @@ export default function AttendancePage() {
                                                                             "Absent"
                                                                         )
                                                                     }
-                                                                    className={`rounded-lg px-3 py-2 text-xs font-medium border ${
+                                                                    aria-pressed={
                                                                         status ===
                                                                         "Absent"
-                                                                            ? "border-red-500 bg-red-500 text-white"
-                                                                            : "border-zinc-700 bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
+                                                                    }
+                                                                    className={`rounded-lg border px-3 py-2 text-xs font-medium transition ${
+                                                                        status ===
+                                                                        "Absent"
+                                                                            ? "border-black bg-black text-white"
+                                                                            : "border-gray-300 bg-white text-black hover:bg-gray-100"
                                                                     }`}
                                                                 >
                                                                     Absent
@@ -844,7 +674,7 @@ export default function AttendancePage() {
                                                             </div>
                                                         </td>
 
-                                                        <td className="px-5 py-4 font-medium text-zinc-200">
+                                                        <td className="px-5 py-4 font-medium text-black">
                                                             ₹
                                                             {cost.toLocaleString(
                                                                 "en-IN"
@@ -859,14 +689,12 @@ export default function AttendancePage() {
                             </div>
 
                             {/* Save */}
-                            <div className="border-t border-zinc-800 px-5 py-4 flex justify-end">
+                            <div className="flex justify-end border-t border-gray-200 px-5 py-4">
                                 <button
                                     type="button"
-                                    onClick={
-                                        saveAttendance
-                                    }
+                                    onClick={saveAttendance}
                                     disabled={saving}
-                                    className="inline-flex items-center gap-2 rounded-lg bg-yellow-500 px-5 py-2.5 text-sm font-semibold text-black hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="inline-flex items-center gap-2 rounded-lg bg-black px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     {saving ? (
                                         <>
@@ -888,3 +716,4 @@ export default function AttendancePage() {
         </div>
     );
 }
+

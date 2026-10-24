@@ -21,10 +21,8 @@ interface DailySiteUpdate {
     projectId: string;
     projectName?: string;
     date: string;
-
     workersPresent: number;
     tasksCompleted: number;
-
     materialReceived: number;
     materialUsed: number;
     materialsUsed?: Array<{
@@ -33,35 +31,26 @@ interface DailySiteUpdate {
         quantity: number;
         unit: string;
     }>;
-
     issues: number;
     issueDescription?: string;
-
     photos?: string[];
-
     note?: string;
-
     submittedBy: string;
     submittedByName?: string;
-
     createdAt: string;
     updatedAt: string;
 }
 
 export default function DailyUpdateDetailPage() {
     const params = useParams();
-
     const updateId = params.updateId as string;
 
-    const [update, setUpdate] =
-        useState<DailySiteUpdate | null>(null);
-
+    const [update, setUpdate] = useState<DailySiteUpdate | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
     useEffect(() => {
         if (!updateId) return;
-
         loadUpdate();
     }, [updateId]);
 
@@ -82,17 +71,13 @@ export default function DailyUpdateDetailPage() {
 
             if (!res.ok) {
                 throw new Error(
-                    data.error ||
-                        "Failed to load daily update"
+                    data.error || "Failed to load daily update"
                 );
             }
 
             setUpdate(data.update);
         } catch (err: any) {
-            setError(
-                err.message ||
-                    "Failed to load daily update"
-            );
+            setError(err.message || "Failed to load daily update");
         } finally {
             setLoading(false);
         }
@@ -100,12 +85,9 @@ export default function DailyUpdateDetailPage() {
 
     if (loading) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-400">
+            <div className="flex min-h-screen items-center justify-center bg-white text-black">
                 <div className="flex items-center gap-3">
-                    <Loader2
-                        size={24}
-                        className="animate-spin"
-                    />
+                    <Loader2 size={24} className="animate-spin" />
                     Loading daily update...
                 </div>
             </div>
@@ -114,24 +96,22 @@ export default function DailyUpdateDetailPage() {
 
     if (error || !update) {
         return (
-            <div className="min-h-screen bg-zinc-950 p-6 text-white">
+            <div className="min-h-screen bg-white p-6 text-black">
                 <div className="mx-auto max-w-4xl">
                     <Link
                         href="/DriWE-Construction/daily-updates"
-                        className="mb-6 inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white"
+                        className="mb-6 inline-flex items-center gap-2 text-sm text-gray-600 hover:text-black"
                     >
                         <ArrowLeft size={17} />
                         Back to Daily Updates
                     </Link>
 
-                    <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-6">
-                        <h2 className="font-semibold text-red-300">
+                    <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
+                        <h2 className="font-semibold text-red-700">
                             Unable to load daily update
                         </h2>
-
-                        <p className="mt-2 text-sm text-red-400">
-                            {error ||
-                                "Daily update not found."}
+                        <p className="mt-2 text-sm text-red-600">
+                            {error || "Daily update not found."}
                         </p>
                     </div>
                 </div>
@@ -140,14 +120,14 @@ export default function DailyUpdateDetailPage() {
     }
 
     return (
-        <div className="min-h-screen bg-zinc-950 p-6 text-white">
+        <div className="min-h-screen bg-white p-6 text-black">
             <div className="mx-auto max-w-5xl">
                 {/* Header */}
                 <div className="mb-8">
                     <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                         <Link
                             href="/DriWE-Construction/daily-updates"
-                            className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white"
+                            className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-black"
                         >
                             <ArrowLeft size={17} />
                             Back to Daily Updates
@@ -155,7 +135,7 @@ export default function DailyUpdateDetailPage() {
 
                         <Link
                             href={`/DriWE-Construction/daily-updates/${update.updateId}/edit`}
-                            className="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-black hover:bg-orange-400"
+                            className="inline-flex items-center gap-2 rounded-lg bg-black px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
                         >
                             <Edit size={17} />
                             Edit Update
@@ -163,11 +143,8 @@ export default function DailyUpdateDetailPage() {
                     </div>
 
                     <div className="flex items-start gap-4">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-orange-500/10">
-                            <FileText
-                                size={24}
-                                className="text-orange-400"
-                            />
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gray-100">
+                            <FileText size={24} className="text-black" />
                         </div>
 
                         <div>
@@ -175,22 +152,19 @@ export default function DailyUpdateDetailPage() {
                                 Daily Site Update
                             </h1>
 
-                            <p className="mt-1 text-lg text-zinc-300">
-                                {update.projectName ||
-                                    "Project"}
+                            <p className="mt-1 text-lg text-gray-700">
+                                {update.projectName || "Project"}
                             </p>
 
-                            <div className="mt-2 flex flex-wrap gap-4 text-sm text-zinc-500">
+                            <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-500">
                                 <span className="flex items-center gap-1.5">
-                                    <CalendarDays
-                                        size={15}
-                                    />
+                                    <CalendarDays size={15} />
                                     {update.date}
                                 </span>
 
                                 <span>
                                     Submitted by:{" "}
-                                    <span className="text-zinc-300">
+                                    <span className="font-medium text-gray-800">
                                         {update.submittedByName ||
                                             update.submittedBy}
                                     </span>
@@ -203,50 +177,32 @@ export default function DailyUpdateDetailPage() {
                 {/* KPI Cards */}
                 <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
                     <MetricCard
-                        icon={
-                            <Users size={20} />
-                        }
+                        icon={<Users size={20} />}
                         label="Workers Present"
-                        value={
-                            update.workersPresent
-                        }
+                        value={update.workersPresent}
                     />
 
                     <MetricCard
-                        icon={
-                            <ClipboardList
-                                size={20}
-                            />
-                        }
+                        icon={<ClipboardList size={20} />}
                         label="Tasks Completed"
-                        value={
-                            update.tasksCompleted
-                        }
+                        value={update.tasksCompleted}
                     />
 
                     <MetricCard
-                        icon={
-                            <Package size={20} />
-                        }
+                        icon={<Package size={20} />}
                         label="Material Received"
-                        value={
-                            update.materialReceived
-                        }
+                        value={update.materialReceived}
                     />
 
                     <MetricCard
-                        icon={
-                            <AlertTriangle
-                                size={20}
-                            />
-                        }
+                        icon={<AlertTriangle size={20} />}
                         label="Issues"
                         value={update.issues}
                     />
                 </div>
 
                 {/* Material */}
-                <section className="mb-6 rounded-2xl border border-zinc-800 bg-zinc-900/70 p-6">
+                <section className="mb-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
                     <h2 className="mb-5 text-lg font-semibold">
                         Material Movement
                     </h2>
@@ -257,123 +213,120 @@ export default function DailyUpdateDetailPage() {
                             value={`${update.materialReceived}`}
                         />
 
-                        <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-                            <p className="text-xs uppercase tracking-wide text-zinc-500">Materials Used</p>
+                        <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                            <p className="text-xs uppercase tracking-wide text-gray-500">
+                                Materials Used
+                            </p>
+
                             {update.materialsUsed?.length ? (
                                 <ul className="mt-3 space-y-2">
-                                    {update.materialsUsed.map((item, index) => (
-                                        <li key={`${item.materialId}-${index}`} className="flex justify-between gap-3 text-sm">
-                                            <span className="text-zinc-300">{item.materialName}</span>
-                                            <span className="shrink-0 font-medium text-white">{item.quantity} {item.unit}</span>
-                                        </li>
-                                    ))}
+                                    {update.materialsUsed.map(
+                                        (item, index) => (
+                                            <li
+                                                key={`${item.materialId}-${index}`}
+                                                className="flex justify-between gap-3 text-sm"
+                                            >
+                                                <span className="text-gray-700">
+                                                    {item.materialName}
+                                                </span>
+                                                <span className="shrink-0 font-medium text-black">
+                                                    {item.quantity} {item.unit}
+                                                </span>
+                                            </li>
+                                        )
+                                    )}
                                 </ul>
                             ) : (
-                                <p className="mt-2 text-lg font-semibold text-white">{update.materialUsed || 0}</p>
+                                <p className="mt-2 text-lg font-semibold text-black">
+                                    {update.materialUsed || 0}
+                                </p>
                             )}
                         </div>
                     </div>
                 </section>
 
                 {/* Site Issues */}
-                <section className="mb-6 rounded-2xl border border-zinc-800 bg-zinc-900/70 p-6">
+                <section className="mb-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
                     <div className="mb-5 flex items-center gap-2">
-                        <AlertTriangle
-                            size={19}
-                            className="text-orange-400"
-                        />
-
+                        <AlertTriangle size={19} className="text-black" />
                         <h2 className="text-lg font-semibold">
                             Site Issues
                         </h2>
                     </div>
 
                     {update.issues > 0 ? (
-                        <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 p-5">
+                        <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
                             <div className="mb-3">
-                                <span className="text-2xl font-bold text-orange-400">
+                                <span className="text-2xl font-bold text-black">
                                     {update.issues}
                                 </span>
-
-                                <span className="ml-2 text-sm text-zinc-400">
-                                    issue
-                                    {update.issues !==
-                                    1
-                                        ? "s"
-                                        : ""}{" "}
-                                    reported
+                                <span className="ml-2 text-sm text-gray-600">
+                                    issue{update.issues !== 1 ? "s" : ""} reported
                                 </span>
                             </div>
 
                             {update.issueDescription ? (
-                                <p className="whitespace-pre-wrap text-sm leading-6 text-zinc-300">
-                                    {
-                                        update.issueDescription
-                                    }
+                                <p className="whitespace-pre-wrap text-sm leading-6 text-gray-700">
+                                    {update.issueDescription}
                                 </p>
                             ) : (
-                                <p className="text-sm text-zinc-500">
-                                    No issue description
-                                    was provided.
+                                <p className="text-sm text-gray-500">
+                                    No issue description was provided.
                                 </p>
                             )}
                         </div>
                     ) : (
-                        <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-5 text-sm text-zinc-400">
-                            No site issues were reported
-                            for this update.
+                        <div className="rounded-xl border border-gray-200 bg-gray-50 p-5 text-sm text-gray-600">
+                            No site issues were reported for this update.
                         </div>
                     )}
                 </section>
 
                 {/* Site Note */}
-                <section className="mb-6 rounded-2xl border border-zinc-800 bg-zinc-900/70 p-6">
+                <section className="mb-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
                     <h2 className="mb-4 text-lg font-semibold">
                         Site Note
                     </h2>
 
                     {update.note ? (
-                        <div className="rounded-xl bg-zinc-950 p-5">
-                            <p className="whitespace-pre-wrap text-sm leading-7 text-zinc-300">
+                        <div className="rounded-xl bg-gray-50 p-5">
+                            <p className="whitespace-pre-wrap text-sm leading-7 text-gray-700">
                                 {update.note}
                             </p>
                         </div>
                     ) : (
-                        <p className="text-sm text-zinc-500">
+                        <p className="text-sm text-gray-500">
                             No site note was added.
                         </p>
                     )}
                 </section>
 
                 {/* Photos */}
-                <section className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-6">
+                <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
                     <h2 className="mb-4 text-lg font-semibold">
                         Site Photos
                     </h2>
 
-                    {update.photos &&
-                    update.photos.length > 0 ? (
+                    {update.photos && update.photos.length > 0 ? (
                         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                            {update.photos.map(
-                                (photo, index) => (
-                                    <a
-                                        key={index}
-                                        href={photo}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950"
-                                    >
-                                        <img
-                                            src={photo}
-                                            alt={`Site photo ${index + 1}`}
-                                            className="h-40 w-full object-cover transition hover:scale-105"
-                                        />
-                                    </a>
-                                )
-                            )}
+                            {update.photos.map((photo, index) => (
+                                <a
+                                    key={index}
+                                    href={photo}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50"
+                                >
+                                    <img
+                                        src={photo}
+                                        alt={`Site photo ${index + 1}`}
+                                        className="h-40 w-full object-cover transition hover:scale-105"
+                                    />
+                                </a>
+                            ))}
                         </div>
                     ) : (
-                        <div className="rounded-xl bg-zinc-950 p-5 text-sm text-zinc-500">
+                        <div className="rounded-xl bg-gray-50 p-5 text-sm text-gray-500">
                             No site photos uploaded.
                         </div>
                     )}
@@ -393,17 +346,13 @@ function MetricCard({
     value: number;
 }) {
     return (
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5">
-            <div className="mb-3 flex items-center gap-2 text-orange-400">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="mb-3 flex items-center gap-2 text-black">
                 {icon}
-                <span className="text-xs text-zinc-500">
-                    {label}
-                </span>
+                <span className="text-xs text-gray-500">{label}</span>
             </div>
 
-            <p className="text-2xl font-bold">
-                {value}
-            </p>
+            <p className="text-2xl font-bold text-black">{value}</p>
         </div>
     );
 }
@@ -416,14 +365,12 @@ function InfoBox({
     value: string;
 }) {
     return (
-        <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-5">
-            <p className="text-xs uppercase tracking-wide text-zinc-500">
+        <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+            <p className="text-xs uppercase tracking-wide text-gray-500">
                 {label}
             </p>
 
-            <p className="mt-2 text-2xl font-bold">
-                {value}
-            </p>
+            <p className="mt-2 text-2xl font-bold text-black">{value}</p>
         </div>
     );
 }

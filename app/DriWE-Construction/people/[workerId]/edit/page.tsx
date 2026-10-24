@@ -24,27 +24,18 @@ type WorkerType =
 
 interface Worker {
     workerId: string;
-
     companyId: string;
-
     projectId: string;
     projectName?: string;
-
     siteId: string;
     siteName?: string;
-
     name: string;
     phone: string;
-
     role?: string;
-
     workerType: WorkerType;
-
     salary: number;
     dailyWage?: number;
-
     active: boolean;
-
     createdAt?: string;
     updatedAt?: string;
 }
@@ -52,15 +43,11 @@ interface Worker {
 interface Site {
     siteId: string;
     companyId: string;
-
     projectId: string;
     projectName?: string;
-
     siteName: string;
     location?: string;
-
     active: boolean;
-
     createdAt?: string;
     updatedAt?: string;
 }
@@ -98,7 +85,6 @@ export default function EditWorkerPage() {
 
     useEffect(() => {
         if (!workerId) return;
-
         loadWorker();
     }, [workerId]);
 
@@ -133,8 +119,7 @@ export default function EditWorkerPage() {
             setFormData({
                 name: loadedWorker.name || "",
                 phone: loadedWorker.phone || "",
-                workerType:
-                    loadedWorker.workerType || "Employee",
+                workerType: loadedWorker.workerType || "Employee",
                 salary: String(loadedWorker.salary ?? ""),
                 siteId: loadedWorker.siteId || "",
                 active: loadedWorker.active !== false,
@@ -146,7 +131,6 @@ export default function EditWorkerPage() {
             }
         } catch (err) {
             console.error("Load worker error:", err);
-
             setError(
                 err instanceof Error
                     ? err.message
@@ -217,9 +201,7 @@ export default function EditWorkerPage() {
     }
 
     function handleChange(
-        e: React.ChangeEvent<
-            HTMLInputElement | HTMLSelectElement
-        >
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
     ) {
         const { name, value } = e.target;
 
@@ -283,15 +265,10 @@ export default function EditWorkerPage() {
 
             const payload = {
                 name: formData.name.trim(),
-
                 phone: formData.phone.replace(/\D/g, ""),
-
                 workerType: formData.workerType,
-
                 salary,
-
                 siteId: selectedSite.siteId,
-
                 active: formData.active,
             };
 
@@ -339,7 +316,6 @@ export default function EditWorkerPage() {
             }, 700);
         } catch (err) {
             console.error("Update worker error:", err);
-
             setError(
                 err instanceof Error
                     ? err.message
@@ -350,16 +326,38 @@ export default function EditWorkerPage() {
         }
     }
 
+    const cardClass =
+        "rounded-2xl border border-gray-200 bg-white shadow-sm";
+
+    const sectionHeaderClass =
+        "border-b border-gray-200 px-5 py-4 sm:px-6";
+
+    const iconTileClass =
+        "flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-gray-50";
+
+    const labelClass =
+        "mb-2 block text-sm font-medium text-black";
+
+    const inputClass =
+        "w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black disabled:cursor-not-allowed disabled:bg-gray-100 disabled:opacity-70";
+
+    const primaryButtonClass =
+        "inline-flex items-center justify-center gap-2 rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50";
+
+    const secondaryButtonClass =
+        "inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-medium text-black transition hover:bg-gray-100";
+
     if (loading) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-400">
+            <div className="flex min-h-screen items-center justify-center bg-white text-black">
                 <div className="flex items-center gap-3">
                     <Loader2
-                        className="animate-spin"
+                        className="animate-spin text-black"
                         size={24}
                     />
-
-                    <span>Loading worker...</span>
+                    <span className="text-sm text-gray-600">
+                        Loading worker...
+                    </span>
                 </div>
             </div>
         );
@@ -367,24 +365,24 @@ export default function EditWorkerPage() {
 
     if (!worker) {
         return (
-            <div className="min-h-screen bg-zinc-950 px-4 py-8 text-white sm:px-6">
+            <div className="min-h-screen bg-white px-4 py-8 text-black sm:px-6">
                 <div className="mx-auto max-w-3xl">
                     <Link
                         href="/DriWE-Construction/people"
-                        className="mb-6 inline-flex items-center gap-2 text-sm text-zinc-400 transition hover:text-white"
+                        className="mb-6 inline-flex items-center gap-2 text-sm text-gray-600 transition hover:text-black"
                     >
                         <ArrowLeft size={17} />
                         Back to People
                     </Link>
 
-                    <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-8 text-center">
-                        <User className="mx-auto mb-4 h-10 w-10 text-red-400" />
+                    <div className="rounded-2xl border border-red-200 bg-white p-8 text-center shadow-sm">
+                        <User className="mx-auto mb-4 h-10 w-10 text-red-600" />
 
-                        <h1 className="text-xl font-semibold text-white">
+                        <h1 className="text-xl font-semibold text-black">
                             Worker not found
                         </h1>
 
-                        <p className="mt-2 text-sm text-zinc-500">
+                        <p className="mt-2 text-sm text-gray-600">
                             {error ||
                                 "The requested worker could not be found."}
                         </p>
@@ -395,12 +393,12 @@ export default function EditWorkerPage() {
     }
 
     return (
-        <div className="min-h-screen bg-zinc-950 text-white">
+        <div className="min-h-screen bg-white text-black">
             <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
                 {/* Back */}
                 <Link
                     href={`/DriWE-Construction/people/${workerId}`}
-                    className="mb-6 inline-flex items-center gap-2 text-sm text-zinc-400 transition hover:text-white"
+                    className="mb-6 inline-flex items-center gap-2 text-sm text-gray-600 transition hover:text-black"
                 >
                     <ArrowLeft size={17} />
                     Back to Worker
@@ -409,18 +407,18 @@ export default function EditWorkerPage() {
                 {/* Header */}
                 <div className="mb-8">
                     <div className="flex items-start gap-4">
-                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-yellow-500/20 bg-yellow-500/10">
-                            <User className="h-7 w-7 text-yellow-400" />
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-gray-200 bg-gray-50">
+                            <User className="h-7 w-7 text-black" />
                         </div>
 
                         <div>
-                            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+                            <h1 className="text-2xl font-bold tracking-tight text-black sm:text-3xl">
                                 Edit Worker
                             </h1>
 
-                            <p className="mt-1 text-sm text-zinc-400">
-                                Update worker information,
-                                site assignment and salary details.
+                            <p className="mt-1 text-sm text-gray-600">
+                                Update worker information, site assignment
+                                and salary details.
                             </p>
                         </div>
                     </div>
@@ -428,77 +426,71 @@ export default function EditWorkerPage() {
 
                 {/* Alerts */}
                 {error && (
-                    <div className="mb-6 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-400">
+                    <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                         {error}
                     </div>
                 )}
 
                 {success && (
-                    <div className="mb-6 flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-400">
+                    <div className="mb-6 flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
                         <CheckCircle2 size={17} />
                         {success}
                     </div>
                 )}
 
-                <form
-                    onSubmit={handleSubmit}
-                    className="space-y-6"
-                >
+                <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Project Information */}
-                    <section className="rounded-2xl border border-zinc-800 bg-zinc-900/70">
-                        <div className="border-b border-zinc-800 px-5 py-4 sm:px-6">
+                    <section className={cardClass}>
+                        <div className={sectionHeaderClass}>
                             <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10">
-                                    <Building2 className="h-5 w-5 text-orange-400" />
+                                <div className={iconTileClass}>
+                                    <Building2 className="h-5 w-5 text-black" />
                                 </div>
 
                                 <div>
-                                    <h2 className="font-semibold text-white">
+                                    <h2 className="font-semibold text-black">
                                         Project Assignment
                                     </h2>
 
-                                    <p className="text-xs text-zinc-500">
-                                        Worker belongs to this
-                                        construction project.
+                                    <p className="text-xs text-gray-500">
+                                        Worker belongs to this construction
+                                        project.
                                     </p>
                                 </div>
                             </div>
                         </div>
 
                         <div className="grid gap-5 px-5 py-6 sm:px-6 md:grid-cols-2">
+                            {/* Project */}
                             <div>
-                                <label className="mb-2 block text-sm font-medium text-zinc-300">
+                                <label className={labelClass}>
                                     Project
                                 </label>
 
-                                <div className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3">
+                                <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
                                     <div className="flex items-center gap-3">
-                                        <Building2 className="h-4 w-4 text-zinc-500" />
+                                        <Building2 className="h-4 w-4 shrink-0 text-gray-500" />
 
                                         <div className="min-w-0">
-                                            <p className="truncate text-sm font-medium text-white">
+                                            <p className="truncate text-sm font-medium text-black">
                                                 {project?.projectName ||
                                                     worker.projectName ||
                                                     "Project"}
                                             </p>
 
                                             {project?.location && (
-                                                <p className="mt-1 flex items-center gap-1 text-xs text-zinc-500">
-                                                    <MapPin
-                                                        size={12}
-                                                    />
-                                                    {
-                                                        project.location
-                                                    }
+                                                <p className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                                                    <MapPin size={12} />
+                                                    {project.location}
                                                 </p>
                                             )}
                                         </div>
                                     </div>
                                 </div>
 
-                                <p className="mt-2 text-xs text-zinc-600">
-                                    Project is inherited from the
-                                    selected site.
+                                <p className="mt-2 text-xs text-gray-500">
+                                    Project is inherited from the selected
+                                    site.
                                 </p>
                             </div>
 
@@ -506,12 +498,9 @@ export default function EditWorkerPage() {
                             <div>
                                 <label
                                     htmlFor="siteId"
-                                    className="mb-2 block text-sm font-medium text-zinc-300"
+                                    className={labelClass}
                                 >
-                                    Site{" "}
-                                    <span className="text-red-400">
-                                        *
-                                    </span>
+                                    Site <span className="text-red-600">*</span>
                                 </label>
 
                                 <select
@@ -520,15 +509,10 @@ export default function EditWorkerPage() {
                                     value={formData.siteId}
                                     onChange={handleChange}
                                     required
-                                    disabled={
-                                        saving ||
-                                        sites.length === 0
-                                    }
-                                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-white outline-none transition focus:border-yellow-500/50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    disabled={saving || sites.length === 0}
+                                    className={`${inputClass} disabled:opacity-60`}
                                 >
-                                    <option value="">
-                                        Select site
-                                    </option>
+                                    <option value="">Select site</option>
 
                                     {sites.map((site) => (
                                         <option
@@ -541,9 +525,9 @@ export default function EditWorkerPage() {
                                 </select>
 
                                 {sites.length === 0 && (
-                                    <p className="mt-2 text-xs text-red-400">
-                                        No sites are available for
-                                        this project.
+                                    <p className="mt-2 text-xs text-red-600">
+                                        No sites are available for this
+                                        project.
                                     </p>
                                 )}
                             </div>
@@ -551,35 +535,27 @@ export default function EditWorkerPage() {
 
                         {/* Selected site information */}
                         {formData.siteId && (
-                            <div className="mx-5 mb-6 rounded-xl border border-yellow-500/10 bg-yellow-500/5 px-4 py-3 sm:mx-6">
+                            <div className="mx-5 mb-6 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 sm:mx-6">
                                 {(() => {
-                                    const selectedSite =
-                                        sites.find(
-                                            (site) =>
-                                                site.siteId ===
-                                                formData.siteId
-                                        );
+                                    const selectedSite = sites.find(
+                                        (site) =>
+                                            site.siteId === formData.siteId
+                                    );
 
-                                    if (!selectedSite) {
-                                        return null;
-                                    }
+                                    if (!selectedSite) return null;
 
                                     return (
                                         <div className="flex items-center gap-3">
-                                            <MapPin className="h-4 w-4 shrink-0 text-yellow-400" />
+                                            <MapPin className="h-4 w-4 shrink-0 text-black" />
 
                                             <div>
-                                                <p className="text-sm font-medium text-white">
-                                                    {
-                                                        selectedSite.siteName
-                                                    }
+                                                <p className="text-sm font-medium text-black">
+                                                    {selectedSite.siteName}
                                                 </p>
 
                                                 {selectedSite.location && (
-                                                    <p className="mt-0.5 text-xs text-zinc-500">
-                                                        {
-                                                            selectedSite.location
-                                                        }
+                                                    <p className="mt-0.5 text-xs text-gray-500">
+                                                        {selectedSite.location}
                                                     </p>
                                                 )}
                                             </div>
@@ -591,19 +567,19 @@ export default function EditWorkerPage() {
                     </section>
 
                     {/* Personal Information */}
-                    <section className="rounded-2xl border border-zinc-800 bg-zinc-900/70">
-                        <div className="border-b border-zinc-800 px-5 py-4 sm:px-6">
+                    <section className={cardClass}>
+                        <div className={sectionHeaderClass}>
                             <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
-                                    <User className="h-5 w-5 text-blue-400" />
+                                <div className={iconTileClass}>
+                                    <User className="h-5 w-5 text-black" />
                                 </div>
 
                                 <div>
-                                    <h2 className="font-semibold text-white">
+                                    <h2 className="font-semibold text-black">
                                         Worker Information
                                     </h2>
 
-                                    <p className="text-xs text-zinc-500">
+                                    <p className="text-xs text-gray-500">
                                         Basic worker details.
                                     </p>
                                 </div>
@@ -615,16 +591,14 @@ export default function EditWorkerPage() {
                             <div>
                                 <label
                                     htmlFor="name"
-                                    className="mb-2 block text-sm font-medium text-zinc-300"
+                                    className={labelClass}
                                 >
                                     Worker Name{" "}
-                                    <span className="text-red-400">
-                                        *
-                                    </span>
+                                    <span className="text-red-600">*</span>
                                 </label>
 
                                 <div className="relative">
-                                    <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
+                                    <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
 
                                     <input
                                         id="name"
@@ -635,7 +609,7 @@ export default function EditWorkerPage() {
                                         placeholder="Enter worker name"
                                         required
                                         disabled={saving}
-                                        className="w-full rounded-xl border border-zinc-800 bg-zinc-950 py-3 pl-10 pr-4 text-sm text-white outline-none placeholder:text-zinc-600 transition focus:border-yellow-500/50 disabled:opacity-50"
+                                        className={`${inputClass} pl-10`}
                                     />
                                 </div>
                             </div>
@@ -644,16 +618,14 @@ export default function EditWorkerPage() {
                             <div>
                                 <label
                                     htmlFor="phone"
-                                    className="mb-2 block text-sm font-medium text-zinc-300"
+                                    className={labelClass}
                                 >
                                     Mobile Number{" "}
-                                    <span className="text-red-400">
-                                        *
-                                    </span>
+                                    <span className="text-red-600">*</span>
                                 </label>
 
                                 <div className="relative">
-                                    <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
+                                    <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
 
                                     <input
                                         id="phone"
@@ -666,11 +638,11 @@ export default function EditWorkerPage() {
                                         placeholder="10-digit mobile number"
                                         required
                                         disabled={saving}
-                                        className="w-full rounded-xl border border-zinc-800 bg-zinc-950 py-3 pl-10 pr-4 text-sm text-white outline-none placeholder:text-zinc-600 transition focus:border-yellow-500/50 disabled:opacity-50"
+                                        className={`${inputClass} pl-10`}
                                     />
                                 </div>
 
-                                <p className="mt-2 text-xs text-zinc-600">
+                                <p className="mt-2 text-xs text-gray-500">
                                     Enter exactly 10 digits.
                                 </p>
                             </div>
@@ -679,40 +651,33 @@ export default function EditWorkerPage() {
                             <div>
                                 <label
                                     htmlFor="workerType"
-                                    className="mb-2 block text-sm font-medium text-zinc-300"
+                                    className={labelClass}
                                 >
                                     Worker Type{" "}
-                                    <span className="text-red-400">
-                                        *
-                                    </span>
+                                    <span className="text-red-600">*</span>
                                 </label>
 
                                 <div className="relative">
-                                    <BriefcaseBusiness className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
+                                    <BriefcaseBusiness className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
 
                                     <select
                                         id="workerType"
                                         name="workerType"
-                                        value={
-                                            formData.workerType
-                                        }
+                                        value={formData.workerType}
                                         onChange={handleChange}
                                         required
                                         disabled={saving}
-                                        className="w-full appearance-none rounded-xl border border-zinc-800 bg-zinc-950 py-3 pl-10 pr-4 text-sm text-white outline-none transition focus:border-yellow-500/50 disabled:opacity-50"
+                                        className={`${inputClass} appearance-none pl-10`}
                                     >
                                         <option value="Employee">
                                             Employee
                                         </option>
-
                                         <option value="Contract Worker">
                                             Contract Worker
                                         </option>
-
                                         <option value="Daily Wage">
                                             Daily Wage
                                         </option>
-
                                         <option value="Subcontractor">
                                             Subcontractor
                                         </option>
@@ -724,16 +689,14 @@ export default function EditWorkerPage() {
                             <div>
                                 <label
                                     htmlFor="salary"
-                                    className="mb-2 block text-sm font-medium text-zinc-300"
+                                    className={labelClass}
                                 >
                                     Salary / Wage{" "}
-                                    <span className="text-red-400">
-                                        *
-                                    </span>
+                                    <span className="text-red-600">*</span>
                                 </label>
 
                                 <div className="relative">
-                                    <Wallet className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
+                                    <Wallet className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
 
                                     <input
                                         id="salary"
@@ -746,60 +709,58 @@ export default function EditWorkerPage() {
                                         placeholder="Enter salary or wage"
                                         required
                                         disabled={saving}
-                                        className="w-full rounded-xl border border-zinc-800 bg-zinc-950 py-3 pl-10 pr-4 text-sm text-white outline-none placeholder:text-zinc-600 transition focus:border-yellow-500/50 disabled:opacity-50"
+                                        className={`${inputClass} pl-10`}
                                     />
                                 </div>
 
-                                <p className="mt-2 text-xs text-zinc-600">
-                                    For Daily Wage workers, this
-                                    amount will be used as the daily
-                                    wage.
+                                <p className="mt-2 text-xs text-gray-500">
+                                    For Daily Wage workers, this amount will
+                                    be used as the daily wage.
                                 </p>
                             </div>
                         </div>
                     </section>
 
                     {/* Status */}
-                    <section className="rounded-2xl border border-zinc-800 bg-zinc-900/70">
-                        <div className="border-b border-zinc-800 px-5 py-4 sm:px-6">
-                            <h2 className="font-semibold text-white">
+                    <section className={cardClass}>
+                        <div className={sectionHeaderClass}>
+                            <h2 className="font-semibold text-black">
                                 Worker Status
                             </h2>
 
-                            <p className="mt-1 text-xs text-zinc-500">
-                                Control whether this worker is
-                                currently active.
+                            <p className="mt-1 text-xs text-gray-500">
+                                Control whether this worker is currently
+                                active.
                             </p>
                         </div>
 
                         <div className="px-5 py-6 sm:px-6">
-                            <label className="flex cursor-pointer items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950 p-4 transition hover:border-zinc-700">
+                            <label className="flex cursor-pointer items-center justify-between rounded-xl border border-gray-200 bg-gray-50 p-4 transition hover:bg-gray-100">
                                 <div className="flex items-center gap-3">
                                     <div
                                         className={`flex h-10 w-10 items-center justify-center rounded-lg ${
                                             formData.active
-                                                ? "bg-emerald-500/10"
-                                                : "bg-zinc-800"
+                                                ? "bg-green-100"
+                                                : "bg-gray-200"
                                         }`}
                                     >
                                         <CheckCircle2
                                             className={`h-5 w-5 ${
                                                 formData.active
-                                                    ? "text-emerald-400"
-                                                    : "text-zinc-500"
+                                                    ? "text-green-700"
+                                                    : "text-gray-500"
                                             }`}
                                         />
                                     </div>
 
                                     <div>
-                                        <p className="text-sm font-medium text-white">
+                                        <p className="text-sm font-medium text-black">
                                             Active Worker
                                         </p>
 
-                                        <p className="mt-1 text-xs text-zinc-500">
-                                            Active workers can be
-                                            used for attendance
-                                            and site operations.
+                                        <p className="mt-1 text-xs text-gray-600">
+                                            Active workers can be used for
+                                            attendance and site operations.
                                         </p>
                                     </div>
                                 </div>
@@ -808,26 +769,23 @@ export default function EditWorkerPage() {
                                     type="checkbox"
                                     checked={formData.active}
                                     onChange={(e) =>
-                                        setFormData(
-                                            (previous) => ({
-                                                ...previous,
-                                                active:
-                                                    e.target.checked,
-                                            })
-                                        )
+                                        setFormData((previous) => ({
+                                            ...previous,
+                                            active: e.target.checked,
+                                        }))
                                     }
                                     disabled={saving}
-                                    className="h-5 w-5 rounded border-zinc-700 bg-zinc-900 text-yellow-400 accent-yellow-400"
+                                    className="h-5 w-5 rounded border-gray-300 accent-black focus:ring-black"
                                 />
                             </label>
                         </div>
                     </section>
 
                     {/* Actions */}
-                    <div className="flex flex-col-reverse gap-3 border-t border-zinc-800 pt-6 sm:flex-row sm:justify-end">
+                    <div className="flex flex-col-reverse gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:justify-end">
                         <Link
                             href={`/DriWE-Construction/people/${workerId}`}
-                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-700 px-5 py-3 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-white"
+                            className={secondaryButtonClass}
                         >
                             <ArrowLeft size={17} />
                             Cancel
@@ -836,7 +794,7 @@ export default function EditWorkerPage() {
                         <button
                             type="submit"
                             disabled={saving}
-                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-yellow-400 px-6 py-3 text-sm font-semibold text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-50"
+                            className={primaryButtonClass}
                         >
                             {saving ? (
                                 <>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -37,60 +38,37 @@ type Site = {
 type Worker = {
     workerId: string;
     companyId: string;
-
     projectId: string;
     projectName?: string;
-
     siteId: string;
     siteName?: string;
-
     name: string;
     phone: string;
-
     role?: string;
-
     workerType:
         | "Employee"
         | "Contract Worker"
         | "Daily Wage"
         | "Subcontractor";
-
     salary: number;
     dailyWage?: number;
-
     active: boolean;
-
     createdAt: string;
     updatedAt: string;
 };
 
-type AttendanceStatus =
-    | "Present"
-    | "Absent"
-    | "Half Day";
+type AttendanceStatus = "Present" | "Absent" | "Half Day";
 
 export default function NewAttendancePage() {
     const router = useRouter();
 
-    const [projects, setProjects] = useState<Project[]>(
-        []
-    );
-
+    const [projects, setProjects] = useState<Project[]>([]);
     const [sites, setSites] = useState<Site[]>([]);
+    const [workers, setWorkers] = useState<Worker[]>([]);
 
-    const [workers, setWorkers] = useState<Worker[]>(
-        []
-    );
-
-    const [loadingProjects, setLoadingProjects] =
-        useState(true);
-
-    const [loadingSites, setLoadingSites] =
-        useState(false);
-
-    const [loadingWorkers, setLoadingWorkers] =
-        useState(false);
-
+    const [loadingProjects, setLoadingProjects] = useState(true);
+    const [loadingSites, setLoadingSites] = useState(false);
+    const [loadingWorkers, setLoadingWorkers] = useState(false);
     const [saving, setSaving] = useState(false);
 
     const [error, setError] = useState("");
@@ -100,16 +78,11 @@ export default function NewAttendancePage() {
         projectId: "",
         siteId: "",
         workerId: "",
-        date: new Date()
-            .toISOString()
-            .split("T")[0],
+        date: new Date().toISOString().split("T")[0],
         status: "Present" as AttendanceStatus,
         remarks: "",
     });
 
-    /*
-     * Load projects
-     */
     useEffect(() => {
         loadProjects();
     }, []);
@@ -119,30 +92,20 @@ export default function NewAttendancePage() {
             setLoadingProjects(true);
             setError("");
 
-            const response = await fetch(
-                "/api/construction/projects",
-                {
-                    credentials: "include",
-                    cache: "no-store",
-                }
-            );
+            const response = await fetch("/api/construction/projects", {
+                credentials: "include",
+                cache: "no-store",
+            });
 
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(
-                    data?.error ||
-                        "Failed to load projects."
-                );
+                throw new Error(data?.error || "Failed to load projects.");
             }
 
             setProjects(data.projects || []);
         } catch (err) {
-            console.error(
-                "Load projects error:",
-                err
-            );
-
+            console.error("Load projects error:", err);
             setError(
                 err instanceof Error
                     ? err.message
@@ -153,9 +116,6 @@ export default function NewAttendancePage() {
         }
     }
 
-    /*
-     * Load sites whenever project changes
-     */
     useEffect(() => {
         if (!formData.projectId) {
             setSites([]);
@@ -177,7 +137,6 @@ export default function NewAttendancePage() {
         try {
             setLoadingSites(true);
             setError("");
-
             setSites([]);
             setWorkers([]);
 
@@ -194,31 +153,18 @@ export default function NewAttendancePage() {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(
-                    data?.error ||
-                        "Failed to load sites."
-                );
+                throw new Error(data?.error || "Failed to load sites.");
             }
 
-            const projectSites: Site[] =
-                data.sites || [];
-
+            const projectSites: Site[] = data.sites || [];
             setSites(projectSites);
 
-            /*
-             * Automatically select site if
-             * project has only one active site.
-             */
-            const activeSites =
-                projectSites.filter(
-                    (site) => site.active
-                );
+            const activeSites = projectSites.filter((site) => site.active);
 
             if (activeSites.length === 1) {
                 setFormData((current) => ({
                     ...current,
-                    siteId:
-                        activeSites[0].siteId,
+                    siteId: activeSites[0].siteId,
                     workerId: "",
                 }));
             } else {
@@ -229,11 +175,7 @@ export default function NewAttendancePage() {
                 }));
             }
         } catch (err) {
-            console.error(
-                "Load sites error:",
-                err
-            );
-
+            console.error("Load sites error:", err);
             setError(
                 err instanceof Error
                     ? err.message
@@ -244,9 +186,6 @@ export default function NewAttendancePage() {
         }
     }
 
-    /*
-     * Load workers whenever site changes
-     */
     useEffect(() => {
         if (!formData.siteId) {
             setWorkers([]);
@@ -266,7 +205,6 @@ export default function NewAttendancePage() {
         try {
             setLoadingWorkers(true);
             setError("");
-
             setWorkers([]);
 
             const response = await fetch(
@@ -282,31 +220,20 @@ export default function NewAttendancePage() {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(
-                    data?.error ||
-                        "Failed to load workers."
-                );
+                throw new Error(data?.error || "Failed to load workers.");
             }
 
-            const siteWorkers: Worker[] =
-                data.workers || [];
-
-            /*
-             * Only active workers should normally
-             * appear when recording attendance.
-             */
-            const activeWorkers =
-                siteWorkers.filter(
-                    (worker) => worker.active
-                );
+            const siteWorkers: Worker[] = data.workers || [];
+            const activeWorkers = siteWorkers.filter(
+                (worker) => worker.active
+            );
 
             setWorkers(activeWorkers);
 
             if (activeWorkers.length === 1) {
                 setFormData((current) => ({
                     ...current,
-                    workerId:
-                        activeWorkers[0].workerId,
+                    workerId: activeWorkers[0].workerId,
                 }));
             } else {
                 setFormData((current) => ({
@@ -315,11 +242,7 @@ export default function NewAttendancePage() {
                 }));
             }
         } catch (err) {
-            console.error(
-                "Load workers error:",
-                err
-            );
-
+            console.error("Load workers error:", err);
             setError(
                 err instanceof Error
                     ? err.message
@@ -380,30 +303,18 @@ export default function NewAttendancePage() {
     const selectedProject = useMemo(
         () =>
             projects.find(
-                (project) =>
-                    project.projectId ===
-                    formData.projectId
+                (project) => project.projectId === formData.projectId
             ),
         [projects, formData.projectId]
     );
 
     const selectedSite = useMemo(
-        () =>
-            sites.find(
-                (site) =>
-                    site.siteId ===
-                    formData.siteId
-            ),
+        () => sites.find((site) => site.siteId === formData.siteId),
         [sites, formData.siteId]
     );
 
     const selectedWorker = useMemo(
-        () =>
-            workers.find(
-                (worker) =>
-                    worker.workerId ===
-                    formData.workerId
-            ),
+        () => workers.find((worker) => worker.workerId === formData.workerId),
         [workers, formData.workerId]
     );
 
@@ -416,9 +327,7 @@ export default function NewAttendancePage() {
         setSuccess("");
 
         if (!formData.projectId) {
-            setError(
-                "Please select a project."
-            );
+            setError("Please select a project.");
             return;
         }
 
@@ -428,70 +337,41 @@ export default function NewAttendancePage() {
         }
 
         if (!formData.workerId) {
-            setError(
-                "Please select a worker."
-            );
+            setError("Please select a worker.");
             return;
         }
 
         if (!formData.date) {
-            setError(
-                "Attendance date is required."
-            );
+            setError("Attendance date is required.");
             return;
         }
 
         if (!formData.status) {
-            setError(
-                "Please select attendance status."
-            );
+            setError("Please select attendance status.");
             return;
         }
 
         try {
             setSaving(true);
 
-            const response = await fetch(
-                "/api/construction/attendance",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type":
-                            "application/json",
-                    },
-                    credentials: "include",
-                    body: JSON.stringify({
-                        projectId:
-                            formData.projectId,
-
-                        projectName:
-                            selectedProject?.projectName ||
-                            "",
-
-                        siteId:
-                            formData.siteId,
-
-                        siteName:
-                            selectedSite?.siteName ||
-                            "",
-
-                        workerId:
-                            formData.workerId,
-
-                        workerName:
-                            selectedWorker?.name ||
-                            "",
-
-                        date: formData.date,
-
-                        status:
-                            formData.status,
-
-                        remarks:
-                            formData.remarks.trim(),
-                    }),
-                }
-            );
+            const response = await fetch("/api/construction/attendance", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    projectId: formData.projectId,
+                    projectName: selectedProject?.projectName || "",
+                    siteId: formData.siteId,
+                    siteName: selectedSite?.siteName || "",
+                    workerId: formData.workerId,
+                    workerName: selectedWorker?.name || "",
+                    date: formData.date,
+                    status: formData.status,
+                    remarks: formData.remarks.trim(),
+                }),
+            });
 
             const data = await response.json();
 
@@ -503,21 +383,13 @@ export default function NewAttendancePage() {
                 );
             }
 
-            setSuccess(
-                "Attendance recorded successfully."
-            );
+            setSuccess("Attendance recorded successfully.");
 
             setTimeout(() => {
-                router.push(
-                    "/DriWE-Construction/people/attendance"
-                );
+                router.push("/DriWE-Construction/people/attendance");
             }, 700);
         } catch (err) {
-            console.error(
-                "Create attendance error:",
-                err
-            );
-
+            console.error("Create attendance error:", err);
             setError(
                 err instanceof Error
                     ? err.message
@@ -528,11 +400,19 @@ export default function NewAttendancePage() {
         }
     }
 
+    const inputClass =
+        "w-full rounded-lg border border-gray-300 bg-white py-3 pl-10 pr-4 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black";
+
+    const selectClass =
+        "w-full appearance-none rounded-lg border border-gray-300 bg-white py-3 pl-10 pr-4 text-sm text-black outline-none transition focus:border-black focus:ring-1 focus:ring-black disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500";
+
+    const cardClass = "overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm";
+
     if (loadingProjects) {
         return (
-            <div className="min-h-screen bg-zinc-950 text-white">
+            <div className="min-h-screen bg-white text-black">
                 <div className="mx-auto max-w-4xl px-6 py-10">
-                    <div className="flex items-center gap-3 text-zinc-400">
+                    <div className="flex items-center gap-3 text-gray-600">
                         <Loader2 className="h-5 w-5 animate-spin" />
                         Loading projects...
                     </div>
@@ -542,13 +422,13 @@ export default function NewAttendancePage() {
     }
 
     return (
-        <div className="min-h-screen bg-zinc-950 text-white">
-            <div className="mx-auto max-w-4xl px-6 py-8">
+        <div className="min-h-screen bg-white px-4 py-6 text-black sm:px-6 md:py-8">
+            <div className="mx-auto max-w-4xl">
                 {/* Breadcrumb */}
-                <div className="mb-6 flex flex-wrap items-center gap-2 text-sm text-zinc-500">
+                <div className="mb-6 flex flex-wrap items-center gap-2 text-sm text-gray-500">
                     <Link
                         href="/DriWE-Construction/people"
-                        className="transition hover:text-yellow-400"
+                        className="transition hover:text-black"
                     >
                         People
                     </Link>
@@ -557,41 +437,38 @@ export default function NewAttendancePage() {
 
                     <Link
                         href="/DriWE-Construction/people/attendance"
-                        className="transition hover:text-yellow-400"
+                        className="transition hover:text-black"
                     >
                         Attendance
                     </Link>
 
                     <span>/</span>
 
-                    <span className="text-zinc-300">
-                        New Attendance
-                    </span>
+                    <span className="text-black">New Attendance</span>
                 </div>
 
                 {/* Header */}
                 <div className="mb-8">
                     <Link
                         href="/DriWE-Construction/people/attendance"
-                        className="mb-4 inline-flex items-center gap-2 text-sm text-zinc-400 transition hover:text-yellow-400"
+                        className="mb-4 inline-flex items-center gap-2 text-sm text-gray-600 transition hover:text-black"
                     >
                         <ArrowLeft className="h-4 w-4" />
                         Back to Attendance
                     </Link>
 
                     <div className="flex items-center gap-3">
-                        <div className="rounded-xl bg-yellow-500/10 p-3">
-                            <CalendarDays className="h-7 w-7 text-yellow-400" />
+                        <div className="rounded-xl border border-gray-200 bg-gray-100 p-3">
+                            <CalendarDays className="h-7 w-7 text-black" />
                         </div>
 
                         <div>
-                            <h1 className="text-3xl font-bold">
+                            <h1 className="text-3xl font-bold text-black">
                                 Record Attendance
                             </h1>
 
-                            <p className="mt-1 text-zinc-400">
-                                Record attendance for a
-                                construction worker.
+                            <p className="mt-1 text-gray-600">
+                                Record attendance for a construction worker.
                             </p>
                         </div>
                     </div>
@@ -599,46 +476,41 @@ export default function NewAttendancePage() {
 
                 {/* Error */}
                 {error && (
-                    <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
-                        <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-400" />
-
-                        <p className="text-sm text-red-400">
-                            {error}
-                        </p>
+                    <div
+                        role="alert"
+                        className="mb-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3"
+                    >
+                        <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
+                        <p className="text-sm text-red-700">{error}</p>
                     </div>
                 )}
 
                 {/* Success */}
                 {success && (
-                    <div className="mb-6 flex items-start gap-3 rounded-xl border border-green-500/20 bg-green-500/10 px-4 py-3">
-                        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-400" />
-
-                        <p className="text-sm text-green-400">
-                            {success}
-                        </p>
+                    <div
+                        role="status"
+                        className="mb-6 flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3"
+                    >
+                        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
+                        <p className="text-sm text-green-700">{success}</p>
                     </div>
                 )}
 
                 {/* Form */}
-                <form
-                    onSubmit={handleSubmit}
-                    className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/70"
-                >
+                <form onSubmit={handleSubmit} className={cardClass}>
                     {/* Form Header */}
-                    <div className="border-b border-zinc-800 px-6 py-5">
+                    <div className="border-b border-gray-200 px-6 py-5">
                         <div className="flex items-center gap-3">
-                            <div className="rounded-lg bg-zinc-800 p-2">
-                                <UserCheck className="h-5 w-5 text-yellow-400" />
+                            <div className="rounded-lg border border-gray-200 bg-gray-100 p-2">
+                                <UserCheck className="h-5 w-5 text-black" />
                             </div>
 
                             <div>
-                                <h2 className="font-semibold">
+                                <h2 className="font-semibold text-black">
                                     Attendance Details
                                 </h2>
-
-                                <p className="text-sm text-zinc-500">
-                                    Select the project, site and
-                                    worker.
+                                <p className="text-sm text-gray-600">
+                                    Select the project, site and worker.
                                 </p>
                             </div>
                         </div>
@@ -649,49 +521,32 @@ export default function NewAttendancePage() {
                         <div>
                             <label
                                 htmlFor="projectId"
-                                className="mb-2 block text-sm font-medium text-zinc-200"
+                                className="mb-2 block text-sm font-medium text-black"
                             >
-                                Project{" "}
-                                <span className="text-red-400">
-                                    *
-                                </span>
+                                Project <span className="text-red-600">*</span>
                             </label>
 
                             <div className="relative">
-                                <Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                                <Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
 
                                 <select
                                     id="projectId"
                                     name="projectId"
-                                    value={
-                                        formData.projectId
-                                    }
-                                    onChange={
-                                        handleProjectChange
-                                    }
-                                    className="w-full appearance-none rounded-lg border border-zinc-700 bg-zinc-950 py-3 pl-10 pr-4 text-sm text-white outline-none transition focus:border-yellow-500"
+                                    value={formData.projectId}
+                                    onChange={handleProjectChange}
+                                    className={selectClass}
                                     required
                                 >
-                                    <option value="">
-                                        Select Project
-                                    </option>
+                                    <option value="">Select Project</option>
 
-                                    {projects.map(
-                                        (project) => (
-                                            <option
-                                                key={
-                                                    project.projectId
-                                                }
-                                                value={
-                                                    project.projectId
-                                                }
-                                            >
-                                                {
-                                                    project.projectName
-                                                }
-                                            </option>
-                                        )
-                                    )}
+                                    {projects.map((project) => (
+                                        <option
+                                            key={project.projectId}
+                                            value={project.projectId}
+                                        >
+                                            {project.projectName}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
                         </div>
@@ -700,31 +555,21 @@ export default function NewAttendancePage() {
                         <div>
                             <label
                                 htmlFor="siteId"
-                                className="mb-2 block text-sm font-medium text-zinc-200"
+                                className="mb-2 block text-sm font-medium text-black"
                             >
-                                Site{" "}
-                                <span className="text-red-400">
-                                    *
-                                </span>
+                                Site <span className="text-red-600">*</span>
                             </label>
 
                             <div className="relative">
-                                <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                                <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
 
                                 <select
                                     id="siteId"
                                     name="siteId"
-                                    value={
-                                        formData.siteId
-                                    }
-                                    onChange={
-                                        handleSiteChange
-                                    }
-                                    disabled={
-                                        !formData.projectId ||
-                                        loadingSites
-                                    }
-                                    className="w-full appearance-none rounded-lg border border-zinc-700 bg-zinc-950 py-3 pl-10 pr-4 text-sm text-white outline-none transition focus:border-yellow-500 disabled:cursor-not-allowed disabled:opacity-50"
+                                    value={formData.siteId}
+                                    onChange={handleSiteChange}
+                                    disabled={!formData.projectId || loadingSites}
+                                    className={selectClass}
                                     required
                                 >
                                     <option value="">
@@ -736,41 +581,27 @@ export default function NewAttendancePage() {
                                     </option>
 
                                     {sites
-                                        .filter(
-                                            (site) =>
-                                                site.active
-                                        )
-                                        .map(
-                                            (site) => (
-                                                <option
-                                                    key={
-                                                        site.siteId
-                                                    }
-                                                    value={
-                                                        site.siteId
-                                                    }
-                                                >
-                                                    {
-                                                        site.siteName
-                                                    }
-                                                    {site.location
-                                                        ? ` — ${site.location}`
-                                                        : ""}
-                                                </option>
-                                            )
-                                        )}
+                                        .filter((site) => site.active)
+                                        .map((site) => (
+                                            <option
+                                                key={site.siteId}
+                                                value={site.siteId}
+                                            >
+                                                {site.siteName}
+                                                {site.location
+                                                    ? ` — ${site.location}`
+                                                    : ""}
+                                            </option>
+                                        ))}
                                 </select>
                             </div>
 
                             {formData.projectId &&
                                 !loadingSites &&
-                                sites.filter(
-                                    (site) =>
-                                        site.active
-                                ).length === 0 && (
-                                    <p className="mt-2 text-xs text-yellow-500">
-                                        No active sites are
-                                        available for this
+                                sites.filter((site) => site.active).length ===
+                                    0 && (
+                                    <p className="mt-2 text-xs text-gray-600">
+                                        No active sites are available for this
                                         project.
                                     </p>
                                 )}
@@ -780,31 +611,21 @@ export default function NewAttendancePage() {
                         <div>
                             <label
                                 htmlFor="workerId"
-                                className="mb-2 block text-sm font-medium text-zinc-200"
+                                className="mb-2 block text-sm font-medium text-black"
                             >
-                                Worker{" "}
-                                <span className="text-red-400">
-                                    *
-                                </span>
+                                Worker <span className="text-red-600">*</span>
                             </label>
 
                             <div className="relative">
-                                <Users className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                                <Users className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
 
                                 <select
                                     id="workerId"
                                     name="workerId"
-                                    value={
-                                        formData.workerId
-                                    }
-                                    onChange={
-                                        handleChange
-                                    }
-                                    disabled={
-                                        !formData.siteId ||
-                                        loadingWorkers
-                                    }
-                                    className="w-full appearance-none rounded-lg border border-zinc-700 bg-zinc-950 py-3 pl-10 pr-4 text-sm text-white outline-none transition focus:border-yellow-500 disabled:cursor-not-allowed disabled:opacity-50"
+                                    value={formData.workerId}
+                                    onChange={handleChange}
+                                    disabled={!formData.siteId || loadingWorkers}
+                                    className={selectClass}
                                     required
                                 >
                                     <option value="">
@@ -815,36 +636,22 @@ export default function NewAttendancePage() {
                                               : "Select Worker"}
                                     </option>
 
-                                    {workers.map(
-                                        (worker) => (
-                                            <option
-                                                key={
-                                                    worker.workerId
-                                                }
-                                                value={
-                                                    worker.workerId
-                                                }
-                                            >
-                                                {
-                                                    worker.name
-                                                }
-                                                {" — "}
-                                                {
-                                                    worker.workerType
-                                                }
-                                            </option>
-                                        )
-                                    )}
+                                    {workers.map((worker) => (
+                                        <option
+                                            key={worker.workerId}
+                                            value={worker.workerId}
+                                        >
+                                            {worker.name} — {worker.workerType}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
 
                             {formData.siteId &&
                                 !loadingWorkers &&
-                                workers.length ===
-                                    0 && (
-                                    <p className="mt-2 text-xs text-yellow-500">
-                                        No active workers are
-                                        available at this
+                                workers.length === 0 && (
+                                    <p className="mt-2 text-xs text-gray-600">
+                                        No active workers are available at this
                                         site.
                                     </p>
                                 )}
@@ -854,28 +661,22 @@ export default function NewAttendancePage() {
                         <div>
                             <label
                                 htmlFor="date"
-                                className="mb-2 block text-sm font-medium text-zinc-200"
+                                className="mb-2 block text-sm font-medium text-black"
                             >
                                 Attendance Date{" "}
-                                <span className="text-red-400">
-                                    *
-                                </span>
+                                <span className="text-red-600">*</span>
                             </label>
 
                             <div className="relative">
-                                <CalendarDays className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                                <CalendarDays className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
 
                                 <input
                                     id="date"
                                     name="date"
                                     type="date"
-                                    value={
-                                        formData.date
-                                    }
-                                    onChange={
-                                        handleChange
-                                    }
-                                    className="w-full rounded-lg border border-zinc-700 bg-zinc-950 py-3 pl-10 pr-4 text-sm text-white outline-none transition focus:border-yellow-500"
+                                    value={formData.date}
+                                    onChange={handleChange}
+                                    className={inputClass}
                                     required
                                 />
                             </div>
@@ -883,177 +684,124 @@ export default function NewAttendancePage() {
 
                         {/* Status */}
                         <div>
-                            <label className="mb-2 block text-sm font-medium text-zinc-200">
+                            <label className="mb-2 block text-sm font-medium text-black">
                                 Attendance Status{" "}
-                                <span className="text-red-400">
-                                    *
-                                </span>
+                                <span className="text-red-600">*</span>
                             </label>
 
                             <div className="grid gap-3 sm:grid-cols-3">
-                                {/* Present */}
                                 <button
                                     type="button"
+                                    aria-pressed={formData.status === "Present"}
                                     onClick={() =>
-                                        setFormData(
-                                            (
-                                                current
-                                            ) => ({
-                                                ...current,
-                                                status: "Present",
-                                            })
-                                        )
+                                        setFormData((current) => ({
+                                            ...current,
+                                            status: "Present",
+                                        }))
                                     }
                                     className={`flex items-center gap-3 rounded-lg border p-4 text-left transition ${
-                                        formData.status ===
-                                        "Present"
-                                            ? "border-green-500/50 bg-green-500/10"
-                                            : "border-zinc-700 bg-zinc-950 hover:border-zinc-600"
+                                        formData.status === "Present"
+                                            ? "border-black bg-black text-white"
+                                            : "border-gray-300 bg-white text-black hover:bg-gray-50"
                                     }`}
                                 >
-                                    <div
-                                        className={`rounded-lg p-2 ${
-                                            formData.status ===
-                                            "Present"
-                                                ? "bg-green-500/20"
-                                                : "bg-zinc-800"
+                                    <CheckCircle2
+                                        className={`h-5 w-5 ${
+                                            formData.status === "Present"
+                                                ? "text-white"
+                                                : "text-gray-600"
                                         }`}
-                                    >
-                                        <CheckCircle2
-                                            className={`h-5 w-5 ${
-                                                formData.status ===
-                                                "Present"
-                                                    ? "text-green-400"
-                                                    : "text-zinc-500"
-                                            }`}
-                                        />
-                                    </div>
+                                    />
 
                                     <div>
-                                        <p
-                                            className={`text-sm font-semibold ${
-                                                formData.status ===
-                                                "Present"
-                                                    ? "text-green-400"
-                                                    : "text-zinc-300"
-                                            }`}
-                                        >
+                                        <p className="text-sm font-semibold">
                                             Present
                                         </p>
-
-                                        <p className="mt-0.5 text-xs text-zinc-500">
+                                        <p
+                                            className={`mt-0.5 text-xs ${
+                                                formData.status === "Present"
+                                                    ? "text-gray-300"
+                                                    : "text-gray-500"
+                                            }`}
+                                        >
                                             Full day
                                         </p>
                                     </div>
                                 </button>
 
-                                {/* Absent */}
                                 <button
                                     type="button"
+                                    aria-pressed={formData.status === "Absent"}
                                     onClick={() =>
-                                        setFormData(
-                                            (
-                                                current
-                                            ) => ({
-                                                ...current,
-                                                status: "Absent",
-                                            })
-                                        )
+                                        setFormData((current) => ({
+                                            ...current,
+                                            status: "Absent",
+                                        }))
                                     }
                                     className={`flex items-center gap-3 rounded-lg border p-4 text-left transition ${
-                                        formData.status ===
-                                        "Absent"
-                                            ? "border-red-500/50 bg-red-500/10"
-                                            : "border-zinc-700 bg-zinc-950 hover:border-zinc-600"
+                                        formData.status === "Absent"
+                                            ? "border-black bg-black text-white"
+                                            : "border-gray-300 bg-white text-black hover:bg-gray-50"
                                     }`}
                                 >
-                                    <div
-                                        className={`rounded-lg p-2 ${
-                                            formData.status ===
-                                            "Absent"
-                                                ? "bg-red-500/20"
-                                                : "bg-zinc-800"
+                                    <UserX
+                                        className={`h-5 w-5 ${
+                                            formData.status === "Absent"
+                                                ? "text-white"
+                                                : "text-gray-600"
                                         }`}
-                                    >
-                                        <UserX
-                                            className={`h-5 w-5 ${
-                                                formData.status ===
-                                                "Absent"
-                                                    ? "text-red-400"
-                                                    : "text-zinc-500"
-                                            }`}
-                                        />
-                                    </div>
+                                    />
 
                                     <div>
-                                        <p
-                                            className={`text-sm font-semibold ${
-                                                formData.status ===
-                                                "Absent"
-                                                    ? "text-red-400"
-                                                    : "text-zinc-300"
-                                            }`}
-                                        >
+                                        <p className="text-sm font-semibold">
                                             Absent
                                         </p>
-
-                                        <p className="mt-0.5 text-xs text-zinc-500">
+                                        <p
+                                            className={`mt-0.5 text-xs ${
+                                                formData.status === "Absent"
+                                                    ? "text-gray-300"
+                                                    : "text-gray-500"
+                                            }`}
+                                        >
                                             Not present
                                         </p>
                                     </div>
                                 </button>
 
-                                {/* Half Day */}
                                 <button
                                     type="button"
+                                    aria-pressed={formData.status === "Half Day"}
                                     onClick={() =>
-                                        setFormData(
-                                            (
-                                                current
-                                            ) => ({
-                                                ...current,
-                                                status: "Half Day",
-                                            })
-                                        )
+                                        setFormData((current) => ({
+                                            ...current,
+                                            status: "Half Day",
+                                        }))
                                     }
                                     className={`flex items-center gap-3 rounded-lg border p-4 text-left transition ${
-                                        formData.status ===
-                                        "Half Day"
-                                            ? "border-yellow-500/50 bg-yellow-500/10"
-                                            : "border-zinc-700 bg-zinc-950 hover:border-zinc-600"
+                                        formData.status === "Half Day"
+                                            ? "border-black bg-black text-white"
+                                            : "border-gray-300 bg-white text-black hover:bg-gray-50"
                                     }`}
                                 >
-                                    <div
-                                        className={`rounded-lg p-2 ${
-                                            formData.status ===
-                                            "Half Day"
-                                                ? "bg-yellow-500/20"
-                                                : "bg-zinc-800"
+                                    <Clock3
+                                        className={`h-5 w-5 ${
+                                            formData.status === "Half Day"
+                                                ? "text-white"
+                                                : "text-gray-600"
                                         }`}
-                                    >
-                                        <Clock3
-                                            className={`h-5 w-5 ${
-                                                formData.status ===
-                                                "Half Day"
-                                                    ? "text-yellow-400"
-                                                    : "text-zinc-500"
-                                            }`}
-                                        />
-                                    </div>
+                                    />
 
                                     <div>
-                                        <p
-                                            className={`text-sm font-semibold ${
-                                                formData.status ===
-                                                "Half Day"
-                                                    ? "text-yellow-400"
-                                                    : "text-zinc-300"
-                                            }`}
-                                        >
+                                        <p className="text-sm font-semibold">
                                             Half Day
                                         </p>
-
-                                        <p className="mt-0.5 text-xs text-zinc-500">
+                                        <p
+                                            className={`mt-0.5 text-xs ${
+                                                formData.status === "Half Day"
+                                                    ? "text-gray-300"
+                                                    : "text-gray-500"
+                                            }`}
+                                        >
                                             Half day
                                         </p>
                                     </div>
@@ -1065,7 +813,7 @@ export default function NewAttendancePage() {
                         <div>
                             <label
                                 htmlFor="remarks"
-                                className="mb-2 block text-sm font-medium text-zinc-200"
+                                className="mb-2 block text-sm font-medium text-black"
                             >
                                 Remarks
                             </label>
@@ -1073,110 +821,77 @@ export default function NewAttendancePage() {
                             <textarea
                                 id="remarks"
                                 name="remarks"
-                                value={
-                                    formData.remarks
-                                }
-                                onChange={
-                                    handleChange
-                                }
+                                value={formData.remarks}
+                                onChange={handleChange}
                                 rows={4}
                                 placeholder="Add any attendance remarks..."
-                                className="w-full resize-none rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-yellow-500"
+                                className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black"
                             />
                         </div>
                     </div>
 
                     {/* Selected Information */}
                     {selectedWorker && (
-                        <div className="mx-6 mb-6 rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-5">
+                        <div className="mx-6 mb-6 rounded-xl border border-gray-200 bg-gray-50 p-5">
                             <div className="mb-4 flex items-center gap-2">
-                                <UserCheck className="h-5 w-5 text-yellow-400" />
-
-                                <h3 className="font-semibold text-white">
+                                <UserCheck className="h-5 w-5 text-black" />
+                                <h3 className="font-semibold text-black">
                                     Attendance Summary
                                 </h3>
                             </div>
 
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div>
-                                    <p className="text-xs uppercase tracking-wide text-zinc-500">
+                                    <p className="text-xs uppercase tracking-wide text-gray-500">
                                         Project
                                     </p>
-
-                                    <p className="mt-1 font-medium text-zinc-200">
-                                        {
-                                            selectedProject?.projectName
-                                        }
+                                    <p className="mt-1 font-medium text-black">
+                                        {selectedProject?.projectName}
                                     </p>
                                 </div>
 
                                 <div>
-                                    <p className="text-xs uppercase tracking-wide text-zinc-500">
+                                    <p className="text-xs uppercase tracking-wide text-gray-500">
                                         Site
                                     </p>
-
-                                    <p className="mt-1 font-medium text-zinc-200">
-                                        {
-                                            selectedSite?.siteName
-                                        }
+                                    <p className="mt-1 font-medium text-black">
+                                        {selectedSite?.siteName}
                                     </p>
                                 </div>
 
                                 <div>
-                                    <p className="text-xs uppercase tracking-wide text-zinc-500">
+                                    <p className="text-xs uppercase tracking-wide text-gray-500">
                                         Worker
                                     </p>
-
-                                    <p className="mt-1 font-medium text-zinc-200">
-                                        {
-                                            selectedWorker.name
-                                        }
+                                    <p className="mt-1 font-medium text-black">
+                                        {selectedWorker.name}
                                     </p>
                                 </div>
 
                                 <div>
-                                    <p className="text-xs uppercase tracking-wide text-zinc-500">
+                                    <p className="text-xs uppercase tracking-wide text-gray-500">
                                         Worker Type
                                     </p>
-
-                                    <p className="mt-1 font-medium text-zinc-200">
-                                        {
-                                            selectedWorker.workerType
-                                        }
+                                    <p className="mt-1 font-medium text-black">
+                                        {selectedWorker.workerType}
                                     </p>
                                 </div>
 
                                 <div>
-                                    <p className="text-xs uppercase tracking-wide text-zinc-500">
+                                    <p className="text-xs uppercase tracking-wide text-gray-500">
                                         Date
                                     </p>
-
-                                    <p className="mt-1 font-medium text-zinc-200">
-                                        {
-                                            formData.date
-                                        }
+                                    <p className="mt-1 font-medium text-black">
+                                        {formData.date}
                                     </p>
                                 </div>
 
                                 <div>
-                                    <p className="text-xs uppercase tracking-wide text-zinc-500">
+                                    <p className="text-xs uppercase tracking-wide text-gray-500">
                                         Status
                                     </p>
-
-                                    <p
-                                        className={`mt-1 font-semibold ${
-                                            formData.status ===
-                                            "Present"
-                                                ? "text-green-400"
-                                                : formData.status ===
-                                                    "Absent"
-                                                  ? "text-red-400"
-                                                  : "text-yellow-400"
-                                        }`}
-                                    >
-                                        {
-                                            formData.status
-                                        }
+                                    <p className="mt-1 font-semibold text-black">
+                                        {formData.status}
                                     </p>
                                 </div>
                             </div>
@@ -1184,10 +899,10 @@ export default function NewAttendancePage() {
                     )}
 
                     {/* Actions */}
-                    <div className="flex flex-col-reverse gap-3 border-t border-zinc-800 px-6 py-5 sm:flex-row sm:justify-end">
+                    <div className="flex flex-col-reverse gap-3 border-t border-gray-200 px-6 py-5 sm:flex-row sm:justify-end">
                         <Link
                             href="/DriWE-Construction/people/attendance"
-                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-5 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800"
+                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-black transition hover:bg-gray-100"
                         >
                             Cancel
                         </Link>
@@ -1200,7 +915,7 @@ export default function NewAttendancePage() {
                                 !formData.siteId ||
                                 !formData.workerId
                             }
-                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-yellow-500 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-black px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             {saving ? (
                                 <>
@@ -1220,3 +935,4 @@ export default function NewAttendancePage() {
         </div>
     );
 }
+

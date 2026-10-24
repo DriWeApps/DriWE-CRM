@@ -3,11 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-    ArrowLeft,
-    Save,
-    Loader2,
-} from "lucide-react";
+import { ArrowLeft, Save, Loader2 } from "lucide-react";
 
 type DailySiteUpdate = {
     updateId: string;
@@ -34,14 +30,17 @@ type DailySiteUpdate = {
     updatedAt?: string;
 };
 
+const inputClass =
+    "w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-black outline-none transition focus:border-black focus:ring-1 focus:ring-black";
+
+const labelClass = "mb-2 block text-sm font-medium text-gray-700";
+
 export default function EditDailyUpdatePage() {
     const params = useParams();
     const router = useRouter();
 
     const updateId =
-        typeof params?.updateId === "string"
-            ? params.updateId
-            : "";
+        typeof params?.updateId === "string" ? params.updateId : "";
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -61,7 +60,8 @@ export default function EditDailyUpdatePage() {
 
     const [projectId, setProjectId] = useState("");
     const [projectName, setProjectName] = useState("");
-    const [materialsUsed, setMaterialsUsed] = useState<NonNullable<DailySiteUpdate["materialsUsed"]>>([]);
+    const [materialsUsed, setMaterialsUsed] =
+        useState<NonNullable<DailySiteUpdate["materialsUsed"]>>([]);
 
     useEffect(() => {
         if (!updateId) return;
@@ -72,9 +72,7 @@ export default function EditDailyUpdatePage() {
                 setError("");
 
                 const res = await fetch(
-                    `/api/construction/daily-updates/${encodeURIComponent(
-                        updateId
-                    )}`,
+                    `/api/construction/daily-updates/${encodeURIComponent(updateId)}`,
                     {
                         method: "GET",
                         credentials: "include",
@@ -86,8 +84,7 @@ export default function EditDailyUpdatePage() {
 
                 if (!res.ok || !data.success) {
                     throw new Error(
-                        data.message ||
-                            "Failed to load daily update"
+                        data.message || "Failed to load daily update"
                     );
                 }
 
@@ -99,28 +96,16 @@ export default function EditDailyUpdatePage() {
 
                 setForm({
                     date: update.date || "",
-                    workersPresent: String(
-                        update.workersPresent ?? 0
-                    ),
-                    tasksCompleted: String(
-                        update.tasksCompleted ?? 0
-                    ),
-                    materialReceived: String(
-                        update.materialReceived ?? 0
-                    ),
-                    materialUsed: String(
-                        update.materialUsed ?? 0
-                    ),
+                    workersPresent: String(update.workersPresent ?? 0),
+                    tasksCompleted: String(update.tasksCompleted ?? 0),
+                    materialReceived: String(update.materialReceived ?? 0),
+                    materialUsed: String(update.materialUsed ?? 0),
                     issues: String(update.issues ?? 0),
-                    issueDescription:
-                        update.issueDescription || "",
+                    issueDescription: update.issueDescription || "",
                     note: update.note || "",
                 });
             } catch (err) {
-                console.error(
-                    "Load daily update error:",
-                    err
-                );
+                console.error("Load daily update error:", err);
 
                 setError(
                     err instanceof Error
@@ -135,19 +120,14 @@ export default function EditDailyUpdatePage() {
         loadUpdate();
     }, [updateId]);
 
-    function updateField(
-        field: keyof typeof form,
-        value: string
-    ) {
+    function updateField(field: keyof typeof form, value: string) {
         setForm((prev) => ({
             ...prev,
             [field]: value,
         }));
     }
 
-    async function handleSubmit(
-        e: FormEvent<HTMLFormElement>
-    ) {
+    async function handleSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
 
         if (!updateId) {
@@ -166,9 +146,7 @@ export default function EditDailyUpdatePage() {
             setSuccess("");
 
             const res = await fetch(
-                `/api/construction/daily-updates/${encodeURIComponent(
-                    updateId
-                )}`,
+                `/api/construction/daily-updates/${encodeURIComponent(updateId)}`,
                 {
                     method: "PUT",
                     headers: {
@@ -177,18 +155,12 @@ export default function EditDailyUpdatePage() {
                     credentials: "include",
                     body: JSON.stringify({
                         date: form.date,
-                        workersPresent:
-                            Number(form.workersPresent) || 0,
-                        tasksCompleted:
-                            Number(form.tasksCompleted) || 0,
-                        materialReceived:
-                            Number(form.materialReceived) || 0,
-                        materialUsed:
-                            Number(form.materialUsed) || 0,
-                        issues:
-                            Number(form.issues) || 0,
-                        issueDescription:
-                            form.issueDescription.trim(),
+                        workersPresent: Number(form.workersPresent) || 0,
+                        tasksCompleted: Number(form.tasksCompleted) || 0,
+                        materialReceived: Number(form.materialReceived) || 0,
+                        materialUsed: Number(form.materialUsed) || 0,
+                        issues: Number(form.issues) || 0,
+                        issueDescription: form.issueDescription.trim(),
                         note: form.note.trim(),
                     }),
                 }
@@ -198,29 +170,20 @@ export default function EditDailyUpdatePage() {
 
             if (!res.ok || !data.success) {
                 throw new Error(
-                    data.message ||
-                        "Failed to update daily update"
+                    data.message || "Failed to update daily update"
                 );
             }
 
-            setSuccess(
-                "Daily site update updated successfully."
-            );
+            setSuccess("Daily site update updated successfully.");
 
             setTimeout(() => {
                 router.push(
-                    `/DriWE-Construction/daily-updates/${encodeURIComponent(
-                        updateId
-                    )}`
+                    `/DriWE-Construction/daily-updates/${encodeURIComponent(updateId)}`
                 );
-
                 router.refresh();
             }, 700);
         } catch (err) {
-            console.error(
-                "Update daily site update error:",
-                err
-            );
+            console.error("Update daily site update error:", err);
 
             setError(
                 err instanceof Error
@@ -234,8 +197,8 @@ export default function EditDailyUpdatePage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
-                <div className="flex items-center gap-3 text-zinc-400">
+            <div className="flex min-h-screen items-center justify-center bg-white text-black">
+                <div className="flex items-center gap-3 text-gray-600">
                     <Loader2 className="h-5 w-5 animate-spin" />
                     Loading daily update...
                 </div>
@@ -245,17 +208,17 @@ export default function EditDailyUpdatePage() {
 
     if (error && !projectId) {
         return (
-            <div className="min-h-screen bg-zinc-950 text-white p-6">
-                <div className="max-w-3xl mx-auto">
+            <div className="min-h-screen bg-white p-6 text-black">
+                <div className="mx-auto max-w-3xl">
                     <Link
                         href="/DriWE-Construction/daily-updates"
-                        className="inline-flex items-center gap-2 text-zinc-400 hover:text-white mb-6"
+                        className="mb-6 inline-flex items-center gap-2 text-gray-600 hover:text-black"
                     >
                         <ArrowLeft className="h-4 w-4" />
                         Back to Daily Updates
                     </Link>
 
-                    <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-5 text-red-300">
+                    <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-red-700">
                         {error}
                     </div>
                 </div>
@@ -264,14 +227,12 @@ export default function EditDailyUpdatePage() {
     }
 
     return (
-        <div className="min-h-screen bg-zinc-950 text-white p-6">
-            <div className="max-w-4xl mx-auto">
+        <div className="min-h-screen bg-white p-6 text-black">
+            <div className="mx-auto max-w-4xl">
                 <div className="mb-8">
                     <Link
-                        href={`/DriWE-Construction/daily-updates/${encodeURIComponent(
-                            updateId
-                        )}`}
-                        className="inline-flex items-center gap-2 text-zinc-400 hover:text-white mb-5"
+                        href={`/DriWE-Construction/daily-updates/${encodeURIComponent(updateId)}`}
+                        className="mb-5 inline-flex items-center gap-2 text-gray-600 hover:text-black"
                     >
                         <ArrowLeft className="h-4 w-4" />
                         Back to Daily Update
@@ -282,9 +243,9 @@ export default function EditDailyUpdatePage() {
                     </h1>
 
                     {projectName && (
-                        <p className="text-zinc-400 mt-1">
+                        <p className="mt-1 text-gray-600">
                             Project:{" "}
-                            <span className="text-yellow-400">
+                            <span className="font-medium text-black">
                                 {projectName}
                             </span>
                         </p>
@@ -292,187 +253,159 @@ export default function EditDailyUpdatePage() {
                 </div>
 
                 {error && (
-                    <div className="mb-5 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-red-300">
+                    <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
                         {error}
                     </div>
                 )}
 
                 {success && (
-                    <div className="mb-5 rounded-xl border border-green-500/30 bg-green-500/10 p-4 text-green-300">
+                    <div className="mb-5 rounded-xl border border-green-200 bg-green-50 p-4 text-green-700">
                         {success}
                     </div>
                 )}
 
                 <form
                     onSubmit={handleSubmit}
-                    className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-6 space-y-6"
+                    className="space-y-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm"
                 >
                     <div>
-                        <label className="block text-sm text-zinc-300 mb-2">
-                            Date
-                        </label>
-
+                        <label className={labelClass}>Date</label>
                         <input
                             type="date"
                             value={form.date}
                             onChange={(e) =>
-                                updateField(
-                                    "date",
-                                    e.target.value
-                                )
+                                updateField("date", e.target.value)
                             }
-                            className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-yellow-500"
+                            className={inputClass}
                             required
                         />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                         <div>
-                            <label className="block text-sm text-zinc-300 mb-2">
+                            <label className={labelClass}>
                                 Workers Present
                             </label>
-
                             <input
                                 type="number"
                                 min="0"
-                                value={
-                                    form.workersPresent
-                                }
+                                value={form.workersPresent}
                                 onChange={(e) =>
-                                    updateField(
-                                        "workersPresent",
-                                        e.target.value
-                                    )
+                                    updateField("workersPresent", e.target.value)
                                 }
-                                className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-yellow-500"
+                                className={inputClass}
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm text-zinc-300 mb-2">
+                            <label className={labelClass}>
                                 Tasks Completed
                             </label>
-
                             <input
                                 type="number"
                                 min="0"
-                                value={
-                                    form.tasksCompleted
-                                }
+                                value={form.tasksCompleted}
                                 onChange={(e) =>
-                                    updateField(
-                                        "tasksCompleted",
-                                        e.target.value
-                                    )
+                                    updateField("tasksCompleted", e.target.value)
                                 }
-                                className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-yellow-500"
+                                className={inputClass}
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm text-zinc-300 mb-2">
+                            <label className={labelClass}>
                                 Material Received
                             </label>
-
                             <input
                                 type="number"
                                 min="0"
-                                value={
-                                    form.materialReceived
-                                }
+                                value={form.materialReceived}
                                 onChange={(e) =>
-                                    updateField(
-                                        "materialReceived",
-                                        e.target.value
-                                    )
+                                    updateField("materialReceived", e.target.value)
                                 }
-                                className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-yellow-500"
+                                className={inputClass}
                             />
                         </div>
 
-                        <div className="rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3">
-                            <p className="mb-2 text-sm text-zinc-300">Materials Used</p>
+                        <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                            <p className="mb-2 text-sm font-medium text-gray-700">
+                                Materials Used
+                            </p>
+
                             {materialsUsed.length > 0 ? (
                                 <ul className="space-y-2">
                                     {materialsUsed.map((item, index) => (
-                                        <li key={`${item.materialId}-${index}`} className="flex justify-between gap-3 text-sm">
-                                            <span className="text-zinc-300">{item.materialName}</span>
-                                            <span className="text-white">{item.quantity} {item.unit}</span>
+                                        <li
+                                            key={`${item.materialId}-${index}`}
+                                            className="flex justify-between gap-3 text-sm"
+                                        >
+                                            <span className="text-gray-700">
+                                                {item.materialName}
+                                            </span>
+                                            <span className="text-black">
+                                                {item.quantity} {item.unit}
+                                            </span>
                                         </li>
                                     ))}
                                 </ul>
                             ) : (
-                                <p className="text-sm text-zinc-500">{form.materialUsed} (legacy total)</p>
+                                <p className="text-sm text-gray-600">
+                                    {form.materialUsed} (legacy total)
+                                </p>
                             )}
-                            <p className="mt-2 text-xs text-zinc-600">Recorded material usage is preserved to keep inventory accurate.</p>
+
+                            <p className="mt-2 text-xs text-gray-500">
+                                Recorded material usage is preserved to keep
+                                inventory accurate.
+                            </p>
                         </div>
 
                         <div>
-                            <label className="block text-sm text-zinc-300 mb-2">
-                                Issues
-                            </label>
-
+                            <label className={labelClass}>Issues</label>
                             <input
                                 type="number"
                                 min="0"
                                 value={form.issues}
                                 onChange={(e) =>
-                                    updateField(
-                                        "issues",
-                                        e.target.value
-                                    )
+                                    updateField("issues", e.target.value)
                                 }
-                                className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-yellow-500"
+                                className={inputClass}
                             />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm text-zinc-300 mb-2">
+                        <label className={labelClass}>
                             Issue Description
                         </label>
-
                         <textarea
-                            value={
-                                form.issueDescription
-                            }
+                            value={form.issueDescription}
                             onChange={(e) =>
-                                updateField(
-                                    "issueDescription",
-                                    e.target.value
-                                )
+                                updateField("issueDescription", e.target.value)
                             }
                             rows={4}
                             placeholder="Describe any site issues..."
-                            className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-yellow-500 resize-none"
+                            className={`${inputClass} resize-none`}
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm text-zinc-300 mb-2">
-                            Site Note
-                        </label>
-
+                        <label className={labelClass}>Site Note</label>
                         <textarea
                             value={form.note}
                             onChange={(e) =>
-                                updateField(
-                                    "note",
-                                    e.target.value
-                                )
+                                updateField("note", e.target.value)
                             }
                             rows={5}
                             placeholder="Enter daily site progress notes..."
-                            className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-yellow-500 resize-none"
+                            className={`${inputClass} resize-none`}
                         />
                     </div>
 
-                    <div className="flex justify-end gap-3 pt-3">
+                    <div className="flex flex-col-reverse gap-3 border-t border-gray-200 pt-5 sm:flex-row sm:justify-end">
                         <Link
-                            href={`/DriWE-Construction/daily-updates/${encodeURIComponent(
-                                updateId
-                            )}`}
-                            className="px-5 py-3 rounded-lg border border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                            href={`/DriWE-Construction/daily-updates/${encodeURIComponent(updateId)}`}
+                            className="rounded-lg border border-gray-300 px-5 py-3 text-center text-sm font-medium text-black transition-colors hover:bg-gray-100"
                         >
                             Cancel
                         </Link>
@@ -480,7 +413,7 @@ export default function EditDailyUpdatePage() {
                         <button
                             type="submit"
                             disabled={saving}
-                            className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-yellow-500 text-black font-semibold hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-black px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             {saving ? (
                                 <>

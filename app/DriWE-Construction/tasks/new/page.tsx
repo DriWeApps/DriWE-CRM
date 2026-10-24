@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -46,11 +47,7 @@ type FormData = {
     description: string;
     assignedTo: string;
     priority: "Low" | "Medium" | "High";
-    status:
-        | "Pending"
-        | "In Progress"
-        | "Completed"
-        | "Delayed";
+    status: "Pending" | "In Progress" | "Completed" | "Delayed";
     startDate: string;
     dueDate: string;
     remarks: string;
@@ -363,19 +360,22 @@ export default function NewConstructionTaskPage() {
     }
 
     const inputClassName =
-        "w-full rounded-lg border border-zinc-700 bg-black px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/30 disabled:cursor-not-allowed disabled:opacity-50";
-    const labelClassName = "mb-2 block text-sm font-medium text-zinc-300";
+        "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-black placeholder-gray-400 outline-none transition focus:border-black focus:ring-1 focus:ring-black/10 disabled:cursor-not-allowed disabled:opacity-50";
+
+    const labelClassName =
+        "mb-2 block text-sm font-medium text-gray-800";
+
     const sectionClassName =
-        "rounded-xl border border-zinc-800 bg-black p-6 shadow-lg shadow-black/20";
+        "rounded-xl border border-gray-200 bg-white p-6 shadow-sm";
 
     return (
-        <div className="min-h-screen bg-black p-6 text-white md:p-8">
+        <div className="min-h-screen bg-white p-6 text-black md:p-8">
             <div className="mx-auto max-w-5xl">
                 <div className="mb-8 flex items-center gap-4">
                     <Link
                         href="/DriWE-Construction/tasks"
                         aria-label="Back to construction tasks"
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950 text-zinc-300 transition hover:border-yellow-500/50 hover:text-yellow-400"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 transition hover:border-black hover:bg-gray-50 hover:text-black"
                     >
                         <ArrowLeft size={20} />
                     </Link>
@@ -384,13 +384,13 @@ export default function NewConstructionTaskPage() {
                         <div className="flex items-center gap-2">
                             <ClipboardList
                                 size={24}
-                                className="text-yellow-400"
+                                className="text-black"
                             />
-                            <h1 className="text-2xl font-bold text-white">
+                            <h1 className="text-2xl font-bold text-black">
                                 Create Construction Task
                             </h1>
                         </div>
-                        <p className="mt-1 text-sm text-zinc-400">
+                        <p className="mt-1 text-sm text-gray-600">
                             Create and assign a task to a worker under a specific site.
                         </p>
                     </div>
@@ -399,7 +399,7 @@ export default function NewConstructionTaskPage() {
                 {error && (
                     <div
                         role="alert"
-                        className="mb-6 rounded-lg border border-red-500/30 bg-red-950/40 px-4 py-3 text-sm text-red-300"
+                        className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
                     >
                         {error}
                     </div>
@@ -407,14 +407,14 @@ export default function NewConstructionTaskPage() {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <section className={sectionClassName}>
-                        <h2 className="mb-6 text-lg font-semibold text-yellow-400">
+                        <h2 className="mb-6 text-lg font-semibold text-black">
                             Assignment
                         </h2>
 
                         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                             <div>
                                 <label htmlFor="projectId" className={labelClassName}>
-                                    Project <span className="ml-1 text-red-400">*</span>
+                                    Project <span className="ml-1 text-red-600">*</span>
                                 </label>
                                 <select
                                     id="projectId"
@@ -424,7 +424,7 @@ export default function NewConstructionTaskPage() {
                                     disabled={loadingProjects || saving}
                                     className={inputClassName}
                                 >
-                                    <option value="" className="bg-black text-white">
+                                    <option value="">
                                         {loadingProjects
                                             ? "Loading projects..."
                                             : "Select Project"}
@@ -433,7 +433,6 @@ export default function NewConstructionTaskPage() {
                                         <option
                                             key={project.projectId}
                                             value={project.projectId}
-                                            className="bg-black text-white"
                                         >
                                             {project.projectName}
                                         </option>
@@ -443,7 +442,7 @@ export default function NewConstructionTaskPage() {
 
                             <div>
                                 <label htmlFor="siteId" className={labelClassName}>
-                                    Site <span className="ml-1 text-red-400">*</span>
+                                    Site <span className="ml-1 text-red-600">*</span>
                                 </label>
                                 <select
                                     id="siteId"
@@ -453,7 +452,7 @@ export default function NewConstructionTaskPage() {
                                     disabled={!formData.projectId || loadingSites || saving}
                                     className={inputClassName}
                                 >
-                                    <option value="" className="bg-black text-white">
+                                    <option value="">
                                         {!formData.projectId
                                             ? "Select project first"
                                             : loadingSites
@@ -466,7 +465,6 @@ export default function NewConstructionTaskPage() {
                                         <option
                                             key={site.siteId}
                                             value={site.siteId}
-                                            className="bg-black text-white"
                                         >
                                             {site.siteName}
                                         </option>
@@ -476,7 +474,7 @@ export default function NewConstructionTaskPage() {
 
                             <div>
                                 <label htmlFor="assignedTo" className={labelClassName}>
-                                    Assign Worker <span className="ml-1 text-red-400">*</span>
+                                    Assign Worker <span className="ml-1 text-red-600">*</span>
                                 </label>
                                 <select
                                     id="assignedTo"
@@ -486,7 +484,7 @@ export default function NewConstructionTaskPage() {
                                     disabled={!formData.siteId || loadingWorkers || saving}
                                     className={inputClassName}
                                 >
-                                    <option value="" className="bg-black text-white">
+                                    <option value="">
                                         {!formData.siteId
                                             ? "Select site first"
                                             : loadingWorkers
@@ -499,13 +497,12 @@ export default function NewConstructionTaskPage() {
                                         <option
                                             key={worker.workerId}
                                             value={worker.workerId}
-                                            className="bg-black text-white"
                                         >
                                             {worker.name}
                                         </option>
                                     ))}
                                 </select>
-                                <p className="mt-2 text-xs text-zinc-500">
+                                <p className="mt-2 text-xs text-gray-500">
                                     Only workers from the selected site are shown.
                                 </p>
                             </div>
@@ -513,14 +510,14 @@ export default function NewConstructionTaskPage() {
                     </section>
 
                     <section className={sectionClassName}>
-                        <h2 className="mb-6 text-lg font-semibold text-yellow-400">
+                        <h2 className="mb-6 text-lg font-semibold text-black">
                             Task Details
                         </h2>
 
                         <div className="space-y-6">
                             <div>
                                 <label htmlFor="title" className={labelClassName}>
-                                    Task Title <span className="ml-1 text-red-400">*</span>
+                                    Task Title <span className="ml-1 text-red-600">*</span>
                                 </label>
                                 <input
                                     id="title"
@@ -563,9 +560,9 @@ export default function NewConstructionTaskPage() {
                                         disabled={saving}
                                         className={inputClassName}
                                     >
-                                        <option value="Low" className="bg-black text-white">Low</option>
-                                        <option value="Medium" className="bg-black text-white">Medium</option>
-                                        <option value="High" className="bg-black text-white">High</option>
+                                        <option value="Low">Low</option>
+                                        <option value="Medium">Medium</option>
+                                        <option value="High">High</option>
                                     </select>
                                 </div>
 
@@ -581,10 +578,10 @@ export default function NewConstructionTaskPage() {
                                         disabled={saving}
                                         className={inputClassName}
                                     >
-                                        <option value="Pending" className="bg-black text-white">Pending</option>
-                                        <option value="In Progress" className="bg-black text-white">In Progress</option>
-                                        <option value="Completed" className="bg-black text-white">Completed</option>
-                                        <option value="Delayed" className="bg-black text-white">Delayed</option>
+                                        <option value="Pending">Pending</option>
+                                        <option value="In Progress">In Progress</option>
+                                        <option value="Completed">Completed</option>
+                                        <option value="Delayed">Delayed</option>
                                     </select>
                                 </div>
                             </div>
@@ -642,7 +639,7 @@ export default function NewConstructionTaskPage() {
                     <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                         <Link
                             href="/DriWE-Construction/tasks"
-                            className="inline-flex items-center justify-center rounded-lg border border-zinc-700 bg-zinc-950 px-5 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-zinc-600 hover:bg-zinc-900 hover:text-white"
+                            className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-black transition hover:border-gray-400 hover:bg-gray-50"
                         >
                             Cancel
                         </Link>
@@ -650,7 +647,7 @@ export default function NewConstructionTaskPage() {
                         <button
                             type="submit"
                             disabled={saving}
-                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-yellow-500 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-black px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             {saving ? (
                                 <>
@@ -670,3 +667,4 @@ export default function NewConstructionTaskPage() {
         </div>
     );
 }
+

@@ -35,24 +35,16 @@ type MaterialCategory =
 export default function NewConstructionMaterialPage() {
     const router = useRouter();
 
-    const [projects, setProjects] = useState<Project[]>(
-        []
-    );
-
-    const [loadingProjects, setLoadingProjects] =
-        useState(true);
-
+    const [projects, setProjects] = useState<Project[]>([]);
+    const [loadingProjects, setLoadingProjects] = useState(true);
     const [saving, setSaving] = useState(false);
-
     const [error, setError] = useState("");
 
     const [formData, setFormData] = useState({
         projectId: "",
-
         materialName: "",
         category: "Other" as MaterialCategory,
         description: "",
-
         unit: "",
         quantity: "0",
     });
@@ -62,12 +54,9 @@ export default function NewConstructionMaterialPage() {
             setLoadingProjects(true);
             setError("");
 
-            const response = await fetch(
-                "/api/construction/projects",
-                {
-                    cache: "no-store",
-                }
-            );
+            const response = await fetch("/api/construction/projects", {
+                cache: "no-store",
+            });
 
             const data = await response.json();
 
@@ -81,10 +70,7 @@ export default function NewConstructionMaterialPage() {
 
             setProjects(data?.projects || []);
         } catch (err) {
-            console.error(
-                "Failed to load projects:",
-                err
-            );
+            console.error("Failed to load projects:", err);
 
             setError(
                 err instanceof Error
@@ -102,9 +88,7 @@ export default function NewConstructionMaterialPage() {
 
     function handleChange(
         e: React.ChangeEvent<
-            HTMLInputElement |
-                HTMLTextAreaElement |
-                HTMLSelectElement
+            HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
         >
     ) {
         const { name, value } = e.target;
@@ -128,11 +112,8 @@ export default function NewConstructionMaterialPage() {
         setError("");
     }
 
-    async function handleSubmit(
-        e: React.FormEvent<HTMLFormElement>
-    ) {
+    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-
         setError("");
 
         if (!formData.projectId) {
@@ -141,9 +122,7 @@ export default function NewConstructionMaterialPage() {
         }
 
         if (!formData.materialName.trim()) {
-            setError(
-                "Material name is required."
-            );
+            setError("Material name is required.");
             return;
         }
 
@@ -153,66 +132,48 @@ export default function NewConstructionMaterialPage() {
         }
 
         if (!/[a-zA-Z]/.test(formData.unit)) {
-            setError("Enter a unit such as kg, bags, or pieces. Enter stock quantity in the Quantity field.");
+            setError(
+                "Enter a unit such as kg, bags, or pieces. Enter stock quantity in the Quantity field."
+            );
             return;
         }
 
         const quantity = Number(formData.quantity);
+
         if (!Number.isFinite(quantity) || quantity < 0) {
-            setError("Quantity must be a valid number greater than or equal to zero.");
+            setError(
+                "Quantity must be a valid number greater than or equal to zero."
+            );
             return;
         }
 
         try {
             setSaving(true);
 
-            const selectedProject =
-                projects.find(
-                    (project) =>
-                        project.projectId ===
-                        formData.projectId
-                );
+            const selectedProject = projects.find(
+                (project) => project.projectId === formData.projectId
+            );
 
             const payload = {
-                projectId:
-                    formData.projectId,
-
-                projectName:
-                    selectedProject?.projectName ||
-                    "",
-
-                materialName:
-                    formData.materialName.trim(),
-
-                category:
-                    formData.category,
-
-                description:
-                    formData.description.trim(),
-
-                unit:
-                    formData.unit.trim(),
-
+                projectId: formData.projectId,
+                projectName: selectedProject?.projectName || "",
+                materialName: formData.materialName.trim(),
+                category: formData.category,
+                description: formData.description.trim(),
+                unit: formData.unit.trim(),
                 quantity,
                 currentStock: quantity,
             };
 
-            const response = await fetch(
-                "/api/construction/materials",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type":
-                            "application/json",
-                    },
-                    body: JSON.stringify(
-                        payload
-                    ),
-                }
-            );
+            const response = await fetch("/api/construction/materials", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            });
 
-            const data =
-                await response.json();
+            const data = await response.json();
 
             if (!response.ok) {
                 throw new Error(
@@ -222,28 +183,20 @@ export default function NewConstructionMaterialPage() {
                 );
             }
 
-            const createdMaterial =
-                data?.material || data;
-
-            const materialId =
-                createdMaterial?.materialId;
+            const createdMaterial = data?.material || data;
+            const materialId = createdMaterial?.materialId;
 
             if (materialId) {
                 router.push(
                     `/DriWE-Construction/materials/${materialId}`
                 );
             } else {
-                router.push(
-                    "/DriWE-Construction/materials"
-                );
+                router.push("/DriWE-Construction/materials");
             }
 
             router.refresh();
         } catch (err) {
-            console.error(
-                "Failed to create material:",
-                err
-            );
+            console.error("Failed to create material:", err);
 
             setError(
                 err instanceof Error
@@ -255,13 +208,25 @@ export default function NewConstructionMaterialPage() {
         }
     }
 
+    const inputClass =
+        "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black disabled:cursor-not-allowed disabled:bg-gray-100 disabled:opacity-70";
+
+    const labelClass =
+        "mb-2 block text-sm font-medium text-gray-700";
+
+    const primaryButtonClass =
+        "inline-flex items-center justify-center gap-2 rounded-lg bg-black px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50";
+
+    const secondaryButtonClass =
+        "inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-black transition hover:border-black hover:bg-gray-100";
+
     return (
-        <div className="min-h-screen bg-zinc-950 text-white">
+        <div className="min-h-screen bg-white text-black">
             <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
                 {/* Back */}
                 <Link
                     href="/DriWE-Construction/materials"
-                    className="mb-5 inline-flex items-center gap-2 text-sm text-zinc-400 transition hover:text-yellow-400"
+                    className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-gray-600 transition hover:text-black"
                 >
                     <ArrowLeft className="h-4 w-4" />
                     Back to Materials
@@ -270,16 +235,16 @@ export default function NewConstructionMaterialPage() {
                 {/* Header */}
                 <div className="mb-6">
                     <div className="flex items-center gap-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-yellow-500/10">
-                            <Package className="h-5 w-5 text-yellow-400" />
+                        <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 bg-gray-100">
+                            <Package className="h-5 w-5 text-black" />
                         </div>
 
                         <div>
-                            <h1 className="text-2xl font-bold text-white">
+                            <h1 className="text-2xl font-bold text-black">
                                 Add New Material
                             </h1>
 
-                            <p className="mt-1 text-sm text-zinc-500">
+                            <p className="mt-1 text-sm text-gray-600">
                                 Add construction material to a project
                             </p>
                         </div>
@@ -288,11 +253,11 @@ export default function NewConstructionMaterialPage() {
 
                 {/* Error */}
                 {error && (
-                    <div className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3">
+                    <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
                         <div className="flex items-start gap-3">
-                            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-400" />
+                            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-700" />
 
-                            <p className="text-sm text-red-300">
+                            <p className="text-sm text-red-800">
                                 {error}
                             </p>
                         </div>
@@ -302,32 +267,31 @@ export default function NewConstructionMaterialPage() {
                 <form onSubmit={handleSubmit}>
                     <div className="space-y-6">
                         {/* Project Assignment */}
-                        <section className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 shadow-lg">
+                        <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
                             <div className="mb-5 flex items-center gap-3">
-                                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-yellow-500/10">
-                                    <Building2 className="h-4 w-4 text-yellow-400" />
+                                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100">
+                                    <Building2 className="h-4 w-4 text-black" />
                                 </div>
 
                                 <div>
-                                    <h2 className="font-semibold text-white">
+                                    <h2 className="font-semibold text-black">
                                         Project
                                     </h2>
 
-                                    <p className="text-xs text-zinc-500">
+                                    <p className="text-xs text-gray-600">
                                         Select the project this material belongs to
                                     </p>
                                 </div>
                             </div>
 
                             <div className="grid gap-5 md:grid-cols-2">
-                                {/* Project */}
                                 <div>
                                     <label
                                         htmlFor="projectId"
-                                        className="mb-2 block text-sm font-medium text-zinc-300"
+                                        className={labelClass}
                                     >
                                         Project
-                                        <span className="ml-1 text-yellow-400">
+                                        <span className="ml-1 text-red-600">
                                             *
                                         </span>
                                     </label>
@@ -335,16 +299,10 @@ export default function NewConstructionMaterialPage() {
                                     <select
                                         id="projectId"
                                         name="projectId"
-                                        value={
-                                            formData.projectId
-                                        }
-                                        onChange={
-                                            handleProjectChange
-                                        }
-                                        disabled={
-                                            loadingProjects
-                                        }
-                                        className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white outline-none transition focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 disabled:cursor-not-allowed disabled:opacity-50"
+                                        value={formData.projectId}
+                                        onChange={handleProjectChange}
+                                        disabled={loadingProjects}
+                                        className={inputClass}
                                     >
                                         <option value="">
                                             {loadingProjects
@@ -352,36 +310,27 @@ export default function NewConstructionMaterialPage() {
                                                 : "Select Project"}
                                         </option>
 
-                                        {projects.map(
-                                            (project) => (
-                                                <option
-                                                    key={
-                                                        project.projectId
-                                                    }
-                                                    value={
-                                                        project.projectId
-                                                    }
-                                                >
-                                                    {
-                                                        project.projectName
-                                                    }
-                                                </option>
-                                            )
-                                        )}
+                                        {projects.map((project) => (
+                                            <option
+                                                key={project.projectId}
+                                                value={project.projectId}
+                                            >
+                                                {project.projectName}
+                                            </option>
+                                        ))}
                                     </select>
                                 </div>
-
                             </div>
                         </section>
 
                         {/* Material Information */}
-                        <section className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 shadow-lg">
+                        <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
                             <div className="mb-5">
-                                <h2 className="font-semibold text-white">
+                                <h2 className="font-semibold text-black">
                                     Material Information
                                 </h2>
 
-                                <p className="text-xs text-zinc-500">
+                                <p className="text-xs text-gray-600">
                                     Enter the basic material details
                                 </p>
                             </div>
@@ -392,10 +341,10 @@ export default function NewConstructionMaterialPage() {
                                     <div>
                                         <label
                                             htmlFor="materialName"
-                                            className="mb-2 block text-sm font-medium text-zinc-300"
+                                            className={labelClass}
                                         >
                                             Material Name
-                                            <span className="ml-1 text-yellow-400">
+                                            <span className="ml-1 text-red-600">
                                                 *
                                             </span>
                                         </label>
@@ -404,21 +353,17 @@ export default function NewConstructionMaterialPage() {
                                             id="materialName"
                                             name="materialName"
                                             type="text"
-                                            value={
-                                                formData.materialName
-                                            }
-                                            onChange={
-                                                handleChange
-                                            }
+                                            value={formData.materialName}
+                                            onChange={handleChange}
                                             placeholder="e.g. OPC 53 Grade Cement"
-                                            className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 outline-none transition focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500"
+                                            className={inputClass}
                                         />
                                     </div>
 
                                     <div>
                                         <label
                                             htmlFor="category"
-                                            className="mb-2 block text-sm font-medium text-zinc-300"
+                                            className={labelClass}
                                         >
                                             Category
                                         </label>
@@ -426,66 +371,38 @@ export default function NewConstructionMaterialPage() {
                                         <select
                                             id="category"
                                             name="category"
-                                            value={
-                                                formData.category
-                                            }
-                                            onChange={
-                                                handleChange
-                                            }
-                                            className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white outline-none transition focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500"
+                                            value={formData.category}
+                                            onChange={handleChange}
+                                            className={inputClass}
                                         >
-                                            <option value="Cement">
-                                                Cement
-                                            </option>
-
-                                            <option value="Steel">
-                                                Steel
-                                            </option>
-
-                                            <option value="Sand">
-                                                Sand
-                                            </option>
-
-                                            <option value="Bricks">
-                                                Bricks
-                                            </option>
-
-                                            <option value="Aggregate">
-                                                Aggregate
-                                            </option>
-
-                                            <option value="Electrical">
-                                                Electrical
-                                            </option>
-
-                                            <option value="Plumbing">
-                                                Plumbing
-                                            </option>
-
-                                            <option value="Tiles">
-                                                Tiles
-                                            </option>
-
-                                            <option value="Paint">
-                                                Paint
-                                            </option>
-
-                                            <option value="Hardware">
-                                                Hardware
-                                            </option>
-
-                                            <option value="Other">
-                                                Other
-                                            </option>
+                                            <option value="Cement">Cement</option>
+                                            <option value="Steel">Steel</option>
+                                            <option value="Sand">Sand</option>
+                                            <option value="Bricks">Bricks</option>
+                                            <option value="Aggregate">Aggregate</option>
+                                            <option value="Electrical">Electrical</option>
+                                            <option value="Plumbing">Plumbing</option>
+                                            <option value="Tiles">Tiles</option>
+                                            <option value="Paint">Paint</option>
+                                            <option value="Hardware">Hardware</option>
+                                            <option value="Other">Other</option>
                                         </select>
                                     </div>
                                 </div>
 
+                                {/* Unit / Quantity */}
                                 <div className="grid gap-5 md:grid-cols-2">
                                     <div>
-                                        <label htmlFor="unit" className="mb-2 block text-sm font-medium text-zinc-300">
-                                            Unit<span className="ml-1 text-yellow-400">*</span>
+                                        <label
+                                            htmlFor="unit"
+                                            className={labelClass}
+                                        >
+                                            Unit
+                                            <span className="ml-1 text-red-600">
+                                                *
+                                            </span>
                                         </label>
+
                                         <input
                                             id="unit"
                                             name="unit"
@@ -493,15 +410,22 @@ export default function NewConstructionMaterialPage() {
                                             value={formData.unit}
                                             onChange={handleChange}
                                             placeholder="e.g. Bags, Kg, Ton, Nos, Sq Ft"
-                                            className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 outline-none transition focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500"
+                                            className={inputClass}
                                         />
-                                        <p className="mt-1 text-xs text-zinc-500">Measurement unit only, not the quantity.</p>
+
+                                        <p className="mt-1 text-xs text-gray-500">
+                                            Measurement unit only, not the quantity.
+                                        </p>
                                     </div>
 
                                     <div>
-                                        <label htmlFor="quantity" className="mb-2 block text-sm font-medium text-zinc-300">
+                                        <label
+                                            htmlFor="quantity"
+                                            className={labelClass}
+                                        >
                                             Available Quantity
                                         </label>
+
                                         <input
                                             id="quantity"
                                             name="quantity"
@@ -511,7 +435,7 @@ export default function NewConstructionMaterialPage() {
                                             value={formData.quantity}
                                             onChange={handleChange}
                                             placeholder="0"
-                                            className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 outline-none transition focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500"
+                                            className={inputClass}
                                         />
                                     </div>
                                 </div>
@@ -520,7 +444,7 @@ export default function NewConstructionMaterialPage() {
                                 <div>
                                     <label
                                         htmlFor="description"
-                                        className="mb-2 block text-sm font-medium text-zinc-300"
+                                        className={labelClass}
                                     >
                                         Description
                                     </label>
@@ -529,14 +453,10 @@ export default function NewConstructionMaterialPage() {
                                         id="description"
                                         name="description"
                                         rows={4}
-                                        value={
-                                            formData.description
-                                        }
-                                        onChange={
-                                            handleChange
-                                        }
+                                        value={formData.description}
+                                        onChange={handleChange}
                                         placeholder="Add material description..."
-                                        className="w-full resize-none rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 outline-none transition focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500"
+                                        className={`${inputClass} resize-none`}
                                     />
                                 </div>
                             </div>
@@ -546,7 +466,7 @@ export default function NewConstructionMaterialPage() {
                         <div className="flex flex-col-reverse gap-3 pb-8 sm:flex-row sm:justify-end">
                             <Link
                                 href="/DriWE-Construction/materials"
-                                className="inline-flex items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-5 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+                                className={secondaryButtonClass}
                             >
                                 Cancel
                             </Link>
@@ -554,7 +474,7 @@ export default function NewConstructionMaterialPage() {
                             <button
                                 type="submit"
                                 disabled={saving}
-                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-yellow-500 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-50"
+                                className={primaryButtonClass}
                             >
                                 {saving ? (
                                     <>

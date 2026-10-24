@@ -87,16 +87,16 @@ function createWorker(): WorkerForm {
 }
 
 const inputClass =
-    "w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/30";
+    "w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black";
 
 const labelClass =
-    "mb-2 block text-sm font-medium text-zinc-300";
+    "mb-2 block text-sm font-medium text-gray-700";
 
 const cardClass =
-    "rounded-2xl border border-zinc-800 bg-zinc-900/70";
+    "rounded-2xl border border-gray-200 bg-white";
 
 const primaryButtonClass =
-    "inline-flex items-center justify-center gap-2 rounded-xl bg-yellow-400 px-5 py-3 text-sm font-semibold text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-50";
+    "inline-flex items-center justify-center gap-2 rounded-xl bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50";
 
 export default function NewProjectPage() {
     const router = useRouter();
@@ -340,20 +340,20 @@ export default function NewProjectPage() {
 
             router.push(`/DriWE-Construction/projects/${projectId}`);
         } catch (error) {
-  const message =
-    error instanceof Error ? error.message : "";
+            const message =
+                error instanceof Error ? error.message : "";
 
-  if (
-    message.toLowerCase().includes("account already exists") ||
-    message.toLowerCase().includes("email already exists") ||
-    message.toLowerCase().includes("email already exist")
-  ) {
-    alert("Email Already Exist");
-    return;
-  }
+            if (
+                message.toLowerCase().includes("account already exists") ||
+                message.toLowerCase().includes("email already exists") ||
+                message.toLowerCase().includes("email already exist")
+            ) {
+                alert("Email Already Exist");
+                return;
+            }
 
-  alert(message || "Failed to create project. Please try again.");
-}finally {
+            alert(message || "Failed to create project. Please try again.");
+        } finally {
             setLoading(false);
         }
     }
@@ -365,37 +365,36 @@ export default function NewProjectPage() {
     ];
 
     return (
-        <main className="relative isolate min-h-screen overflow-hidden bg-zinc-950 text-zinc-100">
-            <div className="pointer-events-none fixed inset-0 -z-10 bg-zinc-950" />
-            <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_right,rgba(250,204,21,0.09),transparent_42%),radial-gradient(ellipse_at_bottom_left,rgba(250,204,21,0.04),transparent_35%)]" />
-
-            <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+        <main className="min-h-screen bg-white text-black">
+            <div className="w-full px-4 py-6 sm:px-6 sm:py-8 lg:px-10 2xl:px-14">
+                {/* Header */}
                 <header className="mb-8">
                     <button
                         type="button"
                         onClick={() => router.push("/DriWE-Construction/projects")}
-                        className="mb-5 inline-flex items-center gap-2 text-sm text-zinc-400 transition hover:text-yellow-400"
+                        className="mb-5 inline-flex items-center gap-2 text-sm text-gray-600 transition hover:text-black"
                     >
                         <ArrowLeft className="h-4 w-4" />
                         Back to Projects
                     </button>
 
                     <div className="flex items-center gap-4">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-yellow-400/20 bg-yellow-400/10">
-                            <Building2 className="h-6 w-6 text-yellow-400" />
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-gray-100">
+                            <Building2 className="h-6 w-6 text-black" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                            <h1 className="text-2xl font-bold tracking-tight text-black sm:text-3xl">
                                 Create New Project
                             </h1>
-                            <p className="mt-1 text-sm text-zinc-400">
+                            <p className="mt-1 text-sm text-gray-600">
                                 Set up your project, manager account and workers.
                             </p>
                         </div>
                     </div>
                 </header>
 
-                <div className="mb-8 rounded-2xl border border-zinc-800 bg-zinc-900/80 p-3 shadow-xl sm:p-4">
+                {/* Step progress */}
+                <div className="mb-8 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm sm:p-4">
                     <div className="grid grid-cols-3 gap-2">
                         {steps.map((item) => {
                             const Icon = item.icon;
@@ -407,19 +406,19 @@ export default function NewProjectPage() {
                                     <div
                                         className={`flex items-center gap-2 rounded-xl px-2 py-3 transition sm:gap-3 sm:px-3 ${
                                             active
-                                                ? "bg-yellow-400/10 text-yellow-300"
+                                                ? "bg-gray-100 text-black"
                                                 : completed
-                                                  ? "text-green-400"
-                                                  : "text-zinc-500"
+                                                  ? "text-green-700"
+                                                  : "text-gray-500"
                                         }`}
                                     >
                                         <div
                                             className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
                                                 active
-                                                    ? "bg-yellow-400 text-black"
+                                                    ? "bg-black text-white"
                                                     : completed
-                                                      ? "bg-green-400/10"
-                                                      : "bg-zinc-800"
+                                                      ? "bg-green-100 text-green-700"
+                                                      : "bg-gray-100 text-gray-500"
                                             }`}
                                         >
                                             {completed ? (
@@ -443,23 +442,25 @@ export default function NewProjectPage() {
                     </div>
                 </div>
 
+                {/* Error message */}
                 {error && (
                     <div
                         role="alert"
-                        className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+                        className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
                     >
                         {error}
                     </div>
                 )}
 
-                <div className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900/80 shadow-2xl shadow-black/20 backdrop-blur-xl">
+                <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
+                    {/* Step 1: Project details */}
                     {step === 1 && (
                         <section className="p-5 sm:p-8">
                             <div className="mb-7">
-                                <h2 className="text-xl font-bold text-white">
+                                <h2 className="text-xl font-bold text-black">
                                     Project Information
                                 </h2>
-                                <p className="mt-1 text-sm text-zinc-400">
+                                <p className="mt-1 text-sm text-gray-600">
                                     Enter project details and create the manager's login.
                                 </p>
                             </div>
@@ -478,7 +479,7 @@ export default function NewProjectPage() {
                                 <div className="md:col-span-2">
                                     <label className={labelClass}>Project Location *</label>
                                     <div className="relative">
-                                        <MapPin className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                                        <MapPin className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
                                         <input
                                             value={project.location}
                                             onChange={(e) => updateProject("location", e.target.value)}
@@ -524,7 +525,7 @@ export default function NewProjectPage() {
                                         <button
                                             type="button"
                                             onClick={() => updateProject("showManagerPassword", !project.showManagerPassword)}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-zinc-500 hover:text-yellow-400"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-gray-500 hover:text-black"
                                             aria-label={project.showManagerPassword ? "Hide manager password" : "Show manager password"}
                                         >
                                             {project.showManagerPassword ? (
@@ -534,7 +535,7 @@ export default function NewProjectPage() {
                                             )}
                                         </button>
                                     </div>
-                                    <p className="mt-1 text-xs text-zinc-500">
+                                    <p className="mt-1 text-xs text-gray-500">
                                         The manager will use this password to sign in.
                                     </p>
                                 </div>
@@ -557,7 +558,7 @@ export default function NewProjectPage() {
                                 <div>
                                     <label className={labelClass}>Start Date *</label>
                                     <div className="relative">
-                                        <CalendarDays className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                                        <CalendarDays className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
                                         <input
                                             type="date"
                                             value={project.startDate}
@@ -570,7 +571,7 @@ export default function NewProjectPage() {
                                 <div>
                                     <label className={labelClass}>Expected Completion *</label>
                                     <div className="relative">
-                                        <CalendarDays className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                                        <CalendarDays className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
                                         <input
                                             type="date"
                                             value={project.expectedCompletion}
@@ -594,12 +595,13 @@ export default function NewProjectPage() {
                         </section>
                     )}
 
+                    {/* Step 2: Workers */}
                     {step === 2 && (
                         <section className="p-5 sm:p-8">
                             <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
-                                    <h2 className="text-xl font-bold text-white">Project Workers</h2>
-                                    <p className="mt-1 text-sm text-zinc-400">
+                                    <h2 className="text-xl font-bold text-black">Project Workers</h2>
+                                    <p className="mt-1 text-sm text-gray-600">
                                         Add workers directly to this project.
                                     </p>
                                 </div>
@@ -610,12 +612,12 @@ export default function NewProjectPage() {
                             </div>
 
                             {workers.length === 0 ? (
-                                <div className="rounded-2xl border border-dashed border-zinc-700 bg-zinc-950/50 px-5 py-14 text-center">
-                                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-yellow-400/20 bg-yellow-400/10">
-                                        <Users className="h-7 w-7 text-yellow-400" />
+                                <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-5 py-14 text-center">
+                                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-gray-200 bg-white">
+                                        <Users className="h-7 w-7 text-black" />
                                     </div>
-                                    <h3 className="mt-4 font-semibold text-white">No workers added</h3>
-                                    <p className="mx-auto mt-2 max-w-md text-sm text-zinc-400">
+                                    <h3 className="mt-4 font-semibold text-black">No workers added</h3>
+                                    <p className="mx-auto mt-2 max-w-md text-sm text-gray-600">
                                         You can create the project first and add workers later, or add workers now.
                                     </p>
                                     <button type="button" onClick={addWorker} className={`${primaryButtonClass} mt-5`}>
@@ -629,20 +631,20 @@ export default function NewProjectPage() {
                                         <div key={worker.tempId} className={`${cardClass} p-4 sm:p-5`}>
                                             <div className="mb-5 flex items-center justify-between">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-yellow-400/10 text-sm font-bold text-yellow-400">
+                                                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100 text-sm font-bold text-black">
                                                         {index + 1}
                                                     </div>
                                                     <div>
-                                                        <h3 className="font-semibold text-white">
+                                                        <h3 className="font-semibold text-black">
                                                             {worker.name.trim() || `Worker ${index + 1}`}
                                                         </h3>
-                                                        <p className="text-xs text-zinc-500">Project worker</p>
+                                                        <p className="text-xs text-gray-500">Project worker</p>
                                                     </div>
                                                 </div>
                                                 <button
                                                     type="button"
                                                     onClick={() => removeWorker(worker.tempId)}
-                                                    className="rounded-lg p-2 text-zinc-500 transition hover:bg-red-500/10 hover:text-red-400"
+                                                    className="rounded-lg p-2 text-gray-500 transition hover:bg-red-50 hover:text-red-600"
                                                     title="Remove worker"
                                                     aria-label={`Remove worker ${index + 1}`}
                                                 >
@@ -698,7 +700,7 @@ export default function NewProjectPage() {
                                                         <button
                                                             type="button"
                                                             onClick={() => updateWorker(worker.tempId, "showPassword", !worker.showPassword)}
-                                                            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-zinc-500 hover:text-yellow-400"
+                                                            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-gray-500 hover:text-black"
                                                             aria-label={worker.showPassword ? "Hide password" : "Show password"}
                                                         >
                                                             {worker.showPassword ? (
@@ -708,7 +710,7 @@ export default function NewProjectPage() {
                                                             )}
                                                         </button>
                                                     </div>
-                                                    <p className="mt-1 text-xs text-zinc-500">
+                                                    <p className="mt-1 text-xs text-gray-500">
                                                         The worker will use this password to log in.
                                                     </p>
                                                 </div>
@@ -732,7 +734,7 @@ export default function NewProjectPage() {
                                                         {worker.workerType === "Daily Wage" ? "Daily Wage *" : "Salary *"}
                                                     </label>
                                                     <div className="relative">
-                                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-zinc-500">₹</span>
+                                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-gray-500">₹</span>
                                                         <input
                                                             type="number"
                                                             min="0"
@@ -749,65 +751,66 @@ export default function NewProjectPage() {
                                 </div>
                             )}
 
-                            <div className="mt-5 rounded-xl border border-yellow-400/20 bg-yellow-400/5 p-4 text-sm text-zinc-300">
+                            <div className="mt-5 rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
                                 Workers added here are associated with this project. You can continue without adding workers and manage them later.
                             </div>
                         </section>
                     )}
 
+                    {/* Step 3: Review */}
                     {step === 3 && (
                         <section className="p-5 sm:p-8">
                             <div className="mb-7">
-                                <h2 className="text-xl font-bold text-white">Review Project</h2>
-                                <p className="mt-1 text-sm text-zinc-400">
+                                <h2 className="text-xl font-bold text-black">Review Project</h2>
+                                <p className="mt-1 text-sm text-gray-600">
                                     Review the project details, manager login and workers.
                                 </p>
                             </div>
 
                             <div className={`${cardClass} p-4 sm:p-5`}>
                                 <div className="flex items-start gap-4">
-                                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-yellow-400/20 bg-yellow-400/10">
-                                        <Building2 className="h-5 w-5 text-yellow-400" />
+                                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-gray-100">
+                                        <Building2 className="h-5 w-5 text-black" />
                                     </div>
                                     <div className="min-w-0">
-                                        <h3 className="break-words text-lg font-bold text-white">
+                                        <h3 className="break-words text-lg font-bold text-black">
                                             {project.projectName}
                                         </h3>
-                                        <div className="mt-2 flex items-center gap-2 text-sm text-zinc-400">
-                                            <MapPin className="h-4 w-4 shrink-0 text-yellow-400" />
+                                        <div className="mt-2 flex items-center gap-2 text-sm text-gray-600">
+                                            <MapPin className="h-4 w-4 shrink-0 text-gray-500" />
                                             {project.location}
                                         </div>
-                                        <p className="mt-2 text-sm text-zinc-400">
+                                        <p className="mt-2 text-sm text-gray-600">
                                             Project Manager:{" "}
-                                            <span className="font-medium text-zinc-200">
+                                            <span className="font-medium text-black">
                                                 {project.projectManagerName}
                                             </span>
                                         </p>
-                                        <p className="mt-1 break-words text-sm text-zinc-400">
+                                        <p className="mt-1 break-words text-sm text-gray-600">
                                             Manager login: {project.projectManagerEmail}
                                         </p>
                                     </div>
                                 </div>
 
                                 <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                                    <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
-                                        <p className="text-xs text-zinc-500">Status</p>
-                                        <p className="mt-1 text-sm font-semibold text-yellow-400">{project.status}</p>
+                                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                                        <p className="text-xs text-gray-500">Status</p>
+                                        <p className="mt-1 text-sm font-semibold text-black">{project.status}</p>
                                     </div>
-                                    <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
-                                        <p className="text-xs text-zinc-500">Start Date</p>
-                                        <p className="mt-1 text-sm font-semibold text-zinc-200">{project.startDate}</p>
+                                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                                        <p className="text-xs text-gray-500">Start Date</p>
+                                        <p className="mt-1 text-sm font-semibold text-black">{project.startDate}</p>
                                     </div>
-                                    <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
-                                        <p className="text-xs text-zinc-500">Completion</p>
-                                        <p className="mt-1 text-sm font-semibold text-zinc-200">{project.expectedCompletion}</p>
+                                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                                        <p className="text-xs text-gray-500">Completion</p>
+                                        <p className="mt-1 text-sm font-semibold text-black">{project.expectedCompletion}</p>
                                     </div>
                                 </div>
 
                                 {project.description.trim() && (
-                                    <div className="mt-4 rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
-                                        <p className="text-xs text-zinc-500">Description</p>
-                                        <p className="mt-1 whitespace-pre-wrap text-sm text-zinc-300">
+                                    <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                                        <p className="text-xs text-gray-500">Description</p>
+                                        <p className="mt-1 whitespace-pre-wrap text-sm text-gray-700">
                                             {project.description}
                                         </p>
                                     </div>
@@ -816,32 +819,32 @@ export default function NewProjectPage() {
 
                             <div className="mt-5 grid gap-3 sm:grid-cols-2">
                                 <div className={`${cardClass} p-5`}>
-                                    <div className="flex items-center gap-2 text-sm text-zinc-400">
-                                        <Users className="h-4 w-4 text-yellow-400" />
+                                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                                        <Users className="h-4 w-4 text-black" />
                                         Workers
                                     </div>
-                                    <p className="mt-2 text-3xl font-bold text-white">{totalWorkers}</p>
+                                    <p className="mt-2 text-3xl font-bold text-black">{totalWorkers}</p>
                                 </div>
                                 <div className={`${cardClass} p-5`}>
-                                    <div className="flex items-center gap-2 text-sm text-zinc-400">
-                                        <HardHat className="h-4 w-4 text-yellow-400" />
+                                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                                        <HardHat className="h-4 w-4 text-black" />
                                         Total Salary / Wage
                                     </div>
-                                    <p className="mt-2 text-2xl font-bold text-white">
+                                    <p className="mt-2 text-2xl font-bold text-black">
                                         ₹{totalSalary.toLocaleString("en-IN")}
                                     </p>
-                                    <p className="mt-1 text-xs text-zinc-500">
+                                    <p className="mt-1 text-xs text-gray-500">
                                         Daily wages and salaries may use different periods.
                                     </p>
                                 </div>
                             </div>
 
                             <div className="mt-6">
-                                <h3 className="mb-3 font-semibold text-white">Project Workers</h3>
+                                <h3 className="mb-3 font-semibold text-black">Project Workers</h3>
                                 {workers.length === 0 ? (
-                                    <div className="rounded-xl border border-dashed border-zinc-700 bg-zinc-950/50 px-5 py-8 text-center">
-                                        <Users className="mx-auto h-7 w-7 text-zinc-600" />
-                                        <p className="mt-3 text-sm text-zinc-400">
+                                    <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-5 py-8 text-center">
+                                        <Users className="mx-auto h-7 w-7 text-gray-400" />
+                                        <p className="mt-3 text-sm text-gray-600">
                                             No workers added. You can add them after creating the project.
                                         </p>
                                     </div>
@@ -850,27 +853,27 @@ export default function NewProjectPage() {
                                         {workers.map((worker, index) => (
                                             <div
                                                 key={worker.tempId}
-                                                className="flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-950/60 px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
+                                                className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
                                             >
                                                 <div className="flex min-w-0 items-center gap-3">
-                                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-800">
-                                                        <UserRound className="h-4 w-4 text-yellow-400" />
+                                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                                                        <UserRound className="h-4 w-4 text-black" />
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <p className="break-words text-sm font-medium text-white">
+                                                        <p className="break-words text-sm font-medium text-black">
                                                             {index + 1}. {worker.name}
                                                         </p>
-                                                        <p className="break-words text-xs text-zinc-400">
+                                                        <p className="break-words text-xs text-gray-600">
                                                             {worker.phone} · {worker.email}
                                                         </p>
-                                                        <p className="mt-1 text-xs text-zinc-500">{worker.workerType}</p>
+                                                        <p className="mt-1 text-xs text-gray-500">{worker.workerType}</p>
                                                     </div>
                                                 </div>
                                                 <div className="text-left sm:shrink-0 sm:text-right">
-                                                    <p className="text-sm font-semibold text-zinc-200">
+                                                    <p className="text-sm font-semibold text-black">
                                                         ₹{(Number(worker.salary) || 0).toLocaleString("en-IN")}
                                                     </p>
-                                                    <p className="text-xs text-zinc-500">
+                                                    <p className="text-xs text-gray-500">
                                                         {worker.workerType === "Daily Wage" ? "Daily wage" : "Salary"}
                                                     </p>
                                                 </div>
@@ -882,7 +885,8 @@ export default function NewProjectPage() {
                         </section>
                     )}
 
-                    <footer className="flex flex-col-reverse gap-3 border-t border-zinc-800 bg-zinc-950/40 p-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+                    {/* Footer navigation */}
+                    <footer className="flex flex-col-reverse gap-3 border-t border-gray-200 bg-gray-50 p-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
                         <button
                             type="button"
                             onClick={
@@ -891,14 +895,18 @@ export default function NewProjectPage() {
                                     : previousStep
                             }
                             disabled={loading}
-                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-700 px-5 py-3 text-sm font-medium text-zinc-300 transition hover:border-zinc-600 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-medium text-black transition hover:border-black hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             <ChevronLeft className="h-4 w-4" />
                             {step === 1 ? "Cancel" : "Previous"}
                         </button>
 
                         {step < 3 ? (
-                            <button type="button" onClick={nextStep} className={primaryButtonClass}>
+                            <button
+                                type="button"
+                                onClick={nextStep}
+                                className={primaryButtonClass}
+                            >
                                 Continue
                                 <ChevronRight className="h-4 w-4" />
                             </button>
@@ -925,10 +933,11 @@ export default function NewProjectPage() {
                     </footer>
                 </div>
 
-                <p className="mt-6 text-center text-xs text-zinc-600">
+                <p className="mt-6 text-center text-xs text-gray-500">
                     DriWE Construction Management
                 </p>
             </div>
         </main>
     );
 }
+

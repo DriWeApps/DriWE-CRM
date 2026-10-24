@@ -1333,7 +1333,33 @@ export default function ConstructionReportsPage() {
     /* ---------------------------------------------------------------------- */
 
     return (
-        <div className="min-h-screen bg-zinc-950 text-white">
+        <div className="reports-light min-h-screen bg-white text-slate-900">
+            <style>{`
+                .reports-light { background-color: #fff !important; color: #111827 !important; }
+                .reports-light [class*="bg-zinc-950"],
+                .reports-light [class*="bg-zinc-900"],
+                .reports-light [class*="bg-zinc-800"] { background-color: #fff !important; }
+                .reports-light [class*="bg-zinc-950/70"],
+                .reports-light [class*="bg-zinc-900/60"],
+                .reports-light [class*="bg-zinc-900/95"] { background-color: #f8fafc !important; }
+                .reports-light [class*="border-zinc-800"],
+                .reports-light [class*="border-zinc-700"] { border-color: #e2e8f0 !important; }
+                .reports-light [class~="text-white"],
+                .reports-light [class~="text-zinc-200"],
+                .reports-light [class~="text-zinc-300"] { color: #111827 !important; }
+                .reports-light [class~="text-zinc-400"],
+                .reports-light [class~="text-zinc-500"],
+                .reports-light [class~="text-zinc-600"] { color: #64748b !important; }
+                .reports-light [class*="hover:bg-zinc-800"]:hover { background-color: #f1f5f9 !important; }
+                .reports-light [class*="hover:text-white"]:hover { color: #111827 !important; }
+                .reports-light input,
+                .reports-light select { background-color: #fff !important; color: #111827 !important; border-color: #cbd5e1 !important; }
+                .reports-light input::placeholder { color: #94a3b8 !important; }
+                .reports-light button[class*="bg-yellow"],
+                .reports-light a[class*="bg-yellow"] { background-color: #111827 !important; color: #fff !important; border-color: #111827 !important; }
+                .reports-light button[class*="bg-yellow"]:hover,
+                .reports-light a[class*="bg-yellow"]:hover { background-color: #334155 !important; }
+            `}</style>
             {/* ---------------------------------------------------------------- */}
             {/* Header                                                           */}
             {/* ---------------------------------------------------------------- */}

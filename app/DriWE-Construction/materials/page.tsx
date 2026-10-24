@@ -18,32 +18,23 @@ interface Material {
     materialId: string;
     companyId?: string;
     companyName?: string;
-
     projectId?: string;
     projectName?: string;
-
     siteId?: string;
     siteName?: string;
-
     materialName: string;
     category?: string;
     description?: string;
     unit?: string;
-
     quantity?: number;
     currentStock?: number;
     minimumStock?: number;
-
-
     supplier?: string;
     supplierName?: string;
     supplierContact?: string;
-
     status?: MaterialStatus;
-
     createdBy?: string;
     createdByName?: string;
-
     createdAt?: string;
     updatedAt?: string;
 }
@@ -56,11 +47,9 @@ interface Project {
 export default function MaterialsPage() {
     const [materials, setMaterials] = useState<Material[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
-
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
-
     const [search, setSearch] = useState("");
     const [projectFilter, setProjectFilter] = useState("");
     const [categoryFilter, setCategoryFilter] = useState("");
@@ -85,7 +74,6 @@ export default function MaterialsPage() {
 
             if (materialsRes.ok) {
                 const data = await materialsRes.json();
-
                 if (Array.isArray(data)) {
                     setMaterials(data);
                 } else {
@@ -97,14 +85,12 @@ export default function MaterialsPage() {
 
             if (projectsRes.ok) {
                 const data = await projectsRes.json();
-
                 if (Array.isArray(data)) {
                     setProjects(data);
                 } else {
                     setProjects(data.projects || []);
                 }
             }
-
         } catch (error) {
             console.error("Failed to load materials:", error);
         } finally {
@@ -133,33 +119,20 @@ export default function MaterialsPage() {
         return materials.filter((material) => {
             const matchesSearch =
                 !searchText ||
-                material.materialName
-                    ?.toLowerCase()
-                    .includes(searchText) ||
-                material.category
-                    ?.toLowerCase()
-                    .includes(searchText) ||
-                material.projectName
-                    ?.toLowerCase()
-                    .includes(searchText) ||
-                material.supplier
-                    ?.toLowerCase()
-                    .includes(searchText) ||
-                material.supplierName
-                    ?.toLowerCase()
-                    .includes(searchText);
+                material.materialName?.toLowerCase().includes(searchText) ||
+                material.category?.toLowerCase().includes(searchText) ||
+                material.projectName?.toLowerCase().includes(searchText) ||
+                material.supplier?.toLowerCase().includes(searchText) ||
+                material.supplierName?.toLowerCase().includes(searchText);
 
             const matchesProject =
-                !projectFilter ||
-                material.projectId === projectFilter;
+                !projectFilter || material.projectId === projectFilter;
 
             const matchesCategory =
-                !categoryFilter ||
-                material.category === categoryFilter;
+                !categoryFilter || material.category === categoryFilter;
 
             const matchesStatus =
-                !statusFilter ||
-                material.status === statusFilter;
+                !statusFilter || material.status === statusFilter;
 
             return (
                 matchesSearch &&
@@ -211,13 +184,11 @@ export default function MaterialsPage() {
 
             setMaterials((previous) =>
                 previous.filter(
-                    (item) =>
-                        item.materialId !== material.materialId
+                    (item) => item.materialId !== material.materialId
                 )
             );
         } catch (error) {
             console.error("Delete material error:", error);
-
             alert(
                 error instanceof Error
                     ? error.message
@@ -236,20 +207,25 @@ export default function MaterialsPage() {
     };
 
     const hasFilters =
-        search ||
-        projectFilter ||
-        categoryFilter ||
-        statusFilter;
+        search || projectFilter || categoryFilter || statusFilter;
+
+    const inputClass =
+        "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-black outline-none placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black";
+
+    const secondaryButtonClass =
+        "inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-black transition hover:border-black hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50";
+
+    const primaryButtonClass =
+        "inline-flex items-center justify-center gap-2 rounded-lg bg-black px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-800";
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-zinc-950 text-white">
+            <div className="min-h-screen bg-white text-black">
                 <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                     <div className="flex min-h-[500px] items-center justify-center">
                         <div className="flex flex-col items-center gap-4">
-                            <RefreshCw className="h-8 w-8 animate-spin text-yellow-400" />
-
-                            <p className="text-sm text-zinc-400">
+                            <RefreshCw className="h-8 w-8 animate-spin text-black" />
+                            <p className="text-sm text-gray-600">
                                 Loading materials...
                             </p>
                         </div>
@@ -260,26 +236,22 @@ export default function MaterialsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-zinc-950 text-white">
-            <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-white text-black">
+            <div className="w-full px-4 py-6 sm:px-6 lg:px-10 xl:px-12">
                 {/* Header */}
                 <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                        <div className="mb-2 flex items-center gap-3">
-                            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-yellow-500/20 bg-yellow-500/10">
-                                <Package className="h-6 w-6 text-yellow-400" />
-                            </div>
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 bg-gray-100">
+                            <Package className="h-6 w-6 text-black" />
+                        </div>
 
-                            <div>
-                                <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                                    Materials
-                                </h1>
-
-                                <p className="mt-1 text-sm text-zinc-400">
-                                    Manage construction materials,
-                                    inventory and stock levels
-                                </p>
-                            </div>
+                        <div>
+                            <h1 className="text-2xl font-bold tracking-tight text-black sm:text-3xl">
+                                Materials
+                            </h1>
+                            <p className="mt-1 text-sm text-gray-600">
+                                Manage construction materials, inventory and stock levels
+                            </p>
                         </div>
                     </div>
 
@@ -288,21 +260,17 @@ export default function MaterialsPage() {
                             type="button"
                             onClick={() => loadData(true)}
                             disabled={refreshing}
-                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:border-zinc-700 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+                            className={secondaryButtonClass}
                         >
                             <RefreshCw
-                                className={`h-4 w-4 ${
-                                    refreshing
-                                        ? "animate-spin"
-                                        : ""
-                                }`}
+                                className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
                             />
                             Refresh
                         </button>
 
                         <Link
                             href="/DriWE-Construction/materials/new"
-                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-yellow-400 px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-yellow-300"
+                            className={primaryButtonClass}
                         >
                             <Plus className="h-4 w-4" />
                             Add Material
@@ -311,12 +279,11 @@ export default function MaterialsPage() {
                 </div>
 
                 {/* Filters */}
-                <div className="mb-6 rounded-xl border border-zinc-800 bg-zinc-900/70 p-4">
+                <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
                     <div className="mb-4 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <Filter className="h-4 w-4 text-yellow-400" />
-
-                            <h2 className="text-sm font-semibold text-white">
+                            <Filter className="h-4 w-4 text-black" />
+                            <h2 className="text-sm font-semibold text-black">
                                 Filters
                             </h2>
                         </div>
@@ -325,7 +292,7 @@ export default function MaterialsPage() {
                             <button
                                 type="button"
                                 onClick={clearFilters}
-                                className="text-xs font-medium text-yellow-400 hover:text-yellow-300"
+                                className="text-xs font-medium text-black underline underline-offset-4 hover:text-gray-600"
                             >
                                 Clear filters
                             </button>
@@ -335,31 +302,23 @@ export default function MaterialsPage() {
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-5">
                         {/* Search */}
                         <div className="relative lg:col-span-2">
-                            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
-
+                            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
                             <input
                                 type="text"
                                 value={search}
-                                onChange={(e) =>
-                                    setSearch(e.target.value)
-                                }
+                                onChange={(e) => setSearch(e.target.value)}
                                 placeholder="Search material, project, site..."
-                                className="w-full rounded-lg border border-zinc-800 bg-zinc-950 py-2.5 pl-10 pr-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-yellow-500/50"
+                                className={`${inputClass} pl-10`}
                             />
                         </div>
 
                         {/* Project */}
                         <select
                             value={projectFilter}
-                            onChange={(e) =>
-                                setProjectFilter(e.target.value)
-                            }
-                            className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-200 outline-none focus:border-yellow-500/50"
+                            onChange={(e) => setProjectFilter(e.target.value)}
+                            className={inputClass}
                         >
-                            <option value="">
-                                All Projects
-                            </option>
-
+                            <option value="">All Projects</option>
                             {projects.map((project) => (
                                 <option
                                     key={project.projectId}
@@ -373,20 +332,12 @@ export default function MaterialsPage() {
                         {/* Category */}
                         <select
                             value={categoryFilter}
-                            onChange={(e) =>
-                                setCategoryFilter(e.target.value)
-                            }
-                            className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-200 outline-none focus:border-yellow-500/50"
+                            onChange={(e) => setCategoryFilter(e.target.value)}
+                            className={inputClass}
                         >
-                            <option value="">
-                                All Categories
-                            </option>
-
+                            <option value="">All Categories</option>
                             {categories.map((category) => (
-                                <option
-                                    key={category}
-                                    value={category}
-                                >
+                                <option key={category} value={category}>
                                     {category}
                                 </option>
                             ))}
@@ -396,35 +347,25 @@ export default function MaterialsPage() {
                     <div className="mt-3">
                         <select
                             value={statusFilter}
-                            onChange={(e) =>
-                                setStatusFilter(e.target.value)
-                            }
-                            className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-200 outline-none focus:border-yellow-500/50 md:w-56"
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className={`${inputClass} md:w-56`}
                         >
-                            <option value="">
-                                All Status
-                            </option>
-
-                            <option value="Active">
-                                Active
-                            </option>
-
-                            <option value="Inactive">
-                                Inactive
-                            </option>
+                            <option value="">All Status</option>
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
                         </select>
                     </div>
                 </div>
 
                 {/* Result count */}
                 <div className="mb-4 flex items-center justify-between">
-                    <p className="text-sm text-zinc-500">
+                    <p className="text-sm text-gray-600">
                         Showing{" "}
-                        <span className="font-medium text-zinc-300">
+                        <span className="font-semibold text-black">
                             {filteredMaterials.length}
                         </span>{" "}
                         of{" "}
-                        <span className="font-medium text-zinc-300">
+                        <span className="font-semibold text-black">
                             {materials.length}
                         </span>{" "}
                         materials
@@ -433,18 +374,18 @@ export default function MaterialsPage() {
 
                 {/* Empty state */}
                 {filteredMaterials.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-zinc-800 bg-zinc-900/40 px-6 py-16 text-center">
-                        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900">
-                            <Package className="h-7 w-7 text-zinc-600" />
+                    <div className="rounded-xl border border-dashed border-gray-300 bg-white px-6 py-16 text-center">
+                        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
+                            <Package className="h-7 w-7 text-gray-500" />
                         </div>
 
-                        <h3 className="text-lg font-semibold text-white">
+                        <h3 className="text-lg font-semibold text-black">
                             {materials.length === 0
                                 ? "No materials added yet"
                                 : "No materials found"}
                         </h3>
 
-                        <p className="mx-auto mt-2 max-w-md text-sm text-zinc-500">
+                        <p className="mx-auto mt-2 max-w-md text-sm text-gray-600">
                             {materials.length === 0
                                 ? "Start adding construction materials to manage inventory and stock levels."
                                 : "Try changing your search or filters to find the material you are looking for."}
@@ -453,7 +394,7 @@ export default function MaterialsPage() {
                         {materials.length === 0 && (
                             <Link
                                 href="/DriWE-Construction/materials/new"
-                                className="mt-6 inline-flex items-center gap-2 rounded-lg bg-yellow-400 px-4 py-2.5 text-sm font-semibold text-black hover:bg-yellow-300"
+                                className={`${primaryButtonClass} mt-6`}
                             >
                                 <Plus className="h-4 w-4" />
                                 Add First Material
@@ -463,90 +404,80 @@ export default function MaterialsPage() {
                 ) : (
                     <>
                         {/* Desktop table */}
-                        <div className="hidden overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/70 lg:block">
+                        <div className="hidden overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm lg:block">
                             <div className="overflow-x-auto">
                                 <table className="w-full min-w-[1100px]">
                                     <thead>
-                                        <tr className="border-b border-zinc-800 bg-zinc-900">
-                                            <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                                        <tr className="border-b border-gray-200 bg-gray-50">
+                                            <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                                                 Material
                                             </th>
-
-                                            <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                                            <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                                                 Available Quantity
                                             </th>
-
-                                            <th className="px-5 py-4 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                                            <th className="px-5 py-4 text-right text-xs font-semibold uppercase tracking-wider text-gray-600">
                                                 Actions
                                             </th>
                                         </tr>
                                     </thead>
 
-                                    <tbody className="divide-y divide-zinc-800">
-                                        {filteredMaterials.map(
-                                            (material) => {
-                                                return (
-                                                    <tr
-                                                        key={
-                                                            material.materialId
-                                                        }
-                                                        className="transition hover:bg-zinc-800/40"
-                                                    >
-                                                        <td className="px-5 py-4">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-yellow-500/10">
-                                                                    <Package className="h-5 w-5 text-yellow-400" />
-                                                                </div>
+                                    <tbody className="divide-y divide-gray-200">
+                                        {filteredMaterials.map((material) => (
+                                            <tr
+                                                key={material.materialId}
+                                                className="transition hover:bg-gray-50"
+                                            >
+                                                <td className="px-5 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                                                            <Package className="h-5 w-5 text-black" />
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <span className="block truncate font-semibold text-black">
+                                                                {material.materialName}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </td>
 
-                                                                <div className="min-w-0">
-                                                                        <span className="block truncate font-semibold text-white">
-                                                                        {
-                                                                            material.materialName
-                                                                        }
-                                                                        </span>
+                                                <td className="px-5 py-4">
+                                                    <div className="text-lg font-bold text-black">
+                                                        {formatNumber(
+                                                            material.quantity ??
+                                                                material.currentStock
+                                                        )}{" "}
+                                                        {material.unit || ""}
+                                                    </div>
+                                                </td>
 
-                                                                </div>
-                                                            </div>
-                                                        </td>
+                                                <td className="px-5 py-4">
+                                                    <div className="flex items-center justify-end gap-1">
+                                                        <Link
+                                                            href={`/DriWE-Construction/materials/${material.materialId}/edit`}
+                                                            title="Edit"
+                                                            className="rounded-lg p-2 text-gray-600 transition hover:bg-gray-100 hover:text-black"
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Link>
 
-                                                        <td className="px-5 py-4">
-                                                            <div className="text-lg font-bold text-white">
-                                                                {formatNumber(material.quantity ?? material.currentStock)} {material.unit || ""}
-                                                            </div>
-                                                        </td>
-
-                                                        <td className="px-5 py-4">
-                                                            <div className="flex items-center justify-end gap-1">
-                                                                <Link
-                                                                    href={`/DriWE-Construction/materials/${material.materialId}/edit`}
-                                                                    title="Edit"
-                                                                    className="rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-yellow-400"
-                                                                >
-                                                                    <Pencil className="h-4 w-4" />
-                                                                </Link>
-
-                                                                <button
-                                                                    type="button"
-                                                                    title="Delete"
-                                                                    disabled={
-                                                                        deletingId ===
-                                                                        material.materialId
-                                                                    }
-                                                                    onClick={() =>
-                                                                        handleDelete(
-                                                                            material
-                                                                        )
-                                                                    }
-                                                                    className="rounded-lg p-2 text-zinc-400 transition hover:bg-red-500/10 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
-                                                                >
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                </button>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            }
-                                        )}
+                                                        <button
+                                                            type="button"
+                                                            title="Delete"
+                                                            disabled={
+                                                                deletingId ===
+                                                                material.materialId
+                                                            }
+                                                            onClick={() =>
+                                                                handleDelete(material)
+                                                            }
+                                                            className="rounded-lg p-2 text-gray-600 transition hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
                                     </tbody>
                                 </table>
                             </div>
@@ -554,67 +485,65 @@ export default function MaterialsPage() {
 
                         {/* Mobile / Tablet cards */}
                         <div className="grid grid-cols-1 gap-4 lg:hidden">
-                            {filteredMaterials.map((material) => {
-                                return (
-                                    <div
-                                        key={material.materialId}
-                                        className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-4"
-                                    >
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="flex min-w-0 items-center gap-3">
-                                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-yellow-500/10">
-                                                    <Package className="h-5 w-5 text-yellow-400" />
-                                                </div>
-
-                                                <div className="min-w-0">
-                                                    <span className="block truncate font-semibold text-white">
-                                                        {
-                                                            material.materialName
-                                                        }
-                                                    </span>
-
-                                                </div>
+                            {filteredMaterials.map((material) => (
+                                <div
+                                    key={material.materialId}
+                                    className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                                >
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="flex min-w-0 items-center gap-3">
+                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                                                <Package className="h-5 w-5 text-black" />
                                             </div>
-                                        </div>
-
-                                        <div className="mt-4 rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
-                                            <p className="text-[11px] uppercase tracking-wide text-zinc-500">Quantity</p>
-                                            <p className="mt-1 text-xl font-bold text-white">
-                                                {formatNumber(material.quantity ?? material.currentStock)} {material.unit || ""}
-                                            </p>
-                                        </div>
-
-                                        <div className="mt-4 flex items-center justify-between border-t border-zinc-800 pt-4">
-                                            <div className="flex items-center gap-1">
-                                                <Link
-                                                    href={`/DriWE-Construction/materials/${material.materialId}/edit`}
-                                                    className="rounded-lg p-2 text-zinc-400 hover:bg-zinc-800 hover:text-yellow-400"
-                                                    title="Edit"
-                                                >
-                                                    <Pencil className="h-4 w-4" />
-                                                </Link>
-
-                                                <button
-                                                    type="button"
-                                                    disabled={
-                                                        deletingId ===
-                                                        material.materialId
-                                                    }
-                                                    onClick={() =>
-                                                        handleDelete(
-                                                            material
-                                                        )
-                                                    }
-                                                    className="rounded-lg p-2 text-zinc-400 hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </button>
+                                            <div className="min-w-0">
+                                                <span className="block truncate font-semibold text-black">
+                                                    {material.materialName}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
-                                );
-                            })}
+
+                                    <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                                        <p className="text-[11px] uppercase tracking-wide text-gray-600">
+                                            Quantity
+                                        </p>
+                                        <p className="mt-1 text-xl font-bold text-black">
+                                            {formatNumber(
+                                                material.quantity ??
+                                                    material.currentStock
+                                            )}{" "}
+                                            {material.unit || ""}
+                                        </p>
+                                    </div>
+
+                                    <div className="mt-4 flex items-center justify-between border-t border-gray-200 pt-4">
+                                        <div className="flex items-center gap-1">
+                                            <Link
+                                                href={`/DriWE-Construction/materials/${material.materialId}/edit`}
+                                                className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 hover:text-black"
+                                                title="Edit"
+                                            >
+                                                <Pencil className="h-4 w-4" />
+                                            </Link>
+
+                                            <button
+                                                type="button"
+                                                disabled={
+                                                    deletingId ===
+                                                    material.materialId
+                                                }
+                                                onClick={() =>
+                                                    handleDelete(material)
+                                                }
+                                                className="rounded-lg p-2 text-gray-600 hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
+                                                title="Delete"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </>
                 )}
