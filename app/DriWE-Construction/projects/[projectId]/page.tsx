@@ -282,8 +282,8 @@ export default function ProjectDashboardPage() {
     }
 
     return (
-        <main className="min-h-screen bg-white text-black">
-            <div className="mx-auto max-w-7xl px-6 py-8">
+        <main className="min-h-screen w-full min-w-0 bg-white text-black">
+    <div className="w-full min-w-0 px-4 py-6 sm:px-6 lg:px-8">
                 {/* Back */}
                 <Link
                     href="/DriWE-Construction/projects"

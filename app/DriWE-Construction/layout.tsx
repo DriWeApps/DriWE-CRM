@@ -2,7 +2,6 @@
 "use client";
 
 import { ReactNode, useState } from "react";
-import { usePathname } from "next/navigation";
 import { HardHat, LogOut, Building2, ChevronRight } from "lucide-react";
 
 export default function ConstructionLayout({
@@ -10,7 +9,6 @@ export default function ConstructionLayout({
 }: {
   children: ReactNode;
 }) {
-  const pathname = usePathname();
   const [loggingOut, setLoggingOut] = useState(false);
 
   async function handleLogout() {
@@ -89,7 +87,7 @@ export default function ConstructionLayout({
           <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
       </header>
 
-      <main className="min-h-[calc(100vh-77px)]">{children}</main>
+      <main className="construction-content min-h-[calc(100vh-77px)] w-full">{children}</main>
     </div>
   );
 }

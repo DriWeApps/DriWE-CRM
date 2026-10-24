@@ -75,8 +75,8 @@ export default function ConstructionDashboardPage() {
   return (
     <div className="min-h-screen bg-white text-black">
       {/* Main */}
-      <main className="relative z-10 px-6 py-10">
-        <div className="mx-auto max-w-7xl">
+     <main className="relative z-10 w-full px-4 py-6 sm:px-6 lg:px-8">
+  <div className="w-full min-w-0">
           {/* Page Heading */}
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">

@@ -83,6 +83,12 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+/* Construction pages use the full available viewport width. */
+.construction-content div.mx-auto[class*="max-w-"] {
+  width: 100% !important;
+  max-width: none !important;
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);

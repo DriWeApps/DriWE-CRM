@@ -276,8 +276,8 @@ export default function ConstructionTaskDetailsPage() {
 
     if (loading || !authLoaded) {
         return (
-            <div className="min-h-screen bg-white text-black">
-                <div className="flex min-h-[70vh] items-center justify-center">
+           <div className="min-h-screen w-full min-w-0 bg-white text-black">
+    <div className="w-full min-w-0 px-4 py-8 sm:px-6 lg:px-8">
                     <div className="flex items-center gap-3 text-gray-600">
                         <Loader2 className="h-5 w-5 animate-spin" />
                         <span>Loading task...</span>
@@ -324,8 +324,8 @@ export default function ConstructionTaskDetailsPage() {
         "rounded-lg border border-gray-200 bg-gray-50 p-4";
 
     return (
-        <div className="min-h-screen bg-white text-black">
-            <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+  <div className="min-h-screen w-full min-w-0 bg-white text-black">
+        <div className="w-full min-w-0 px-4 py-6 sm:px-6 lg:px-8">
                 <Link
                     href="/DriWE-Construction/tasks"
                     className="mb-5 inline-flex items-center gap-2 text-sm text-gray-600 transition hover:text-black"

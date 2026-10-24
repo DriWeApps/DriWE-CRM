@@ -168,8 +168,8 @@ export default function PeoplePage() {
         "rounded-xl border border-gray-200 bg-white p-5 shadow-sm";
 
     return (
-        <div className="min-h-screen bg-white p-4 text-black md:p-6">
-            <div className="mx-auto max-w-7xl space-y-6">
+<div className="min-h-screen w-full min-w-0 bg-white p-4 text-black sm:p-6 lg:p-8">
+    <div className="w-full min-w-0 space-y-6">
                 {/* Header */}
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div className="flex items-center gap-3">

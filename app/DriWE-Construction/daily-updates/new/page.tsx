@@ -1,3 +1,4 @@
+
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
@@ -62,8 +63,12 @@ export default function NewDailyUpdatePage() {
             }
 
             setProjects(data.projects || []);
-        } catch (err: any) {
-            setError(err.message || "Failed to load projects");
+        } catch (err: unknown) {
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : "Failed to load projects"
+            );
         } finally {
             setLoadingProjects(false);
         }
@@ -134,18 +139,23 @@ export default function NewDailyUpdatePage() {
             }
 
             router.push("/DriWE-Construction/daily-updates");
-        } catch (err: any) {
+        } catch (err: unknown) {
             setError(
-                err.message || "Failed to create daily update"
+                err instanceof Error
+                    ? err.message
+                    : "Failed to create daily update"
             );
         } finally {
             setSaving(false);
         }
     }
 
+    const inputClass =
+        "w-full min-w-0 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-black outline-none transition placeholder:text-gray-400 hover:border-gray-400 focus:border-black focus:ring-1 focus:ring-black";
+
     return (
-        <div className="min-h-screen bg-white p-6 text-black">
-            <div className="mx-auto max-w-4xl">
+        <div className="min-h-screen w-full min-w-0 bg-white p-4 text-black sm:p-6 lg:p-8">
+            <main className="w-full min-w-0">
                 {/* Header */}
                 <div className="mb-8">
                     <Link
@@ -156,53 +166,83 @@ export default function NewDailyUpdatePage() {
                         Back to Daily Updates
                     </Link>
 
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gray-100">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-gray-50">
                             <FileText size={22} className="text-black" />
                         </div>
 
                         <div>
-                            <h1 className="text-3xl font-bold">
+                            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
                                 New Daily Site Update
                             </h1>
                             <p className="mt-1 text-sm text-gray-600">
-                                Record today's site progress.
+                                Record and track daily construction site progress.
                             </p>
                         </div>
                     </div>
                 </div>
 
+                {/* Error */}
                 {error && (
-                    <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                        {error}
+                    <div
+                        role="alert"
+                        className="mb-6 flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 p-4 sm:flex-row sm:items-start sm:justify-between"
+                    >
+                        <div className="flex items-start gap-3">
+                            <AlertTriangle
+                                size={19}
+                                className="mt-0.5 shrink-0 text-red-700"
+                            />
+                            <div>
+                                <p className="text-sm font-semibold text-red-800">
+                                    Unable to continue
+                                </p>
+                                <p className="mt-1 break-words text-sm text-red-700">
+                                    {error}
+                                </p>
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => setError("")}
+                            className="self-start text-sm font-medium text-red-800 underline underline-offset-4 hover:text-red-950"
+                        >
+                            Dismiss
+                        </button>
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="w-full space-y-6">
                     {/* Project & Date */}
-                    <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                        <div className="mb-6">
+                    <section className="w-full rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-7">
+                        <div className="mb-6 border-b border-gray-100 pb-5">
                             <h2 className="text-lg font-semibold">
                                 Basic Information
                             </h2>
                             <p className="mt-1 text-sm text-gray-500">
-                                Select the project and update date.
+                                Select the project and date for this report.
                             </p>
                         </div>
 
-                        <div className="grid gap-5 md:grid-cols-2">
-                            <div>
-                                <label className="mb-2 block text-sm font-medium text-gray-700">
-                                    Project *
+                        <div className="grid min-w-0 gap-5 md:grid-cols-2">
+                            <div className="min-w-0">
+                                <label
+                                    htmlFor="projectId"
+                                    className="mb-2 block text-sm font-medium text-gray-700"
+                                >
+                                    Project <span className="text-red-600">*</span>
                                 </label>
 
                                 <select
+                                    id="projectId"
+                                    required
                                     value={form.projectId}
                                     onChange={(e) =>
                                         handleProjectChange(e.target.value)
                                     }
                                     disabled={loadingProjects}
-                                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-black focus:ring-1 focus:ring-black disabled:cursor-not-allowed disabled:bg-gray-50"
+                                    className={inputClass}
                                 >
                                     <option value="">
                                         {loadingProjects
@@ -219,26 +259,37 @@ export default function NewDailyUpdatePage() {
                                         </option>
                                     ))}
                                 </select>
+
+                                {!loadingProjects && projects.length === 0 && (
+                                    <p className="mt-2 text-xs text-amber-700">
+                                        No projects are available. Create a project before submitting an update.
+                                    </p>
+                                )}
                             </div>
 
-                            <div>
-                                <label className="mb-2 block text-sm font-medium text-gray-700">
-                                    Date *
+                            <div className="min-w-0">
+                                <label
+                                    htmlFor="updateDate"
+                                    className="mb-2 block text-sm font-medium text-gray-700"
+                                >
+                                    Date <span className="text-red-600">*</span>
                                 </label>
 
                                 <div className="relative">
                                     <CalendarDays
                                         size={17}
-                                        className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
+                                        className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
                                     />
 
                                     <input
+                                        id="updateDate"
                                         type="date"
+                                        required
                                         value={form.date}
                                         onChange={(e) =>
                                             updateField("date", e.target.value)
                                         }
-                                        className="w-full rounded-xl border border-gray-300 bg-white py-3 pl-11 pr-4 text-sm text-black outline-none transition focus:border-black focus:ring-1 focus:ring-black"
+                                        className={`${inputClass} pl-11`}
                                     />
                                 </div>
                             </div>
@@ -246,17 +297,17 @@ export default function NewDailyUpdatePage() {
                     </section>
 
                     {/* Progress */}
-                    <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                        <div className="mb-6">
+                    <section className="w-full rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-7">
+                        <div className="mb-6 border-b border-gray-100 pb-5">
                             <h2 className="text-lg font-semibold">
                                 Today's Progress
                             </h2>
                             <p className="mt-1 text-sm text-gray-500">
-                                Enter the progress recorded at the site.
+                                Enter the progress recorded at the construction site.
                             </p>
                         </div>
 
-                        <div className="grid gap-5 sm:grid-cols-2">
+                        <div className="grid min-w-0 gap-5 sm:grid-cols-2 xl:grid-cols-4">
                             <NumberField
                                 label="Workers Present"
                                 icon={<Users size={17} />}
@@ -296,8 +347,8 @@ export default function NewDailyUpdatePage() {
                     </section>
 
                     {/* Issues */}
-                    <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                        <div className="mb-6">
+                    <section className="w-full rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-7">
+                        <div className="mb-6 border-b border-gray-100 pb-5">
                             <h2 className="flex items-center gap-2 text-lg font-semibold">
                                 <AlertTriangle size={19} className="text-black" />
                                 Site Issues
@@ -307,22 +358,28 @@ export default function NewDailyUpdatePage() {
                             </p>
                         </div>
 
-                        <div className="space-y-5">
-                            <NumberField
-                                label="Number of Issues"
-                                icon={<AlertTriangle size={17} />}
-                                value={form.issues}
-                                onChange={(value) =>
-                                    updateField("issues", value)
-                                }
-                            />
+                        <div className="grid min-w-0 gap-5 lg:grid-cols-3">
+                            <div className="min-w-0">
+                                <NumberField
+                                    label="Number of Issues"
+                                    icon={<AlertTriangle size={17} />}
+                                    value={form.issues}
+                                    onChange={(value) =>
+                                        updateField("issues", value)
+                                    }
+                                />
+                            </div>
 
-                            <div>
-                                <label className="mb-2 block text-sm font-medium text-gray-700">
+                            <div className="min-w-0 lg:col-span-2">
+                                <label
+                                    htmlFor="issueDescription"
+                                    className="mb-2 block text-sm font-medium text-gray-700"
+                                >
                                     Issue Description
                                 </label>
 
                                 <textarea
+                                    id="issueDescription"
                                     value={form.issueDescription}
                                     onChange={(e) =>
                                         updateField(
@@ -332,47 +389,55 @@ export default function NewDailyUpdatePage() {
                                     }
                                     rows={4}
                                     placeholder="Describe the issues reported at the site..."
-                                    className="w-full resize-none rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black"
+                                    className={`${inputClass} resize-y`}
                                 />
                             </div>
                         </div>
                     </section>
 
                     {/* Note */}
-                    <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                        <div className="mb-5">
+                    <section className="w-full rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-7">
+                        <div className="mb-5 border-b border-gray-100 pb-5">
                             <h2 className="text-lg font-semibold">
                                 Site Note
                             </h2>
                             <p className="mt-1 text-sm text-gray-500">
-                                Add a short summary of today's site activities.
+                                Add a summary of today's site activities.
                             </p>
                         </div>
 
+                        <label
+                            htmlFor="siteNote"
+                            className="mb-2 block text-sm font-medium text-gray-700"
+                        >
+                            Daily Summary
+                        </label>
+
                         <textarea
+                            id="siteNote"
                             value={form.note}
                             onChange={(e) =>
                                 updateField("note", e.target.value)
                             }
                             rows={5}
                             placeholder="Example: Foundation work completed for Block A. Electrical work started on the first floor..."
-                            className="w-full resize-none rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black"
+                            className={`${inputClass} resize-y`}
                         />
                     </section>
 
                     {/* Actions */}
-                    <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                    <div className="flex w-full flex-col-reverse gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:items-center sm:justify-end">
                         <Link
                             href="/DriWE-Construction/daily-updates"
-                            className="rounded-xl border border-gray-300 px-6 py-3 text-center text-sm font-medium text-black transition-colors hover:bg-gray-100"
+                            className="inline-flex items-center justify-center rounded-xl border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:border-black hover:bg-gray-50"
                         >
                             Cancel
                         </Link>
 
                         <button
                             type="submit"
-                            disabled={saving}
-                            className="flex items-center justify-center gap-2 rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+                            disabled={saving || loadingProjects || projects.length === 0}
+                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             {saving ? (
                                 <>
@@ -388,7 +453,7 @@ export default function NewDailyUpdatePage() {
                         </button>
                     </div>
                 </form>
-            </div>
+            </main>
         </div>
     );
 }
@@ -405,7 +470,7 @@ function NumberField({
     onChange: (value: string) => void;
 }) {
     return (
-        <div>
+        <div className="min-w-0">
             <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
                 <span className="text-black">{icon}</span>
                 {label}
@@ -414,9 +479,10 @@ function NumberField({
             <input
                 type="number"
                 min="0"
+                step="1"
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-black focus:ring-1 focus:ring-black"
+                className="w-full min-w-0 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-black outline-none transition hover:border-gray-400 focus:border-black focus:ring-1 focus:ring-black"
             />
         </div>
     );

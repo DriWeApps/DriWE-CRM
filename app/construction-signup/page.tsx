@@ -16,6 +16,8 @@ import {
   Building2,
   FileText,
   MapPin,
+  ShieldCheck,
+  CheckCircle2,
 } from "lucide-react";
 
 export default function ConstructionSignupPage() {
@@ -23,8 +25,7 @@ export default function ConstructionSignupPage() {
 
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] =
-    useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [form, setForm] = useState({
     firstName: "",
@@ -39,9 +40,7 @@ export default function ConstructionSignupPage() {
     confirmPassword: "",
   });
 
-  function handleChange(
-    e: React.ChangeEvent<HTMLInputElement>
-  ) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target;
 
     setForm((prev) => ({
@@ -50,14 +49,8 @@ export default function ConstructionSignupPage() {
     }));
   }
 
-  async function handleSubmit(
-    e: React.FormEvent<HTMLFormElement>
-  ) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-
-    /* =====================================================
-       VALIDATION
-    ====================================================== */
 
     if (!form.firstName.trim()) {
       alert("Please enter your first name.");
@@ -133,31 +126,23 @@ export default function ConstructionSignupPage() {
           companyPANNo: form.companyPANNo.trim().toUpperCase(),
           pincode: form.pincode.trim(),
           password: form.password,
-
-          /*
-           * Portal is controlled/validated by the server.
-           */
           portal: "construction",
         }),
       });
 
-      /*
-       * Prevent JSON parsing errors when the API returns HTML.
-       */
       const contentType = res.headers.get("content-type") || "";
 
       if (!contentType.includes("application/json")) {
-        const text = await res.text();
+        const responseText = await res.text();
 
         console.error(
           "Construction signup API returned non-JSON:",
-          text
+          responseText
         );
 
         alert(
           "The signup service returned an unexpected response. Please check the API route."
         );
-
         return;
       }
 
@@ -165,23 +150,15 @@ export default function ConstructionSignupPage() {
 
       if (!res.ok || !data.success) {
         alert(
-          data.message ||
-            "Unable to create your Construction account."
+          data.message || "Unable to create your Construction account."
         );
-
         return;
       }
 
-      alert(
-        "Construction account created successfully. Please login."
-      );
-
+      alert("Construction account created successfully. Please login.");
       router.push("/login");
     } catch (error) {
-      console.error(
-        "Construction signup error:",
-        error
-      );
+      console.error("Construction signup error:", error);
 
       alert(
         "Something went wrong while creating your account. Please try again."
@@ -191,382 +168,318 @@ export default function ConstructionSignupPage() {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-zinc-950 px-4 py-8 text-white">
-      {/* =====================================================
-          BACKGROUND
-      ====================================================== */}
-      <div className="pointer-events-none fixed inset-0 bg-gradient-to-br from-orange-500/5 via-amber-500/5 to-transparent" />
+  const inputClass =
+    "w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-black focus:ring-2 focus:ring-gray-200 disabled:cursor-not-allowed disabled:bg-gray-100";
 
-      <div className="relative mx-auto w-full max-w-5xl">
-        {/* =====================================================
-            HEADER
-        ====================================================== */}
-        <div className="mb-8 flex items-center justify-between">
+  const inputWithIconClass =
+    "w-full rounded-xl border border-gray-300 bg-white py-3 pl-11 pr-4 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-black focus:ring-2 focus:ring-gray-200 disabled:cursor-not-allowed disabled:bg-gray-100";
+
+  const labelClass = "mb-2 block text-sm font-medium text-gray-800";
+
+  const iconClass =
+    "absolute left-4 top-1/2 -translate-y-1/2 text-gray-500";
+
+  const sectionClass =
+    "rounded-2xl border border-gray-200 bg-white p-5 sm:p-6";
+
+  return (
+  <main className="min-h-screen w-full bg-gray-50 px-3 py-4 text-black sm:px-6 sm:py-6 lg:px-8">
+  <div className="w-full min-w-0">
+        {/* Header */}
+        <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-300 transition hover:bg-zinc-800 hover:text-white"
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-black transition hover:bg-gray-100"
           >
             <ArrowLeft size={17} />
-            Back
+            Back to Home
           </Link>
 
-          <Link
-            href="/login"
-            className="text-sm text-zinc-400 transition hover:text-white"
-          >
+          <p className="text-sm text-gray-600">
             Already have an account?{" "}
-            <span className="font-medium text-orange-400">
+            <Link
+              href="/login"
+              className="font-semibold text-black underline underline-offset-4 transition hover:text-gray-600"
+            >
               Sign in
-            </span>
-          </Link>
-        </div>
+            </Link>
+          </p>
+        </header>
 
-        {/* =====================================================
-            MAIN CARD
-        ====================================================== */}
-        <div className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900 shadow-2xl">
-          <div className="grid lg:grid-cols-5">
-            {/* =================================================
-                LEFT INFORMATION
-            ================================================== */}
-            <div className="border-b border-zinc-800 bg-gradient-to-br from-orange-500/10 via-zinc-900 to-zinc-950 p-8 lg:col-span-2 lg:border-b-0 lg:border-r lg:p-10">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-400 to-amber-600 shadow-xl shadow-orange-500/20">
-                <HardHat className="h-8 w-8 text-black" />
-              </div>
-
-              <h1 className="mt-8 text-3xl font-bold">
-                Construction Portal
-              </h1>
-
-              <p className="mt-4 leading-7 text-zinc-400">
-                Create your Construction account and get
-                access to the DriWE Construction platform.
-              </p>
-
-              <div className="mt-8 space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="mt-1 h-2 w-2 rounded-full bg-orange-400" />
-
-                  <p className="text-sm text-zinc-400">
-                    Manage construction-related activities
-                  </p>
+        {/* Main card */}
+       <div className="w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          {/* Title banner */}
+          <div className="border-b border-gray-200 bg-white px-6 py-8 sm:px-10 sm:py-10">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-black text-white">
+                  <HardHat className="h-7 w-7" />
                 </div>
 
-                <div className="flex items-start gap-3">
-                  <div className="mt-1 h-2 w-2 rounded-full bg-orange-400" />
-
-                  <p className="text-sm text-zinc-400">
-                    Access your Construction dashboard
+                <div>
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
+                    DriWE Smartech Pvt. Ltd.
                   </p>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="mt-1 h-2 w-2 rounded-full bg-orange-400" />
-
-                  <p className="text-sm text-zinc-400">
-                    Use your account to sign in anytime
+                  <h1 className="text-2xl font-bold tracking-tight text-black sm:text-3xl">
+                    Construction Portal
+                  </h1>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600">
+                    Register your account and company details to access the
+                    DriWE Construction platform.
                   </p>
                 </div>
               </div>
 
-              {/* Account information */}
-              <div className="mt-10 rounded-2xl border border-orange-500/20 bg-orange-500/5 p-4">
-                <p className="text-sm font-medium text-orange-400">
-                  Construction Account
-                </p>
-
-                <p className="mt-2 text-xs leading-5 text-orange-200/60">
-                  Your registration information will be
-                  used to create your Construction portal
-                  account.
-                </p>
+              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-700">
+                <ShieldCheck className="h-4 w-4 text-black" />
+                Account Registration
               </div>
             </div>
+          </div>
 
-            {/* =================================================
-                SIGNUP FORM
-            ================================================== */}
-            <div className="p-6 sm:p-8 lg:col-span-3 lg:p-10">
-              <div className="mb-8">
+          <div className="grid w-full min-w-0 grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px]">
+            {/* Registration form */}
+           <div className="w-full min-w-0 p-4 sm:p-8 lg:p-10">
+              <div className="mb-7">
                 <div className="flex items-center gap-3">
-                  <UserPlus
-                    size={24}
-                    className="text-orange-400"
-                  />
-
-                  <h2 className="text-2xl font-semibold">
-                    Create Account
+                  <UserPlus className="h-5 w-5 text-black" />
+                  <h2 className="text-xl font-bold text-black">
+                    Create your account
                   </h2>
                 </div>
-
-                <p className="mt-2 text-sm text-zinc-500">
-                  Enter your personal and company details
-                  to create your Construction account.
+                <p className="mt-2 text-sm text-gray-600">
+                  Fields marked with <span className="text-red-600">*</span>{" "}
+                  are required.
                 </p>
               </div>
 
-              <form
-                onSubmit={handleSubmit}
-                className="space-y-6"
-              >
-                {/* =================================================
-                    FIRST NAME / LAST NAME
-                ================================================== */}
-                <div className="grid gap-5 sm:grid-cols-2">
-                  {/* First Name */}
-                  <div>
-                    <label className="mb-2 block text-sm text-zinc-300">
-                      First Name *
-                    </label>
+              <form onSubmit={handleSubmit} className="space-y-7">
+                {/* Personal information */}
+                <section className={sectionClass}>
+                  <div className="mb-5 flex items-center gap-3 border-b border-gray-100 pb-4">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100">
+                      <User className="h-4 w-4 text-black" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-black">
+                        Personal Information
+                      </h3>
+                      <p className="mt-0.5 text-xs text-gray-500">
+                        Your contact and login details
+                      </p>
+                    </div>
+                  </div>
 
-                    <div className="relative">
-                      <User
-                        size={17}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
-                      />
-
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="firstName" className={labelClass}>
+                        First Name <span className="text-red-600">*</span>
+                      </label>
                       <input
+                        id="firstName"
                         type="text"
                         name="firstName"
                         value={form.firstName}
                         onChange={handleChange}
                         required
-                        placeholder="First name"
+                        placeholder="Enter first name"
                         autoComplete="given-name"
-                        className="w-full rounded-xl border border-zinc-700 bg-zinc-950 py-3.5 pl-11 pr-4 text-white outline-none transition focus:border-orange-500"
+                        className={inputClass}
                       />
+                    </div>
+
+                    <div>
+                      <label htmlFor="lastName" className={labelClass}>
+                        Last Name <span className="text-red-600">*</span>
+                      </label>
+                      <input
+                        id="lastName"
+                        type="text"
+                        name="lastName"
+                        value={form.lastName}
+                        onChange={handleChange}
+                        required
+                        placeholder="Enter last name"
+                        autoComplete="family-name"
+                        className={inputClass}
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label htmlFor="email" className={labelClass}>
+                        Email Address <span className="text-red-600">*</span>
+                      </label>
+                      <div className="relative">
+                        <Mail size={17} className={iconClass} />
+                        <input
+                          id="email"
+                          type="email"
+                          name="email"
+                          value={form.email}
+                          onChange={handleChange}
+                          required
+                          placeholder="you@example.com"
+                          autoComplete="email"
+                          className={inputWithIconClass}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label htmlFor="contactNo" className={labelClass}>
+                        Contact Number <span className="text-red-600">*</span>
+                      </label>
+                      <div className="relative">
+                        <Phone size={17} className={iconClass} />
+                        <input
+                          id="contactNo"
+                          type="tel"
+                          name="contactNo"
+                          value={form.contactNo}
+                          onChange={handleChange}
+                          required
+                          placeholder="Enter contact number"
+                          autoComplete="tel"
+                          inputMode="tel"
+                          className={inputWithIconClass}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Company information */}
+                <section className={sectionClass}>
+                  <div className="mb-5 flex items-center gap-3 border-b border-gray-100 pb-4">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100">
+                      <Building2 className="h-4 w-4 text-black" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-black">
+                        Company Information
+                      </h3>
+                      <p className="mt-0.5 text-xs text-gray-500">
+                        Enter your registered business details
+                      </p>
                     </div>
                   </div>
 
-                  {/* Last Name */}
-                  <div>
-                    <label className="mb-2 block text-sm text-zinc-300">
-                      Last Name *
-                    </label>
-
-                    <input
-                      type="text"
-                      name="lastName"
-                      value={form.lastName}
-                      onChange={handleChange}
-                      required
-                      placeholder="Last name"
-                      autoComplete="family-name"
-                      className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3.5 text-white outline-none transition focus:border-orange-500"
-                    />
-                  </div>
-                </div>
-
-                {/* =================================================
-                    EMAIL
-                ================================================== */}
-                <div>
-                  <label className="mb-2 block text-sm text-zinc-300">
-                    Email Address *
-                  </label>
-
-                  <div className="relative">
-                    <Mail
-                      size={17}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
-                    />
-
-                    <input
-                      type="email"
-                      name="email"
-                      value={form.email}
-                      onChange={handleChange}
-                      required
-                      placeholder="you@example.com"
-                      autoComplete="email"
-                      className="w-full rounded-xl border border-zinc-700 bg-zinc-950 py-3.5 pl-11 pr-4 text-white outline-none transition focus:border-orange-500"
-                    />
-                  </div>
-                </div>
-
-                {/* =================================================
-                    CONTACT NUMBER
-                ================================================== */}
-                <div>
-                  <label className="mb-2 block text-sm text-zinc-300">
-                    Contact Number *
-                  </label>
-
-                  <div className="relative">
-                    <Phone
-                      size={17}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
-                    />
-
-                    <input
-                      type="tel"
-                      name="contactNo"
-                      value={form.contactNo}
-                      onChange={handleChange}
-                      required
-                      placeholder="9876543210"
-                      autoComplete="tel"
-                      inputMode="numeric"
-                      className="w-full rounded-xl border border-zinc-700 bg-zinc-950 py-3.5 pl-11 pr-4 text-white outline-none transition focus:border-orange-500"
-                    />
-                  </div>
-                </div>
-
-                {/* =================================================
-                    COMPANY DETAILS
-                ================================================== */}
-                <div className="border-t border-zinc-800 pt-6">
-                  <div className="mb-5 flex items-center gap-2">
-                    <Building2
-                      size={19}
-                      className="text-orange-400"
-                    />
-
-                    <h3 className="text-sm font-semibold text-zinc-200">
-                      Company Details
-                    </h3>
-                  </div>
-
                   <div className="space-y-5">
-                    {/* Company Name */}
                     <div>
-                      <label className="mb-2 block text-sm text-zinc-300">
-                        Company Name *
+                      <label htmlFor="companyName" className={labelClass}>
+                        Company Name <span className="text-red-600">*</span>
                       </label>
-
                       <div className="relative">
-                        <Building2
-                          size={17}
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
-                        />
-
+                        <Building2 size={17} className={iconClass} />
                         <input
+                          id="companyName"
                           type="text"
                           name="companyName"
                           value={form.companyName}
                           onChange={handleChange}
                           required
-                          placeholder="Company name"
+                          placeholder="Enter company name"
                           autoComplete="organization"
-                          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 py-3.5 pl-11 pr-4 text-white outline-none transition focus:border-orange-500"
+                          className={inputWithIconClass}
                         />
                       </div>
                     </div>
 
-                    {/* GST + PAN */}
                     <div className="grid gap-5 sm:grid-cols-2">
-                      {/* GST */}
                       <div>
-                        <label className="mb-2 block text-sm text-zinc-300">
-                          Company GST No *
+                        <label htmlFor="companyGSTNo" className={labelClass}>
+                          Company GST No.{" "}
+                          <span className="text-red-600">*</span>
                         </label>
-
                         <div className="relative">
-                          <FileText
-                            size={17}
-                            className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
-                          />
-
+                          <FileText size={17} className={iconClass} />
                           <input
+                            id="companyGSTNo"
                             type="text"
                             name="companyGSTNo"
                             value={form.companyGSTNo}
                             onChange={handleChange}
                             required
-                            placeholder="GST number"
-                            className="w-full rounded-xl border border-zinc-700 bg-zinc-950 py-3.5 pl-11 pr-4 uppercase text-white outline-none transition focus:border-orange-500"
+                            placeholder="Enter GST number"
+                            autoComplete="off"
+                            className={`${inputWithIconClass} uppercase`}
                           />
                         </div>
                       </div>
 
-                      {/* PAN */}
                       <div>
-                        <label className="mb-2 block text-sm text-zinc-300">
-                          Company PAN No *
+                        <label htmlFor="companyPANNo" className={labelClass}>
+                          Company PAN No.{" "}
+                          <span className="text-red-600">*</span>
                         </label>
-
                         <div className="relative">
-                          <FileText
-                            size={17}
-                            className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
-                          />
-
+                          <FileText size={17} className={iconClass} />
                           <input
+                            id="companyPANNo"
                             type="text"
                             name="companyPANNo"
                             value={form.companyPANNo}
                             onChange={handleChange}
                             required
-                            placeholder="PAN number"
-                            className="w-full rounded-xl border border-zinc-700 bg-zinc-950 py-3.5 pl-11 pr-4 uppercase text-white outline-none transition focus:border-orange-500"
+                            placeholder="Enter PAN number"
+                            autoComplete="off"
+                            className={`${inputWithIconClass} uppercase`}
                           />
                         </div>
                       </div>
                     </div>
 
-                    {/* Pincode */}
                     <div>
-                      <label className="mb-2 block text-sm text-zinc-300">
-                        Pincode *
+                      <label htmlFor="pincode" className={labelClass}>
+                        Pincode <span className="text-red-600">*</span>
                       </label>
-
                       <div className="relative">
-                        <MapPin
-                          size={17}
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
-                        />
-
+                        <MapPin size={17} className={iconClass} />
                         <input
+                          id="pincode"
                           type="text"
                           name="pincode"
                           value={form.pincode}
                           onChange={handleChange}
                           required
-                          placeholder="400001"
+                          placeholder="6-digit pincode"
                           inputMode="numeric"
                           maxLength={6}
-                          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 py-3.5 pl-11 pr-4 text-white outline-none transition focus:border-orange-500"
+                          pattern="[0-9]{6}"
+                          autoComplete="postal-code"
+                          className={inputWithIconClass}
                         />
                       </div>
                     </div>
                   </div>
-                </div>
+                </section>
 
-                {/* =================================================
-                    PASSWORD
-                ================================================== */}
-                <div className="border-t border-zinc-800 pt-6">
-                  <div className="mb-5 flex items-center gap-2">
-                    <Lock
-                      size={19}
-                      className="text-orange-400"
-                    />
-
-                    <h3 className="text-sm font-semibold text-zinc-200">
-                      Account Password
-                    </h3>
+                {/* Password */}
+                <section className={sectionClass}>
+                  <div className="mb-5 flex items-center gap-3 border-b border-gray-100 pb-4">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100">
+                      <Lock className="h-4 w-4 text-black" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-black">
+                        Account Password
+                      </h3>
+                      <p className="mt-0.5 text-xs text-gray-500">
+                        Choose a password with at least 6 characters
+                      </p>
+                    </div>
                   </div>
 
                   <div className="grid gap-5 sm:grid-cols-2">
-                    {/* Password */}
                     <div>
-                      <label className="mb-2 block text-sm text-zinc-300">
-                        Password *
+                      <label htmlFor="password" className={labelClass}>
+                        Password <span className="text-red-600">*</span>
                       </label>
-
                       <div className="relative">
-                        <Lock
-                          size={17}
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
-                        />
-
+                        <Lock size={17} className={iconClass} />
                         <input
-                          type={
-                            showPassword
-                              ? "text"
-                              : "password"
-                          }
+                          id="password"
+                          type={showPassword ? "text" : "password"}
                           name="password"
                           value={form.password}
                           onChange={handleChange}
@@ -574,68 +487,44 @@ export default function ConstructionSignupPage() {
                           minLength={6}
                           placeholder="Minimum 6 characters"
                           autoComplete="new-password"
-                          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 py-3.5 pl-11 pr-12 text-white outline-none transition focus:border-orange-500"
+                          className={`${inputWithIconClass} pr-12`}
                         />
-
                         <button
                           type="button"
-                          onClick={() =>
-                            setShowPassword(
-                              (value) => !value
-                            )
-                          }
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 transition hover:text-white"
-                          aria-label={
-                            showPassword
-                              ? "Hide password"
-                              : "Show password"
-                          }
+                          onClick={() => setShowPassword((value) => !value)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 transition hover:text-black"
+                          aria-label={showPassword ? "Hide password" : "Show password"}
                         >
-                          {showPassword ? (
-                            <EyeOff size={18} />
-                          ) : (
-                            <Eye size={18} />
-                          )}
+                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
                       </div>
                     </div>
 
-                    {/* Confirm Password */}
                     <div>
-                      <label className="mb-2 block text-sm text-zinc-300">
-                        Confirm Password *
+                      <label htmlFor="confirmPassword" className={labelClass}>
+                        Confirm Password{" "}
+                        <span className="text-red-600">*</span>
                       </label>
-
                       <div className="relative">
-                        <Lock
-                          size={17}
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
-                        />
-
+                        <Lock size={17} className={iconClass} />
                         <input
-                          type={
-                            showConfirmPassword
-                              ? "text"
-                              : "password"
-                          }
+                          id="confirmPassword"
+                          type={showConfirmPassword ? "text" : "password"}
                           name="confirmPassword"
                           value={form.confirmPassword}
                           onChange={handleChange}
                           required
                           minLength={6}
-                          placeholder="Confirm password"
+                          placeholder="Re-enter password"
                           autoComplete="new-password"
-                          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 py-3.5 pl-11 pr-12 text-white outline-none transition focus:border-orange-500"
+                          className={`${inputWithIconClass} pr-12`}
                         />
-
                         <button
                           type="button"
                           onClick={() =>
-                            setShowConfirmPassword(
-                              (value) => !value
-                            )
+                            setShowConfirmPassword((value) => !value)
                           }
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 transition hover:text-white"
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 transition hover:text-black"
                           aria-label={
                             showConfirmPassword
                               ? "Hide confirm password"
@@ -651,53 +540,96 @@ export default function ConstructionSignupPage() {
                       </div>
                     </div>
                   </div>
+                </section>
+
+                {/* Account type */}
+                <div className="flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                  <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-black" />
+                  <div>
+                    <p className="text-sm font-semibold text-black">
+                      Construction Portal Account
+                    </p>
+                    <p className="mt-1 text-sm leading-5 text-gray-600">
+                      Your registration will create an account for the DriWE
+                      Construction platform.
+                    </p>
+                  </div>
                 </div>
 
-                {/* =================================================
-                    ACCOUNT TYPE
-                ================================================== */}
-                <div className="rounded-2xl border border-orange-500/20 bg-orange-500/5 p-4">
-                  <p className="text-sm font-medium text-orange-400">
-                    Account Type
-                  </p>
-
-                  <p className="mt-1 text-sm text-orange-200/70">
-                    Your account will be created for the
-                    Construction portal.
-                  </p>
-                </div>
-
-                {/* =================================================
-                    SUBMIT
-                ================================================== */}
+                {/* Submit */}
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full rounded-xl bg-gradient-to-r from-orange-500 to-amber-600 py-3.5 font-semibold text-black transition hover:from-orange-400 hover:to-amber-500 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-black px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {loading
-                    ? "Creating Account..."
-                    : "Create Construction Account"}
+                  {loading ? (
+                    <>
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                      Creating Account...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="h-4 w-4" />
+                      Create Construction Account
+                    </>
+                  )}
                 </button>
 
-                <p className="text-center text-xs text-zinc-600">
-                  By creating an account, you agree to use
-                  the Construction platform responsibly.
+                <p className="text-center text-xs leading-5 text-gray-500">
+                  Please ensure your personal and company details are accurate
+                  before submitting your registration.
                 </p>
               </form>
             </div>
+
+            {/* Information panel */}
+            <aside className="border-t border-gray-200 bg-gray-50 p-6 sm:p-8 lg:border-l lg:border-t-0">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-gray-700">
+                Registration Overview
+              </h3>
+
+              <p className="mt-3 text-sm leading-6 text-gray-600">
+                Complete the form to register your company and create your
+                Construction Portal account.
+              </p>
+
+              <div className="mt-7 space-y-5">
+                {[
+                  "Provide your personal contact details",
+                  "Enter your company registration information",
+                  "Create and confirm your password",
+                ].map((item) => (
+                  <div key={item} className="flex items-start gap-3">
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-black" />
+                    <p className="text-sm leading-5 text-gray-700">{item}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 rounded-xl border border-gray-200 bg-white p-4">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-black" />
+                  <p className="text-sm font-semibold text-black">
+                    Registration Details
+                  </p>
+                </div>
+                <p className="mt-2 text-xs leading-5 text-gray-500">
+                  Use a valid email address and accurate company details so
+                  your account information can be recorded correctly.
+                </p>
+              </div>
+            </aside>
           </div>
         </div>
 
-        {/* =====================================================
-            FOOTER
-        ====================================================== */}
-        <div className="mt-8 text-center">
-          <p className="text-xs text-zinc-600">
-            © {new Date().getFullYear()} DriWE
+        {/* Footer */}
+        <footer className="py-6 text-center">
+          <p className="text-xs text-gray-500">
+            © {new Date().getFullYear()} DriWE Smartech Pvt. Ltd. All rights
+            reserved.
           </p>
-        </div>
+        </footer>
       </div>
-    </div>
+    </main>
   );
 }

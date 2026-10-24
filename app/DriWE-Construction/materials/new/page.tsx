@@ -222,7 +222,7 @@ export default function NewConstructionMaterialPage() {
 
     return (
         <div className="min-h-screen bg-white text-black">
-            <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+            <div className="w-full px-4 py-6 sm:px-6 lg:px-10 xl:px-12">
                 {/* Back */}
                 <Link
                     href="/DriWE-Construction/materials"

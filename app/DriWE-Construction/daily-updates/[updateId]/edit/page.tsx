@@ -227,8 +227,8 @@ export default function EditDailyUpdatePage() {
     }
 
     return (
-        <div className="min-h-screen bg-white p-6 text-black">
-            <div className="mx-auto max-w-4xl">
+       <div className="min-h-screen w-full min-w-0 bg-white p-4 text-black sm:p-6 lg:p-8">
+    <div className="w-full min-w-0">
                 <div className="mb-8">
                     <Link
                         href={`/DriWE-Construction/daily-updates/${encodeURIComponent(updateId)}`}

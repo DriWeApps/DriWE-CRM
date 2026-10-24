@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -369,8 +368,8 @@ export default function NewConstructionTaskPage() {
         "rounded-xl border border-gray-200 bg-white p-6 shadow-sm";
 
     return (
-        <div className="min-h-screen bg-white p-6 text-black md:p-8">
-            <div className="mx-auto max-w-5xl">
+        <div className="min-h-screen w-full min-w-0 bg-white p-4 text-black sm:p-6 lg:p-8">
+            <div className="w-full min-w-0">
                 <div className="mb-8 flex items-center gap-4">
                     <Link
                         href="/DriWE-Construction/tasks"
@@ -667,4 +666,3 @@ export default function NewConstructionTaskPage() {
         </div>
     );
 }
-

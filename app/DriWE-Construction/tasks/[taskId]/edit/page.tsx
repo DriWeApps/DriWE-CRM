@@ -471,8 +471,8 @@ export default function EditConstructionTaskPage() {
 
     if (loading || !authLoaded) {
         return (
-            <div className="min-h-screen bg-white text-black">
-                <div className="flex min-h-[70vh] items-center justify-center">
+           <div className="min-h-screen w-full min-w-0 bg-white text-black">
+    <div className="w-full min-w-0 px-4 py-10 sm:px-6 lg:px-8">
                     <div className="flex items-center gap-3 text-gray-600">
                         <Loader2 className="h-5 w-5 animate-spin" />
                         <span>Loading task...</span>
@@ -506,8 +506,8 @@ export default function EditConstructionTaskPage() {
     }
 
     return (
-        <div className="min-h-screen bg-white text-black">
-            <div className="w-full px-4 py-6 sm:px-6 lg:px-10 xl:px-12">
+      <div className="min-h-screen w-full min-w-0 bg-white text-black">
+    <div className="w-full min-w-0 px-4 py-6 sm:px-6 lg:px-8">
                 <div className="mb-6">
                     <Link
                         href={`/DriWE-Construction/tasks/${taskId}`}
