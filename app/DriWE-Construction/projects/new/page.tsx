@@ -108,6 +108,17 @@ export default function NewProjectPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
+    function showValidationPopup(message: string) {
+        // Empty messages clear the inline error only; they must not open a blank alert.
+        setError(message);
+
+        if (!message.trim()) {
+            return;
+        }
+
+        window.alert(message);
+    }
+
     function updateProject(
         field: keyof ProjectForm,
         value: string | boolean
@@ -146,46 +157,46 @@ export default function NewProjectPage() {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
         if (!project.projectName.trim()) {
-            setError("Project name is required.");
+            showValidationPopup("Project name is required.");
             return false;
         }
 
         if (!project.location.trim()) {
-            setError("Project location is required.");
+            showValidationPopup("Project location is required.");
             return false;
         }
 
         if (!project.projectManagerName.trim()) {
-            setError("Project manager name is required.");
+            showValidationPopup("Project manager name is required.");
             return false;
         }
 
-        if (!emailRegex.test(project.projectManagerEmail.trim())) {
-            setError("Please enter a valid project manager email.");
+        if (!emailRegex.test(project.projectManagerEmail.trim().toLowerCase())) {
+            showValidationPopup("Please enter a valid project manager email.");
             return false;
         }
 
         if (project.projectManagerPassword.length < 6) {
-            setError("Project manager password must be at least 6 characters.");
+            showValidationPopup("Project manager password must be at least 6 characters.");
             return false;
         }
 
         if (!project.startDate) {
-            setError("Start date is required.");
+            showValidationPopup("Start date is required.");
             return false;
         }
 
         if (!project.expectedCompletion) {
-            setError("Expected completion date is required.");
+            showValidationPopup("Expected completion date is required.");
             return false;
         }
 
         if (project.expectedCompletion < project.startDate) {
-            setError("Expected completion date cannot be before the start date.");
+            showValidationPopup("Expected completion date cannot be before the start date.");
             return false;
         }
 
-        setError("");
+        showValidationPopup("");
         return true;
     }
 
@@ -194,6 +205,11 @@ export default function NewProjectPage() {
         const managerEmail = project.projectManagerEmail.trim().toLowerCase();
         const seenEmails = new Set<string>();
 
+        if (workers.length === 0) {
+            showValidationPopup("Please add at least one worker and complete the required worker details before continuing.");
+            return false;
+        }
+
         for (let index = 0; index < workers.length; index++) {
             const worker = workers[index];
             const workerLabel = worker.name.trim()
@@ -201,36 +217,36 @@ export default function NewProjectPage() {
                 : `Worker ${index + 1}`;
 
             if (!worker.name.trim()) {
-                setError(`Please enter a name for Worker ${index + 1}.`);
+                showValidationPopup(`Please enter a name for Worker ${index + 1}.`);
                 return false;
             }
 
             if (!/^[0-9]{10}$/.test(worker.phone.trim())) {
-                setError(`Please enter a valid 10-digit mobile number for ${workerLabel}.`);
+                showValidationPopup(`Please enter a valid 10-digit mobile number for ${workerLabel}.`);
                 return false;
             }
 
             const email = worker.email.trim().toLowerCase();
 
             if (!emailRegex.test(email)) {
-                setError(`Please enter a valid email address for ${workerLabel}.`);
+                showValidationPopup(`Please enter a valid email address for ${workerLabel}.`);
                 return false;
             }
 
             if (email === managerEmail) {
-                setError("The project manager and a worker cannot use the same email.");
+                showValidationPopup("The project manager and a worker cannot use the same email.");
                 return false;
             }
 
             if (seenEmails.has(email)) {
-                setError(`Duplicate worker email: ${email}`);
+                showValidationPopup(`Duplicate worker email: ${email}`);
                 return false;
             }
 
             seenEmails.add(email);
 
             if (worker.password.length < 6) {
-                setError(`Password for ${workerLabel} must be at least 6 characters.`);
+                showValidationPopup(`Password for ${workerLabel} must be at least 6 characters.`);
                 return false;
             }
 
@@ -239,12 +255,12 @@ export default function NewProjectPage() {
                 !Number.isFinite(Number(worker.salary)) ||
                 Number(worker.salary) <= 0
             ) {
-                setError(`Please enter a valid salary/wage for ${workerLabel}.`);
+                showValidationPopup(`Please enter a valid salary/wage for ${workerLabel}.`);
                 return false;
             }
         }
 
-        setError("");
+        showValidationPopup("");
         return true;
     }
 
@@ -752,7 +768,7 @@ export default function NewProjectPage() {
                             )}
 
                             <div className="mt-5 rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
-                                Workers added here are associated with this project. You can continue without adding workers and manage them later.
+                                Add at least one worker and complete all required worker details before continuing to the review step.
                             </div>
                         </section>
                     )}
