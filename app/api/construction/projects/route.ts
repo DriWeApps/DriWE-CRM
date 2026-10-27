@@ -20,6 +20,7 @@ import {
 import {
     createWorker,
     getWorkers,
+    getWorkersByProject,
 } from "@/services/construction-worker.service";
 
 import type {
@@ -43,7 +44,6 @@ function isConstructionAdmin(user: AuthUser) {
     const role = normalizeRole(user.role);
     const email = user.email?.trim().toLowerCase();
 
-    // Keep cross-company access limited to the dedicated admin.
     return (
         role === "constructionadmin" ||
         (role === "admin" && email === "adminc@driwe.com")
@@ -80,11 +80,12 @@ const validWorkerTypes: WorkerType[] = [
 /**
  * GET /api/construction/projects
  *
- * Construction Admin: all projects across companies.
- * Project Manager: projects assigned to them.
- * Construction Employee: projects assigned to them.
+ * Admin: all projects.
+ * Project manager: projects assigned to them.
+ * Construction employee: projects assigned to them.
  * Builder: projects created by their account.
  *
+ * Each returned project includes workerCount.
  * Optional query: ?projectId=...
  */
 export async function GET(req: Request) {
@@ -106,13 +107,12 @@ export async function GET(req: Request) {
         const url = new URL(req.url);
         const requestedProjectId = url.searchParams.get("projectId");
 
-        // Only authorized admin accounts can query across companies.
         let projects = admin
             ? await getAllProjects()
             : await getProjects(getCompanyId(authUser));
 
         if (admin) {
-            // Admin may view all projects.
+            // Admin can view all projects.
         } else if (manager) {
             projects = projects.filter(
                 (project) =>
@@ -136,8 +136,6 @@ export async function GET(req: Request) {
                 assignedProjectIds.has(project.projectId)
             );
         } else {
-            // Builders and other non-admin creator accounts only see
-            // projects created by their authenticated user ID.
             projects = projects.filter(
                 (project) => project.createdBy === authUser.userId
             );
@@ -149,9 +147,38 @@ export async function GET(req: Request) {
             );
         }
 
+        // Fetch workers for each individual project.
+        const projectsWithWorkerCounts = await Promise.all(
+            projects.map(async (project) => {
+                try {
+                    const workers = await getWorkersByProject(
+                        project.projectId,
+                        project.companyId
+                    );
+
+                    return {
+                        ...project,
+                        workerCount: workers.length,
+                    };
+                } catch (error) {
+                    console.error(
+                        `Failed to fetch workers for project ${project.projectId}:`,
+                        error
+                    );
+
+                    // Avoid failing the entire project list if one
+                    // worker-count lookup fails.
+                    return {
+                        ...project,
+                        workerCount: 0,
+                    };
+                }
+            })
+        );
+
         return NextResponse.json({
             success: true,
-            projects,
+            projects: projectsWithWorkerCounts,
         });
     } catch (error) {
         console.error("GET construction projects error:", error);
@@ -170,7 +197,7 @@ export async function GET(req: Request) {
  * POST /api/construction/projects
  *
  * Admin and builder accounts may create projects.
- * The server sets createdBy and companyId from the authenticated user.
+ * The server determines createdBy and companyId from the authenticated user.
  */
 export async function POST(req: Request) {
     let createdProjectId: string | null = null;
@@ -510,7 +537,10 @@ export async function POST(req: Request) {
                 success: true,
                 message:
                     "Project, project manager account and workers created successfully.",
-                project: createdProject,
+                project: {
+                    ...createdProject,
+                    workerCount: workers.length,
+                },
                 projectManager: {
                     userId: managerUserId,
                     employeeId: managerEmployeeId,
