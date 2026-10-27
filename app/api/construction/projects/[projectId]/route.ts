@@ -1,12 +1,9 @@
 
 import { NextResponse } from "next/server";
-import {
-    getUserFromRequest,
-} from "@/lib/auth";
+import { getUserFromRequest } from "@/lib/auth";
 
 import {
     getProjectById,
-    getProjects,
     getAllProjects,
     updateProject,
     deleteProject,
@@ -24,7 +21,6 @@ type AuthUser = {
     userId: string;
     email?: string;
     role?: string;
-    portal?: string;
     companyId?: string;
 };
 
@@ -41,32 +37,25 @@ type ProjectRecord = {
     [key: string]: unknown;
 };
 
-function normalizeRole(role?: string): string {
+function normalizeRole(role?: string) {
     return role?.trim().toLowerCase() ?? "";
 }
 
-/**
- * Only the dedicated Construction Admin account receives
- * cross-company Construction Admin access.
- *
- * Other existing Construction Admin roles retain admin
- * permissions within the company resolved by this API.
- */
-function isConstructionAdmin(user: AuthUser): boolean {
+function isConstructionAdmin(user: AuthUser) {
     const role = normalizeRole(user.role);
     const email = user.email?.trim().toLowerCase();
 
     return (
-        (role === "admin" && email === "adminc@driwe.com") ||
-        role === "constructionadmin"
+        role === "constructionadmin" ||
+        (role === "admin" && email === "adminc@driwe.com")
     );
 }
 
-function isProjectManager(user: AuthUser): boolean {
+function isProjectManager(user: AuthUser) {
     return normalizeRole(user.role) === "constructionprojectmanager";
 }
 
-function getCompanyId(user: AuthUser): string {
+function getCompanyId(user: AuthUser) {
     return user.companyId || user.userId;
 }
 
@@ -85,13 +74,6 @@ function forbidden(message: string) {
     );
 }
 
-/**
- * Dedicated Construction Admin:
- * Search all projects and match the exact project ID.
- *
- * Other users:
- * Search only within their own company.
- */
 async function findProject(
     projectId: string,
     user: AuthUser
@@ -126,22 +108,28 @@ export async function GET(
 
         if (!user) {
             return NextResponse.json(
-                { success: false, message: "Unauthorized" },
+                { success: false, message: "Unauthorized." },
                 { status: 401 }
             );
         }
 
+        const authUser = user as AuthUser;
         const { projectId } = await params;
 
         if (!projectId) {
             return NextResponse.json(
-                { success: false, message: "Project ID is required." },
+                {
+                    success: false,
+                    message: "Project ID is required.",
+                },
                 { status: 400 }
             );
         }
 
-        const project = await findProject(projectId, user);
+        const project = await findProject(projectId, authUser);
 
+        // Return 404 for inaccessible projects to avoid revealing
+        // whether another builder's project exists.
         if (!project) {
             return NextResponse.json(
                 { success: false, message: "Project not found." },
@@ -149,27 +137,21 @@ export async function GET(
             );
         }
 
-        const admin = isConstructionAdmin(user);
-        const manager = isProjectManager(user);
+        const admin = isConstructionAdmin(authUser);
+        const manager = isProjectManager(authUser);
 
-        if (
-            !admin &&
-            manager &&
-            project.projectManagerUserId !== user.userId
-        ) {
-            return forbidden(
-                "You can only view projects assigned to you."
-            );
-        }
-
-        if (
-            !admin &&
-            !manager &&
-            project.createdBy !== user.userId
-        ) {
-            return forbidden(
-                "You can only view projects created by you."
-            );
+        if (!admin && manager) {
+            if (project.projectManagerUserId !== authUser.userId) {
+                return forbidden(
+                    "You can only view projects assigned to you."
+                );
+            }
+        } else if (!admin) {
+            if (project.createdBy !== authUser.userId) {
+                return forbidden(
+                    "You can only view projects created by you."
+                );
+            }
         }
 
         return NextResponse.json({
@@ -180,7 +162,10 @@ export async function GET(
         console.error("GET construction project error:", error);
 
         return NextResponse.json(
-            { success: false, message: "Failed to fetch project." },
+            {
+                success: false,
+                message: "Failed to fetch project.",
+            },
             { status: 500 }
         );
     }
@@ -198,22 +183,30 @@ export async function PUT(
 
         if (!user) {
             return NextResponse.json(
-                { success: false, message: "Unauthorized" },
+                { success: false, message: "Unauthorized." },
                 { status: 401 }
             );
         }
 
-        const admin = isConstructionAdmin(user);
+        const authUser = user as AuthUser;
+        const admin = isConstructionAdmin(authUser);
+        const manager = isProjectManager(authUser);
         const { projectId } = await params;
 
         if (!projectId) {
             return NextResponse.json(
-                { success: false, message: "Project ID is required." },
+                {
+                    success: false,
+                    message: "Project ID is required.",
+                },
                 { status: 400 }
             );
         }
 
-        const existingProject = await findProject(projectId, user);
+        const existingProject = await findProject(
+            projectId,
+            authUser
+        );
 
         if (!existingProject) {
             return NextResponse.json(
@@ -222,12 +215,14 @@ export async function PUT(
             );
         }
 
+        // Only Admin or the builder who created the project can edit.
+        // Project managers and employees cannot edit project details.
         if (
             !admin &&
-            existingProject.createdBy !== user.userId
+            (manager || existingProject.createdBy !== authUser.userId)
         ) {
             return forbidden(
-                "You can only edit projects created by you."
+                "Only the Construction Admin or the builder who created this project can edit it."
             );
         }
 
@@ -239,7 +234,10 @@ export async function PUT(
             Array.isArray(body)
         ) {
             return NextResponse.json(
-                { success: false, message: "Invalid project details." },
+                {
+                    success: false,
+                    message: "Invalid project details.",
+                },
                 { status: 400 }
             );
         }
@@ -295,11 +293,9 @@ export async function PUT(
             );
         }
 
-        const companyId = existingProject.companyId;
-
         const updatedProject = await updateProject(
             projectId,
-            companyId,
+            existingProject.companyId,
             {
                 projectName,
                 location,
@@ -339,7 +335,10 @@ export async function PUT(
 
         if (!updatedProject) {
             return NextResponse.json(
-                { success: false, message: "Project could not be updated." },
+                {
+                    success: false,
+                    message: "Project could not be updated.",
+                },
                 { status: 404 }
             );
         }
@@ -353,7 +352,10 @@ export async function PUT(
         console.error("PUT construction project error:", error);
 
         return NextResponse.json(
-            { success: false, message: "Failed to update project." },
+            {
+                success: false,
+                message: "Failed to update project.",
+            },
             { status: 500 }
         );
     }
@@ -371,12 +373,14 @@ export async function DELETE(
 
         if (!user) {
             return NextResponse.json(
-                { success: false, message: "Unauthorized" },
+                { success: false, message: "Unauthorized." },
                 { status: 401 }
             );
         }
 
-        if (!isConstructionAdmin(user)) {
+        const authUser = user as AuthUser;
+
+        if (!isConstructionAdmin(authUser)) {
             return forbidden(
                 "Only a Construction Admin can delete projects."
             );
@@ -386,12 +390,18 @@ export async function DELETE(
 
         if (!projectId) {
             return NextResponse.json(
-                { success: false, message: "Project ID is required." },
+                {
+                    success: false,
+                    message: "Project ID is required.",
+                },
                 { status: 400 }
             );
         }
 
-        const existingProject = await findProject(projectId, user);
+        const existingProject = await findProject(
+            projectId,
+            authUser
+        );
 
         if (!existingProject) {
             return NextResponse.json(
@@ -407,7 +417,10 @@ export async function DELETE(
 
         if (!deleted) {
             return NextResponse.json(
-                { success: false, message: "Project could not be deleted." },
+                {
+                    success: false,
+                    message: "Project could not be deleted.",
+                },
                 { status: 404 }
             );
         }
@@ -420,7 +433,10 @@ export async function DELETE(
         console.error("DELETE construction project error:", error);
 
         return NextResponse.json(
-            { success: false, message: "Failed to delete project." },
+            {
+                success: false,
+                message: "Failed to delete project.",
+            },
             { status: 500 }
         );
     }

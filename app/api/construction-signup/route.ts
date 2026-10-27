@@ -12,7 +12,6 @@ import { createEmployee } from "@/services/employee.service";
 
 export async function POST(req: Request) {
   try {
-    // Read request body
     const body = await req.json();
 
     const firstName =
@@ -60,7 +59,7 @@ export async function POST(req: Request) {
         ? body.password
         : "";
 
-    // Validation
+    // Validate required fields.
     if (!firstName) {
       return NextResponse.json(
         { success: false, message: "First name is required." },
@@ -75,9 +74,12 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!email) {
+    if (
+      !email ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    ) {
       return NextResponse.json(
-        { success: false, message: "Email address is required." },
+        { success: false, message: "Enter a valid email address." },
         { status: 400 }
       );
     }
@@ -127,13 +129,6 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!password) {
-      return NextResponse.json(
-        { success: false, message: "Password is required." },
-        { status: 400 }
-      );
-    }
-
     if (password.length < 6) {
       return NextResponse.json(
         {
@@ -144,7 +139,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check whether the email is already registered
+    // Prevent duplicate accounts.
     const existingUser = await getUserByEmail(email);
 
     if (existingUser) {
@@ -158,15 +153,19 @@ export async function POST(req: Request) {
       );
     }
 
-    // Create IDs and timestamp
     const userId = randomUUID();
     const employeeId = randomUUID();
     const now = new Date().toISOString();
 
-    // Hash password
     const hashedPassword = await hashPassword(password);
 
-    // Construction company administrator profile
+    /*
+     * Public signup creates a builder account, NOT an admin.
+     * Never accept role, userId, or companyId from the request body.
+     */
+    const role = "ConstructionBuilder";
+    const portal = "construction" as const;
+
     const employee = {
       employeeId,
 
@@ -184,15 +183,15 @@ export async function POST(req: Request) {
       // Location
       pincode,
 
-      // Construction account
-      designation: "Construction Admin",
+      // Account permissions
+      designation: "Builder",
       department: "Construction",
-      role: "ConstructionAdmin",
+      role,
       status: "Active",
-      portal: "construction" as const,
+      portal,
       joiningDate: now.split("T")[0],
 
-      // Unused profile fields
+      // Profile fields
       dateOfBirth: "",
       gender: "",
       address: "",
@@ -200,40 +199,42 @@ export async function POST(req: Request) {
       state: "",
       country: "India",
 
-      // No CRM page access
+      // No CRM page access by default
       pageAccess: [],
 
       createdAt: now,
       updatedAt: now,
     };
 
-    // Create employee record
+    // Create employee profile.
     await createEmployee(employee);
 
-    // Create login user with the same role
+    // Create login user.
+    // A unique companyId isolates this builder's projects from
+    // other builders, provided project creation uses this companyId.
     const user = await createUser({
       userId,
       employeeId,
+      companyId: userId,
       name: `${firstName} ${lastName}`.trim(),
       email,
       password: hashedPassword,
-      role: "ConstructionAdmin",
-      portal: "construction",
+      role,
+      portal,
       pageAccess: [],
     });
 
-    // Success response
     return NextResponse.json(
       {
         success: true,
-        message: "Construction account created successfully.",
+        message: "Construction builder account created successfully.",
         user: {
           userId: user.userId,
           employeeId: user.employeeId,
           name: user.name,
           email: user.email,
           role: user.role,
-          portal: "construction",
+          portal,
         },
       },
       { status: 201 }
