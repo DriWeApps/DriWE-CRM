@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { ErrorPopup } from "@/components/ui/error-popup";
 
 import {
     CalendarDays,
@@ -112,10 +113,10 @@ export default function DailyUpdatesPage() {
                 prev.filter((item) => item.updateId !== updateId)
             );
         } catch (err: unknown) {
-            alert(
+            setError(
                 err instanceof Error
                     ? err.message
-                    : "Failed to delete daily update"
+                    : "Failed to delete daily update. Please retry."
             );
         } finally {
             setDeleting(null);
@@ -124,6 +125,7 @@ export default function DailyUpdatesPage() {
 
     return (
         <main className="min-h-screen w-full bg-white text-black">
+            <ErrorPopup message={error} onClose={() => setError("")} />
             <div className="w-full px-4 py-6 sm:px-6 sm:py-8 lg:px-10 2xl:px-14">
                 {/* Header */}
                 <header className="mb-8 flex flex-col gap-5 border-b border-gray-200 pb-7 md:flex-row md:items-center md:justify-between">

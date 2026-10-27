@@ -264,27 +264,27 @@ export default function MaterialDetailsPage() {
                             </p>
                         </div>
 
-                        <div>
-                            <p className={detailLabel}>
-                                Available Quantity
-                            </p>
+                       <div>
+    <p className={detailLabel}>
+        Available Quantity
+    </p>
 
-                            <p
-                                className={`mt-1 text-lg font-semibold ${
-                                    availableQuantity <= 0
-                                        ? "text-red-600"
-                                        : "text-black"
-                                }`}
-                            >
-                                {availableQuantity} {material.unit || ""}
+    <p
+        className={`mt-1 text-lg font-semibold ${
+            availableQuantity <= 0
+                ? "text-red-600"
+                : "text-black"
+        }`}
+    >
+        {availableQuantity}
 
-                                {availableQuantity <= 0 && (
-                                    <span className="ml-2 text-sm font-normal">
-                                        Material is not available
-                                    </span>
-                                )}
-                            </p>
-                        </div>
+        {availableQuantity <= 0 && (
+            <span className="ml-2 text-sm font-normal">
+                Material is not available
+            </span>
+        )}
+    </p>
+</div>
 
                         {material.description && (
                             <div className="sm:col-span-2">

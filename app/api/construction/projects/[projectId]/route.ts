@@ -1,11 +1,13 @@
 
 import { NextResponse } from "next/server";
-
-import { getUserFromRequest } from "@/lib/auth";
+import {
+    getUserFromRequest,
+} from "@/lib/auth";
 
 import {
     getProjectById,
     getProjects,
+    getAllProjects,
     updateProject,
     deleteProject,
 } from "@/services/construction-project.service";
@@ -20,7 +22,9 @@ type RouteContext = {
 
 type AuthUser = {
     userId: string;
+    email?: string;
     role?: string;
+    portal?: string;
     companyId?: string;
 };
 
@@ -29,6 +33,11 @@ type ProjectRecord = {
     companyId: string;
     createdBy?: string;
     projectManagerUserId?: string;
+    projectName?: string;
+    location?: string;
+    startDate?: string;
+    expectedCompletion?: string;
+    status?: ProjectStatus;
     [key: string]: unknown;
 };
 
@@ -36,10 +45,21 @@ function normalizeRole(role?: string): string {
     return role?.trim().toLowerCase() ?? "";
 }
 
+/**
+ * Only the dedicated Construction Admin account receives
+ * cross-company Construction Admin access.
+ *
+ * Other existing Construction Admin roles retain admin
+ * permissions within the company resolved by this API.
+ */
 function isConstructionAdmin(user: AuthUser): boolean {
     const role = normalizeRole(user.role);
+    const email = user.email?.trim().toLowerCase();
 
-    return role === "admin" || role === "constructionadmin";
+    return (
+        (role === "admin" && email === "adminc@driwe.com") ||
+        role === "constructionadmin"
+    );
 }
 
 function isProjectManager(user: AuthUser): boolean {
@@ -66,40 +86,36 @@ function forbidden(message: string) {
 }
 
 /**
- * Admin can locate a project across companies.
- * Other users are restricted to their own company.
+ * Dedicated Construction Admin:
+ * Search all projects and match the exact project ID.
+ *
+ * Other users:
+ * Search only within their own company.
  */
 async function findProject(
     projectId: string,
     user: AuthUser
 ): Promise<ProjectRecord | null> {
-    if (!isConstructionAdmin(user)) {
-        const project = await getProjectById(
-            projectId,
-            getCompanyId(user)
-        );
+    if (isConstructionAdmin(user)) {
+        const projects = await getAllProjects();
 
-        return (project as ProjectRecord | null) ?? null;
+        return (
+            (projects.find(
+                (project) => project.projectId === projectId
+            ) as ProjectRecord | undefined) ?? null
+        );
     }
 
-    // The existing getProjects() service requires a company ID.
-    // Use the known project IDs only through the service and
-    // verify the actual project ID before returning a match.
-    const projects = await getProjects(getCompanyId(user));
-
-    const adminCompanyProject = projects.find(
-        (project) => project.projectId === projectId
+    const project = await getProjectById(
+        projectId,
+        getCompanyId(user)
     );
 
-    return (adminCompanyProject as ProjectRecord | undefined) ?? null;
+    return (project as ProjectRecord | null) ?? null;
 }
 
 /**
  * GET SINGLE PROJECT
- *
- * Admin: projects accessible through the current service.
- * Builder/creator: own projects only.
- * Project manager: assigned projects only.
  */
 export async function GET(
     req: Request,
@@ -172,10 +188,6 @@ export async function GET(
 
 /**
  * UPDATE PROJECT
- *
- * Admin: can update projects within the scope supported by the service.
- * Builder/creator: can update only their own projects.
- * Project managers and workers: cannot update project details.
  */
 export async function PUT(
     req: Request,
@@ -210,7 +222,10 @@ export async function PUT(
             );
         }
 
-        if (!admin && existingProject.createdBy !== user.userId) {
+        if (
+            !admin &&
+            existingProject.createdBy !== user.userId
+        ) {
             return forbidden(
                 "You can only edit projects created by you."
             );
@@ -288,48 +303,46 @@ export async function PUT(
             {
                 projectName,
                 location,
-
-                // Do not allow a builder to change ownership,
-                // company, or assigned project manager.
-               projectManager:
-  typeof existingProject.projectManager === "string"
-    ? existingProject.projectManager
-    : undefined,
-
-projectManagerName:
-  typeof existingProject.projectManagerName === "string"
-    ? existingProject.projectManagerName
-    : undefined,
-
-projectManagerUserId:
-  typeof existingProject.projectManagerUserId === "string"
-    ? existingProject.projectManagerUserId
-    : undefined,
-               projectManagerEmail:
-    typeof existingProject.projectManagerEmail === "string"
-        ? existingProject.projectManagerEmail
-        : undefined,
-
-siteSupervisor:
-    typeof existingProject.siteSupervisor === "string"
-        ? existingProject.siteSupervisor
-        : undefined,
-
-siteSupervisorName:
-    typeof existingProject.siteSupervisorName === "string"
-        ? existingProject.siteSupervisorName
-        : undefined,
-
+                projectManager:
+                    typeof existingProject.projectManager === "string"
+                        ? existingProject.projectManager
+                        : undefined,
+                projectManagerName:
+                    typeof existingProject.projectManagerName === "string"
+                        ? existingProject.projectManagerName
+                        : undefined,
+                projectManagerUserId:
+                    typeof existingProject.projectManagerUserId === "string"
+                        ? existingProject.projectManagerUserId
+                        : undefined,
+                projectManagerEmail:
+                    typeof existingProject.projectManagerEmail === "string"
+                        ? existingProject.projectManagerEmail
+                        : undefined,
+                siteSupervisor:
+                    typeof existingProject.siteSupervisor === "string"
+                        ? existingProject.siteSupervisor
+                        : undefined,
+                siteSupervisorName:
+                    typeof existingProject.siteSupervisorName === "string"
+                        ? existingProject.siteSupervisorName
+                        : undefined,
                 startDate,
                 expectedCompletion,
                 status: status as ProjectStatus,
-
                 description:
                     body.description !== undefined
                         ? body.description
                         : existingProject.description,
             }
         );
+
+        if (!updatedProject) {
+            return NextResponse.json(
+                { success: false, message: "Project could not be updated." },
+                { status: 404 }
+            );
+        }
 
         return NextResponse.json({
             success: true,
@@ -348,8 +361,6 @@ siteSupervisorName:
 
 /**
  * DELETE PROJECT
- *
- * Only Admin can delete projects.
  */
 export async function DELETE(
     req: Request,
@@ -367,7 +378,7 @@ export async function DELETE(
 
         if (!isConstructionAdmin(user)) {
             return forbidden(
-                "Only an Admin can delete projects."
+                "Only a Construction Admin can delete projects."
             );
         }
 
@@ -389,10 +400,17 @@ export async function DELETE(
             );
         }
 
-        await deleteProject(
+        const deleted = await deleteProject(
             projectId,
             existingProject.companyId
         );
+
+        if (!deleted) {
+            return NextResponse.json(
+                { success: false, message: "Project could not be deleted." },
+                { status: 404 }
+            );
+        }
 
         return NextResponse.json({
             success: true,

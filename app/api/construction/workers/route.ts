@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 
 import {
+  getAllProjects,
   getProjects,
   getProjectById,
 } from "@/services/construction-project.service";
@@ -115,10 +116,18 @@ function getCompanyId(user: AuthUser): string | null {
   return user.companyId || user.userId || null;
 }
 
+function isConstructionAdmin(user: AuthUser): boolean {
+  const role = (user.role || "").trim().toUpperCase();
+  const email = (user.email || "").trim().toLowerCase();
+
+  return (
+    (role === "ADMIN" && email === "adminc@driwe.com") ||
+    role === "CONSTRUCTIONADMIN"
+  );
+}
+
 function normalizeId(value: unknown): string {
-  return typeof value === "string"
-    ? value.trim()
-    : "";
+  return typeof value === "string" ? value.trim() : "";
 }
 
 function isWorkerType(value: string): value is WorkerType {
@@ -136,17 +145,14 @@ function getWorkerCompensation(worker: {
   dailyWage?: number;
 }) {
   const salary = Number(worker.salary || 0);
-  const dailyWage = Number(
-    worker.dailyWage || 0
-  );
+  const dailyWage = Number(worker.dailyWage || 0);
 
   if (worker.workerType === "Daily Wage") {
     return {
       salary,
       dailyWage,
       compensationType: "Daily Wage" as const,
-      compensationAmount:
-        dailyWage || salary,
+      compensationAmount: dailyWage || salary,
     };
   }
 
@@ -163,22 +169,21 @@ function getWorkerCompensation(worker: {
  * GET /api/construction/workers
  * GET /api/construction/workers?projectId=PROJECT_ID
  *
- * Returns workers plus project managers and project creators.
+ * Construction Admin can view people across all projects.
+ * Other users remain restricted to their company.
  */
 export async function GET(request: Request) {
   try {
     const user = await getAuthenticatedUser();
 
     if (!user) {
-      return jsonError(
-        "Unauthorized. Please log in.",
-        401
-      );
+      return jsonError("Unauthorized. Please log in.", 401);
     }
 
     const companyId = getCompanyId(user);
+    const constructionAdmin = isConstructionAdmin(user);
 
-    if (!companyId) {
+    if (!constructionAdmin && !companyId) {
       return jsonError(
         "Your account is not associated with a company.",
         403
@@ -186,17 +191,24 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const projectId = normalizeId(
-      searchParams.get("projectId")
-    );
+    const projectId = normalizeId(searchParams.get("projectId"));
 
-    let projects;
+    let projects: Awaited<ReturnType<typeof getProjects>>;
 
-    if (projectId) {
-      const project = await getProjectById(
-        projectId,
-        companyId
-      );
+    if (constructionAdmin) {
+      const allProjects = await getAllProjects();
+
+      projects = projectId
+        ? allProjects.filter(
+            (project) => project.projectId === projectId
+          )
+        : allProjects;
+
+      if (projectId && projects.length === 0) {
+        return jsonError("Project not found.", 404);
+      }
+    } else if (projectId) {
+      const project = await getProjectById(projectId, companyId!);
 
       if (!project) {
         return jsonError(
@@ -207,23 +219,43 @@ export async function GET(request: Request) {
 
       projects = [project];
     } else {
-      projects = await getProjects(companyId);
+      projects = await getProjects(companyId!);
     }
 
-    const workers = projectId
-      ? await getWorkersByProject(
-          projectId,
-          companyId
+    let workerRecords;
+
+    if (constructionAdmin) {
+      const workerGroups = await Promise.all(
+        projects.map((project) =>
+          getWorkersByProject(
+            project.projectId,
+            project.companyId
+          )
         )
-      : await getWorkers(companyId);
+      );
 
-    const people: PersonEntry[] = [];
+      const uniqueWorkers = new Map<
+        string,
+        (typeof workerGroups)[number][number]
+      >();
 
-    for (const worker of workers) {
-      const compensation =
-        getWorkerCompensation(worker);
+      for (const group of workerGroups) {
+        for (const worker of group) {
+          uniqueWorkers.set(worker.workerId, worker);
+        }
+      }
 
-      people.push({
+      workerRecords = Array.from(uniqueWorkers.values());
+    } else {
+      workerRecords = projectId
+        ? await getWorkersByProject(projectId, companyId!)
+        : await getWorkers(companyId!);
+    }
+
+    const people: PersonEntry[] = workerRecords.map((worker) => {
+      const compensation = getWorkerCompensation(worker);
+
+      return {
         personId: worker.workerId,
         workerId: worker.workerId,
         companyId: worker.companyId,
@@ -239,24 +271,23 @@ export async function GET(request: Request) {
         active: worker.active !== false,
         createdAt: worker.createdAt,
         updatedAt: worker.updatedAt,
-      });
-    }
+      };
+    });
 
     const workerEmails = new Set(
-      workers
-        .map((worker) =>
-          normalizeId(worker.email).toLowerCase()
-        )
+      workerRecords
+        .map((worker) => normalizeId(worker.email).toLowerCase())
         .filter(Boolean)
     );
 
     const workerUserIds = new Set(
-      workers
+      workerRecords
         .map((worker) => normalizeId(worker.userId))
         .filter(Boolean)
     );
 
     for (const project of projects) {
+      const projectCompanyId = project.companyId || companyId || "";
       const projectName = project.projectName || "";
 
       const managerName =
@@ -278,7 +309,7 @@ export async function GET(request: Request) {
       if (managerName && !managerAlreadyListed) {
         people.push({
           personId: `manager-${project.projectId}`,
-          companyId,
+          companyId: projectCompanyId,
           name: managerName,
           email: managerEmail,
           phone: "",
@@ -294,31 +325,23 @@ export async function GET(request: Request) {
         });
       }
 
-      const creatorName = normalizeId(
-        project.createdByName
-      );
-
-      const creatorId = normalizeId(
-        project.createdBy
-      );
+      const creatorName = normalizeId(project.createdByName);
+      const creatorId = normalizeId(project.createdBy);
 
       const creatorAlreadyListed =
         (creatorId && workerUserIds.has(creatorId)) ||
-        (creatorId &&
-          workerEmails.has(creatorId.toLowerCase())) ||
+        (creatorId && workerEmails.has(creatorId.toLowerCase())) ||
         (managerUserId && creatorId === managerUserId) ||
-        (managerEmail &&
-          creatorId.toLowerCase() === managerEmail);
+        (managerEmail && creatorId.toLowerCase() === managerEmail);
 
       if (
         creatorName &&
         !creatorAlreadyListed &&
-        creatorName.toLowerCase() !==
-          managerName.toLowerCase()
+        creatorName.toLowerCase() !== managerName.toLowerCase()
       ) {
         people.push({
           personId: `creator-${project.projectId}`,
-          companyId,
+          companyId: projectCompanyId,
           name: creatorName,
           email: "",
           phone: "",
@@ -340,10 +363,7 @@ export async function GET(request: Request) {
       workers: people,
     });
   } catch (error) {
-    console.error(
-      "GET /api/construction/workers error:",
-      error
-    );
+    console.error("GET /api/construction/workers error:", error);
 
     return jsonError(
       error instanceof Error
@@ -357,42 +377,41 @@ export async function GET(request: Request) {
 /**
  * POST /api/construction/workers
  *
- * Creates a worker associated with a project.
+ * Creates a worker for the selected project.
+ * Construction Admin may select a project across companies.
+ * Other permitted roles may only select a project in their company.
  */
 export async function POST(request: Request) {
   try {
     const user = await getAuthenticatedUser();
 
     if (!user) {
-      return jsonError(
-        "Unauthorized. Please log in.",
-        401
-      );
+      return jsonError("Unauthorized. Please log in.", 401);
     }
 
     const companyId = getCompanyId(user);
+    const constructionAdmin = isConstructionAdmin(user);
 
-    if (!companyId) {
-      return jsonError(
-        "Your account is not associated with a company.",
-        403
-      );
-    }
+    const role = (user.role || "").trim().toUpperCase();
 
-    const role = (user.role || "")
-      .trim()
-      .toUpperCase();
-
-    const canManageWorkers = [
-      "ADMIN",
-      "CONSTRUCTIONADMIN",
-      "CONSTRUCTIONMANAGER",
-      "MANAGER",
-    ].includes(role);
+    const canManageWorkers =
+      constructionAdmin ||
+      [
+        "ADMIN",
+        "CONSTRUCTIONMANAGER",
+        "MANAGER",
+      ].includes(role);
 
     if (!canManageWorkers) {
       return jsonError(
         "You do not have permission to create workers.",
+        403
+      );
+    }
+
+    if (!constructionAdmin && !companyId) {
+      return jsonError(
+        "Your account is not associated with a company.",
         403
       );
     }
@@ -402,10 +421,7 @@ export async function POST(request: Request) {
     try {
       body = await request.json();
     } catch {
-      return jsonError(
-        "Invalid JSON request body.",
-        400
-      );
+      return jsonError("Invalid JSON request body.", 400);
     }
 
     const projectId = normalizeId(body.projectId);
@@ -414,9 +430,8 @@ export async function POST(request: Request) {
     const phone = normalizeId(body.phone);
     const workerType = normalizeId(body.workerType);
     const password =
-      typeof body.password === "string"
-        ? body.password
-        : "";
+      typeof body.password === "string" ? body.password : "";
+
     const salaryInput = body.salary;
     const salary = Number(salaryInput);
 
@@ -428,10 +443,7 @@ export async function POST(request: Request) {
     }
 
     if (!name) {
-      return jsonError(
-        "Worker name is required.",
-        400
-      );
+      return jsonError("Worker name is required.", 400);
     }
 
     if (!email || !phone || !password) {
@@ -461,15 +473,25 @@ export async function POST(request: Request) {
       );
     }
 
-    const project = await getProjectById(
-      projectId,
-      companyId
-    );
+    // Resolve the selected project using its actual company.
+    // Never trust a companyId supplied by the request body.
+    const project = constructionAdmin
+      ? (await getAllProjects()).find(
+          (item) => item.projectId === projectId
+        ) || null
+      : await getProjectById(projectId, companyId!);
 
     if (!project) {
       return jsonError(
         "Project not found or you do not have access to it.",
         404
+      );
+    }
+
+    if (!project.companyId) {
+      return jsonError(
+        "The selected project is missing its company association.",
+        400
       );
     }
 
@@ -484,22 +506,17 @@ export async function POST(request: Request) {
         : undefined;
 
     const worker = await createWorker({
-      projectId,
-      projectName:
-        normalizeId(body.projectName) ||
-        normalizeId(
-          (project as { projectName?: string }).projectName
-        ),
-      companyId,
+      projectId: project.projectId,
+      projectName: project.projectName || "",
+      // Critical fix: save under the selected project's company.
+      companyId: project.companyId,
       name,
       email,
       phone,
       password,
       workerType,
       salary,
-      ...(dailyWage !== undefined
-        ? { dailyWage }
-        : {}),
+      ...(dailyWage !== undefined ? { dailyWage } : {}),
       active: body.active === false ? false : true,
     });
 
@@ -512,10 +529,7 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error(
-      "POST /api/construction/workers error:",
-      error
-    );
+    console.error("POST /api/construction/workers error:", error);
 
     return jsonError(
       error instanceof Error

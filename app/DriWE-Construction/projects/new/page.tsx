@@ -3,6 +3,7 @@
 
 import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ErrorPopup } from "@/components/ui/error-popup";
 import {
     ArrowLeft,
     Building2,
@@ -109,14 +110,8 @@ export default function NewProjectPage() {
     const [error, setError] = useState("");
 
     function showValidationPopup(message: string) {
-        // Empty messages clear the inline error only; they must not open a blank alert.
+        // Show errors in the in-page alert so they are readable and non-blocking.
         setError(message);
-
-        if (!message.trim()) {
-            return;
-        }
-
-        window.alert(message);
     }
 
     function updateProject(
@@ -359,16 +354,22 @@ export default function NewProjectPage() {
             const message =
                 error instanceof Error ? error.message : "";
 
+            const normalizedMessage = message.toLowerCase();
             if (
-                message.toLowerCase().includes("account already exists") ||
-                message.toLowerCase().includes("email already exists") ||
-                message.toLowerCase().includes("email already exist")
+                normalizedMessage.includes("account already exists") ||
+                normalizedMessage.includes("email already exists") ||
+                normalizedMessage.includes("email already exist")
             ) {
-                alert("Email Already Exist");
+                setError(
+                    "An account already uses this email. Enter a different email address for the project manager or worker, then try again."
+                );
                 return;
             }
 
-            alert(message || "Failed to create project. Please try again.");
+            setError(
+                message ||
+                    "We couldn’t create the project. Check the required fields and try again."
+            );
         } finally {
             setLoading(false);
         }
@@ -458,15 +459,7 @@ export default function NewProjectPage() {
                     </div>
                 </div>
 
-                {/* Error message */}
-                {error && (
-                    <div
-                        role="alert"
-                        className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-                    >
-                        {error}
-                    </div>
-                )}
+                <ErrorPopup message={error} onClose={() => setError("")} />
 
                 <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
                     {/* Step 1: Project details */}
@@ -477,7 +470,7 @@ export default function NewProjectPage() {
                                     Project Information
                                 </h2>
                                 <p className="mt-1 text-sm text-gray-600">
-                                    Enter project details and create the manager's login.
+                                    Enter project details and create the manager&apos;s login.
                                 </p>
                             </div>
 

@@ -144,8 +144,8 @@ async function readResponse(response: Response): Promise<any> {
     if (!response.ok) {
         throw new Error(
             data?.error ||
-                data?.message ||
-                `Request failed with status ${response.status}`
+            data?.message ||
+            `Request failed with status ${response.status}`
         );
     }
 
@@ -773,13 +773,26 @@ export default function ConstructionTasksPage() {
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                         <div>
                             <div className="mb-2">
-                                <Link
-                                    href="/DriWE-Construction"
-                                    className="inline-flex items-center gap-1.5 text-sm text-gray-600 transition hover:text-black"
-                                >
-                                    <ArrowLeft className="h-4 w-4" />
-                                    Construction
-                                </Link>
+                                {isConstructionWorker ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            window.location.replace("/DriWE-Construction/tasks");
+                                        }}
+                                        className="inline-flex items-center gap-1.5 text-sm text-gray-600 transition hover:text-black"
+                                    >
+                                        <ArrowLeft className="h-4 w-4" />
+                                        Back to Tasks
+                                    </button>
+                                ) : (
+                                    <Link
+                                        href="/DriWE-Construction"
+                                        className="inline-flex items-center gap-1.5 text-sm text-gray-600 transition hover:text-black"
+                                    >
+                                        <ArrowLeft className="h-4 w-4" />
+                                        Construction
+                                    </Link>
+                                )}
                             </div>
 
                             <div className="flex items-center gap-3">
@@ -806,9 +819,8 @@ export default function ConstructionTasksPage() {
                                 className="inline-flex h-10 items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-black transition hover:bg-gray-100 disabled:opacity-50"
                             >
                                 <RefreshCw
-                                    className={`h-4 w-4 ${
-                                        loading ? "animate-spin" : ""
-                                    }`}
+                                    className={`h-4 w-4 ${loading ? "animate-spin" : ""
+                                        }`}
                                 />
                                 Refresh
                             </button>
@@ -910,8 +922,8 @@ export default function ConstructionTasksPage() {
                             onChange={(event) =>
                                 setStatusFilter(
                                     event.target.value as
-                                        | "All"
-                                        | TaskStatus
+                                    | "All"
+                                    | TaskStatus
                                 )
                             }
                             className={inputClass}
@@ -928,8 +940,8 @@ export default function ConstructionTasksPage() {
                             onChange={(event) =>
                                 setPriorityFilter(
                                     event.target.value as
-                                        | "All"
-                                        | Priority
+                                    | "All"
+                                    | Priority
                                 )
                             }
                             className={inputClass}
@@ -1085,11 +1097,10 @@ export default function ConstructionTasksPage() {
 
                                             <td className="px-5 py-4 align-top">
                                                 <div
-                                                    className={`text-sm ${
-                                                        isOverdue(task)
+                                                    className={`text-sm ${isOverdue(task)
                                                             ? "font-medium text-red-700"
                                                             : "text-gray-700"
-                                                    }`}
+                                                        }`}
                                                 >
                                                     {formatDate(task.dueDate)}
                                                 </div>
@@ -1151,8 +1162,8 @@ export default function ConstructionTasksPage() {
                                     {isConstructionWorker
                                         ? "Update Assigned Task"
                                         : editingTask
-                                          ? "Edit Construction Task"
-                                          : "Create Construction Task"}
+                                            ? "Edit Construction Task"
+                                            : "Create Construction Task"}
                                 </h2>
                                 <p className="mt-1 text-xs text-gray-600">
                                     {isConstructionWorker
@@ -1267,10 +1278,10 @@ export default function ConstructionTasksPage() {
                                                             {!form.projectId
                                                                 ? "Select project first"
                                                                 : loadingWorkers
-                                                                  ? "Loading workers..."
-                                                                  : workers.length === 0
-                                                                    ? "No workers found"
-                                                                    : "Select Worker"}
+                                                                    ? "Loading workers..."
+                                                                    : workers.length === 0
+                                                                        ? "No workers found"
+                                                                        : "Select Worker"}
                                                         </option>
                                                         {workers.map(
                                                             (worker, index) => (
@@ -1592,8 +1603,8 @@ export default function ConstructionTasksPage() {
                                     {isConstructionWorker
                                         ? "Save Progress"
                                         : editingTask
-                                          ? "Update Task"
-                                          : "Create Task"}
+                                            ? "Update Task"
+                                            : "Create Task"}
                                 </button>
                             </div>
                         </form>

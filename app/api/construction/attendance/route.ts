@@ -1,18 +1,24 @@
+
 import { NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";
+
 import {
     getAttendance,
     getAttendanceByProject,
     getAttendanceByWorker,
     createAttendance,
 } from "@/services/construction-attendance.service";
+
 import {
     getProjectById,
     getProjects,
+    getAllProjects,
 } from "@/services/construction-project.service";
+
 import {
     getWorkerById,
 } from "@/services/construction-worker.service";
+
 import type { AttendanceStatus } from "@/types/construction";
 
 type ConstructionUser = {
@@ -94,8 +100,9 @@ function serverError(message: string) {
 }
 
 /**
- * Admins can access any project in their company.
- * Project managers can access only projects assigned to them.
+ * Admins can access any construction project.
+ * Project managers can access only their assigned projects
+ * within their own company.
  */
 async function getAuthorizedProject(
     user: ConstructionUser,
@@ -105,35 +112,43 @@ async function getAuthorizedProject(
         return null;
     }
 
-    const project = await getProjectById(
-        projectId,
-        getCompanyId(user)
-    );
+    let project: AssignedProject | undefined;
 
-    if (!project) {
+    if (isAdmin(user)) {
+        const projects = await getAllProjects();
+
+        project = (projects as AssignedProject[]).find(
+            (item) => item.projectId === projectId
+        );
+    } else {
+        const foundProject = await getProjectById(
+            projectId,
+            getCompanyId(user)
+        );
+
+        project = foundProject as AssignedProject | undefined;
+    }
+
+    if (!project || !project.companyId) {
         return null;
     }
 
-    const assignedProject = project as AssignedProject;
-
     if (
         isProjectManager(user) &&
-        assignedProject.projectManagerUserId !== user.userId
+        project.projectManagerUserId !== user.userId
     ) {
         return null;
     }
 
-    return assignedProject;
+    return project;
 }
 
 /**
- * Resolve the logged-in worker's worker record.
- *
- * This supports setups where employeeId equals workerId,
- * or where userId equals workerId.
+ * Resolve the logged-in worker's record.
  */
 async function getLoggedInWorker(user: ConstructionUser) {
     const companyId = getCompanyId(user);
+
     const possibleIds = [
         user.employeeId,
         user.userId,
@@ -169,9 +184,28 @@ function sortAttendance<
     });
 }
 
+function validDate(date: string): boolean {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return false;
+    }
+
+    const parsed = new Date(`${date}T00:00:00.000Z`);
+
+    return (
+        !Number.isNaN(parsed.getTime()) &&
+        parsed.toISOString().slice(0, 10) === date
+    );
+}
+
+const VALID_STATUSES: AttendanceStatus[] = [
+    "Present",
+    "Absent",
+    "Half Day",
+];
+
 /**
  * GET:
- * Admin: company-wide attendance, or filtered by project/worker.
+ * Admin: attendance across all companies, optionally filtered by project/worker.
  * Project manager: attendance for assigned projects only.
  * Worker: their own attendance only.
  */
@@ -195,8 +229,10 @@ export async function GET(req: Request) {
 
         const companyId = getCompanyId(user);
         const { searchParams } = new URL(req.url);
+
         const requestedProjectId =
             searchParams.get("projectId")?.trim();
+
         const requestedWorkerId =
             searchParams.get("workerId")?.trim();
 
@@ -204,7 +240,6 @@ export async function GET(req: Request) {
             ReturnType<typeof getAttendance>
         > = [];
 
-        // Workers can never query another worker or project.
         if (isWorker(user)) {
             const worker = await getLoggedInWorker(user);
 
@@ -216,10 +251,9 @@ export async function GET(req: Request) {
 
             attendance = await getAttendanceByWorker(
                 worker.workerId,
-                companyId
+                worker.companyId
             );
 
-            // Ignore all requested IDs and enforce ownership.
             attendance = attendance.filter(
                 (record) => record.workerId === worker.workerId
             );
@@ -236,7 +270,7 @@ export async function GET(req: Request) {
             if (requestedWorkerId) {
                 const worker = await getWorkerById(
                     requestedWorkerId,
-                    companyId
+                    project.companyId
                 );
 
                 if (!worker) {
@@ -251,7 +285,7 @@ export async function GET(req: Request) {
 
                 attendance = await getAttendanceByWorker(
                     worker.workerId,
-                    companyId
+                    project.companyId
                 );
 
                 attendance = attendance.filter(
@@ -261,14 +295,32 @@ export async function GET(req: Request) {
             } else {
                 attendance = await getAttendanceByProject(
                     project.projectId,
-                    companyId
+                    project.companyId
                 );
             }
         } else if (requestedWorkerId) {
-            const worker = await getWorkerById(
-                requestedWorkerId,
-                companyId
-            );
+            let worker = null;
+
+            if (isAdmin(user)) {
+                // Resolve worker across companies, then use its actual company.
+                const allProjects = await getAllProjects();
+
+                for (const project of allProjects as AssignedProject[]) {
+                    worker = await getWorkerById(
+                        requestedWorkerId,
+                        project.companyId
+                    );
+
+                    if (worker) {
+                        break;
+                    }
+                }
+            } else {
+                worker = await getWorkerById(
+                    requestedWorkerId,
+                    companyId
+                );
+            }
 
             if (!worker) {
                 return notFound("Worker not found.");
@@ -280,14 +332,14 @@ export async function GET(req: Request) {
                     worker.projectId
                 );
 
-                if (!project) {
+                if (!project || project.companyId !== worker.companyId) {
                     return forbidden();
                 }
             }
 
             attendance = await getAttendanceByWorker(
                 worker.workerId,
-                companyId
+                worker.companyId
             );
         } else if (isProjectManager(user)) {
             const projects = await getProjects(companyId);
@@ -303,14 +355,25 @@ export async function GET(req: Request) {
                 assignedProjects.map((project) =>
                     getAttendanceByProject(
                         project.projectId,
-                        companyId
+                        project.companyId
                     )
                 )
             );
 
             attendance = records.flat();
-        } else {
-            attendance = await getAttendance(companyId);
+        } else if (isAdmin(user)) {
+            const projects = await getAllProjects();
+
+            const records = await Promise.all(
+                (projects as AssignedProject[]).map((project) =>
+                    getAttendanceByProject(
+                        project.projectId,
+                        project.companyId
+                    )
+                )
+            );
+
+            attendance = records.flat();
         }
 
         sortAttendance(attendance);
@@ -332,8 +395,8 @@ export async function GET(req: Request) {
 
 /**
  * POST:
- * Admin: can mark attendance for any project in their company.
- * Project manager: can mark attendance only for assigned projects.
+ * Admin: can mark attendance for any project.
+ * Project manager: can mark attendance for assigned projects only.
  * Worker: cannot mark attendance.
  */
 export async function POST(req: Request) {
@@ -350,133 +413,13 @@ export async function POST(req: Request) {
             return forbidden();
         }
 
-        const companyId = getCompanyId(user);
         const body = await req.json();
 
-            if (Array.isArray(body?.records)) {
-                const projectId =
-                    typeof body.projectId === "string"
-                        ? body.projectId.trim()
-                        : "";
-                const date =
-                    typeof body.date === "string"
-                        ? body.date.trim()
-                        : "";
-
-                if (!projectId) {
-                    return badRequest("Project is required.");
-                }
-
-                if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-                    return badRequest("Invalid attendance date. Use YYYY-MM-DD.");
-                }
-
-                const parsedDate = new Date(`${date}T00:00:00.000Z`);
-                if (
-                    Number.isNaN(parsedDate.getTime()) ||
-                    parsedDate.toISOString().slice(0, 10) !== date
-                ) {
-                    return badRequest("Invalid attendance date.");
-                }
-
-                const project = await getAuthorizedProject(user, projectId);
-                if (!project) {
-                    return forbidden();
-                }
-
-                const validStatuses: AttendanceStatus[] = [
-                    "Present",
-                    "Absent",
-                    "Half Day",
-                ];
-                const submittedRecords = body.records as unknown[];
-
-                if (submittedRecords.length === 0) {
-                    return badRequest("At least one worker attendance record is required.");
-                }
-
-                const workerIds = new Set<string>();
-                const recordsToCreate = [];
-
-                for (const record of submittedRecords) {
-                    if (
-                        typeof record !== "object" ||
-                        record === null ||
-                        Array.isArray(record)
-                    ) {
-                        return badRequest("Invalid attendance record.");
-                    }
-
-                    const recordData = record as Record<string, unknown>;
-                    const recordWorkerId =
-                        typeof recordData.workerId === "string"
-                            ? recordData.workerId.trim()
-                            : "";
-                    const status = recordData.status;
-
-                    if (!recordWorkerId) {
-                        return badRequest("Worker is required for each attendance record.");
-                    }
-
-                    if (workerIds.has(recordWorkerId)) {
-                        return badRequest("A worker can appear only once in an attendance submission.");
-                    }
-                    workerIds.add(recordWorkerId);
-
-                    if (
-                        typeof status !== "string" ||
-                        !validStatuses.includes(status as AttendanceStatus)
-                    ) {
-                        return badRequest("Invalid attendance status.");
-                    }
-
-                    const worker = await getWorkerById(recordWorkerId, companyId);
-                    if (!worker) {
-                        return notFound("Worker not found.");
-                    }
-
-                    if (worker.projectId !== project.projectId) {
-                        return badRequest(
-                            "A selected worker does not belong to this project."
-                        );
-                    }
-
-                    recordsToCreate.push({
-                        companyId,
-                        projectId: project.projectId,
-                        projectName: project.projectName,
-                        workerId: worker.workerId,
-                        workerName: worker.name,
-                        date,
-                        status: status as AttendanceStatus,
-                        createdBy: user.userId,
-                        createdByName: user.name || user.email,
-                    });
-                }
-
-                const attendanceRecords = await Promise.all(
-                    recordsToCreate.map((record) => createAttendance(record))
-                );
-
-                return NextResponse.json(
-                    {
-                        success: true,
-                        message: "Attendance saved successfully.",
-                        attendance: attendanceRecords,
-                        count: attendanceRecords.length,
-                    },
-                    { status: 201 }
-                );
-            }
+        const isBulk = Array.isArray(body?.records);
 
         const projectId =
             typeof body.projectId === "string"
                 ? body.projectId.trim()
-                : "";
-
-        const workerId =
-            typeof body.workerId === "string"
-                ? body.workerId.trim()
                 : "";
 
         const date =
@@ -484,52 +427,13 @@ export async function POST(req: Request) {
                 ? body.date.trim()
                 : "";
 
-        const status =
-            typeof body.status === "string"
-                ? body.status.trim()
-                : "";
-
-        const remarks =
-            typeof body.remarks === "string"
-                ? body.remarks.trim()
-                : "";
-
         if (!projectId) {
             return badRequest("Project is required.");
         }
 
-        if (!workerId) {
-            return badRequest("Worker is required.");
-        }
-
-        if (!date) {
-            return badRequest("Attendance date is required.");
-        }
-
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        if (!validDate(date)) {
             return badRequest(
-                "Invalid date format. Use YYYY-MM-DD."
-            );
-        }
-
-        const parsedDate = new Date(`${date}T00:00:00.000Z`);
-
-        if (
-            Number.isNaN(parsedDate.getTime()) ||
-            parsedDate.toISOString().slice(0, 10) !== date
-        ) {
-            return badRequest("Invalid attendance date.");
-        }
-
-        const validStatuses: AttendanceStatus[] = [
-            "Present",
-            "Absent",
-            "Half Day",
-        ];
-
-        if (!validStatuses.includes(status as AttendanceStatus)) {
-            return badRequest(
-                "Invalid attendance status. Use Present, Absent or Half Day."
+                "Invalid attendance date. Use YYYY-MM-DD."
             );
         }
 
@@ -542,39 +446,103 @@ export async function POST(req: Request) {
             return forbidden();
         }
 
-        const worker = await getWorkerById(
-            workerId,
-            companyId
-        );
+        const submittedRecords: unknown[] = isBulk
+            ? body.records
+            : [body];
 
-        if (!worker) {
-            return notFound("Worker not found.");
-        }
-
-        if (worker.projectId !== project.projectId) {
+        if (submittedRecords.length === 0) {
             return badRequest(
-                "The selected worker does not belong to the selected project."
+                "At least one worker attendance record is required."
             );
         }
 
-        const attendance = await createAttendance({
-            companyId,
-            projectId: project.projectId,
-            projectName: project.projectName,
-            workerId: worker.workerId,
-            workerName: worker.name,
-            date,
-            status: status as AttendanceStatus,
-            remarks,
-            createdBy: user.userId,
-            createdByName: user.name || user.email,
-        });
+        const workerIds = new Set<string>();
+        const recordsToCreate = [];
+
+        for (const record of submittedRecords) {
+            if (
+                typeof record !== "object" ||
+                record === null ||
+                Array.isArray(record)
+            ) {
+                return badRequest("Invalid attendance record.");
+            }
+
+            const recordData = record as Record<string, unknown>;
+
+            const workerId =
+                typeof recordData.workerId === "string"
+                    ? recordData.workerId.trim()
+                    : "";
+
+            const status = recordData.status;
+
+            if (!workerId) {
+                return badRequest(
+                    "Worker is required for each attendance record."
+                );
+            }
+
+            if (workerIds.has(workerId)) {
+                return badRequest(
+                    "A worker can appear only once in an attendance submission."
+                );
+            }
+
+            workerIds.add(workerId);
+
+            if (
+                typeof status !== "string" ||
+                !VALID_STATUSES.includes(status as AttendanceStatus)
+            ) {
+                return badRequest(
+                    "Invalid attendance status. Use Present, Absent or Half Day."
+                );
+            }
+
+            const worker = await getWorkerById(
+                workerId,
+                project.companyId
+            );
+
+            if (!worker) {
+                return notFound("Worker not found.");
+            }
+
+            if (worker.projectId !== project.projectId) {
+                return badRequest(
+                    "A selected worker does not belong to this project."
+                );
+            }
+
+          recordsToCreate.push({
+    companyId: project.companyId,
+    projectId: project.projectId,
+    projectName: project.projectName,
+                workerId: worker.workerId,
+                workerName: worker.name,
+                date,
+                status: status as AttendanceStatus,
+                ...(!isBulk && typeof recordData.remarks === "string"
+                    ? { remarks: recordData.remarks.trim() }
+                    : {}),
+                createdBy: user.userId,
+                createdByName: user.name || user.email,
+            });
+        }
+
+        const attendanceRecords = await Promise.all(
+            recordsToCreate.map((record) => createAttendance(record))
+        );
 
         return NextResponse.json(
             {
                 success: true,
-                message: "Attendance marked successfully.",
-                attendance,
+                message: isBulk
+                    ? "Attendance saved successfully."
+                    : "Attendance marked successfully.",
+                attendance: attendanceRecords,
+                ...(isBulk ? { count: attendanceRecords.length } : {}),
             },
             { status: 201 }
         );

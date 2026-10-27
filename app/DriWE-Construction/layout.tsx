@@ -1,7 +1,8 @@
 
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState, type MouseEvent } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { HardHat, LogOut, Building2, ChevronRight } from "lucide-react";
 
 export default function ConstructionLayout({
@@ -9,7 +10,50 @@ export default function ConstructionLayout({
 }: {
   children: ReactNode;
 }) {
+  const pathname = usePathname();
+  const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [lastConstructionPath, setLastConstructionPath] = useState("");
+
+  useEffect(() => {
+    const currentKey = "driwe-construction-current-path";
+    const previousKey = "driwe-construction-previous-path";
+    const previousPath = window.sessionStorage.getItem(currentKey) || "";
+
+    if (
+      previousPath.startsWith("/DriWE-Construction/") &&
+      previousPath !== pathname
+    ) {
+      window.sessionStorage.setItem(previousKey, previousPath);
+    }
+
+    window.sessionStorage.setItem(currentKey, pathname);
+    setLastConstructionPath(
+      window.sessionStorage.getItem(previousKey) || ""
+    );
+  }, [pathname]);
+
+  function handleBackNavigation(event: MouseEvent<HTMLElement>) {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+
+    const anchor = target.closest("a[href]");
+    if (!(anchor instanceof HTMLAnchorElement)) return;
+
+    const label = anchor.textContent?.trim() || "";
+    if (!/^back(?:\s|$)/i.test(label)) return;
+
+    const destination = new URL(anchor.href, window.location.href);
+    if (destination.origin !== window.location.origin) return;
+
+    event.preventDefault();
+    const targetPath = `${destination.pathname}${destination.search}${destination.hash}`;
+    const previousPath =
+      lastConstructionPath && lastConstructionPath !== pathname
+        ? lastConstructionPath
+        : targetPath;
+    router.push(previousPath);
+  }
 
   async function handleLogout() {
     if (loggingOut) return;
@@ -87,7 +131,12 @@ export default function ConstructionLayout({
           <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
       </header>
 
-      <main className="construction-content min-h-[calc(100vh-77px)] w-full">{children}</main>
+      <main
+        className="construction-content min-h-[calc(100vh-77px)] w-full"
+        onClickCapture={handleBackNavigation}
+      >
+        {children}
+      </main>
     </div>
   );
 }

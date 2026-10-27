@@ -96,7 +96,23 @@ export default function ProjectDashboardPage() {
                 }
             );
 
-            const data = await response.json();
+            const responseText = await response.text();
+
+let data: any;
+
+try {
+    data = JSON.parse(responseText);
+} catch {
+    console.error("Project API returned a non-JSON response:", {
+        status: response.status,
+        url: response.url,
+        body: responseText.slice(0, 300),
+    });
+
+    throw new Error(
+        `Project API returned an invalid response (HTTP ${response.status}). Check the API route.`
+    );
+}
 
             if (!response.ok) {
                 throw new Error(
@@ -369,13 +385,13 @@ export default function ProjectDashboardPage() {
                             }
                         />
 
-                        <Info
+                        {/* <Info
                             label="Site Supervisor"
                             value={
                                 project.siteSupervisorName ||
                                 "Not assigned"
                             }
-                        />
+                        /> */}
 
                         <Info
                             label="Start Date"

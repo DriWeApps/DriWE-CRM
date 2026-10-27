@@ -460,7 +460,7 @@ export default function EditProjectPage() {
                                 </div>
 
                                 {/* Site Supervisor */}
-                                <div>
+                                {/* <div>
                                     <label
                                         htmlFor="siteSupervisorName"
                                         className={labelClass}
@@ -479,7 +479,7 @@ export default function EditProjectPage() {
                                             className={iconInputClass}
                                         />
                                     </div>
-                                </div>
+                                </div> */}
 
                                 {/* Start Date */}
                                 <div>

@@ -415,6 +415,9 @@ export default function MaterialsPage() {
                                             <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                                                 Available Quantity
                                             </th>
+                                            <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+    Unit
+</th>
                                             <th className="px-5 py-4 text-right text-xs font-semibold uppercase tracking-wider text-gray-600">
                                                 Actions
                                             </th>
@@ -441,14 +444,16 @@ export default function MaterialsPage() {
                                                 </td>
 
                                                 <td className="px-5 py-4">
-                                                    <div className="text-lg font-bold text-black">
-                                                        {formatNumber(
-                                                            material.quantity ??
-                                                                material.currentStock
-                                                        )}{" "}
-                                                        {material.unit || ""}
-                                                    </div>
-                                                </td>
+    <div className="text-lg font-bold text-black">
+        {formatNumber(
+            material.quantity ?? material.currentStock
+        )}
+    </div>
+</td>
+
+<td className="px-5 py-4 text-sm text-gray-700">
+    {material.unit || "—"}
+</td>
 
                                                 <td className="px-5 py-4">
                                                     <div className="flex items-center justify-end gap-1">

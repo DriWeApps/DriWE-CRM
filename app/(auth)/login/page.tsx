@@ -518,6 +518,7 @@
 
 
 
+
 "use client";
 
 import React, { useState } from "react";
@@ -554,6 +555,8 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
+      const normalizedEmail = email.trim().toLowerCase();
+
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
@@ -561,7 +564,7 @@ export default function LoginPage() {
         },
         credentials: "include",
         body: JSON.stringify({
-          email: email.trim().toLowerCase(),
+          email: normalizedEmail,
           password,
         }),
       });
@@ -576,19 +579,47 @@ export default function LoginPage() {
         return;
       }
 
-      const portal = data.user?.portal;
+      const portal = String(data.user?.portal ?? "")
+        .trim()
+        .toLowerCase();
 
+      const role = String(data.user?.role ?? "")
+        .trim()
+        .toUpperCase();
+
+      // Construction workers go directly to their Tasks page.
+      // They do not land on the Construction dashboard.
+      if (role === "CONSTRUCTIONEMPLOYEE") {
+        router.replace("/DriWE-Construction/tasks");
+        return;
+      }
+
+      // Dedicated Construction Admin.
+      if (
+        normalizedEmail === "adminc@driwe.com" &&
+        role === "ADMIN"
+      ) {
+        router.replace("/DriWE-Construction/dashboard");
+        return;
+      }
+
+      // Other construction-only accounts.
       if (portal === "construction") {
         router.replace("/DriWE-Construction/dashboard");
         return;
       }
 
+      // Main DriWE CRM accounts and other administrators.
+      if (portal === "crm" || portal === "both") {
+        router.replace("/dashboard");
+        return;
+      }
+
       alert(
-        "This login page is currently for DriWE Construction CRM accounts only."
+        "Your account does not have access to this portal. Please contact your administrator."
       );
     } catch (error) {
       console.error("Login Error:", error);
-
       alert("Something went wrong while logging in. Please try again.");
     } finally {
       setIsLoading(false);
@@ -597,7 +628,6 @@ export default function LoginPage() {
 
   return (
     <main className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-white px-4 py-8 text-black sm:px-6 lg:px-10">
-      {/* Subtle background decoration */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(245,158,11,0.09),_transparent_45%),radial-gradient(ellipse_at_bottom_right,_rgba(0,0,0,0.035),_transparent_40%)]" />
 
       <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-amber-100/60 blur-3xl" />
@@ -669,7 +699,6 @@ export default function LoginPage() {
 
         {/* Right login panel */}
         <section className="flex min-w-0 flex-col justify-center p-6 sm:p-10 lg:p-12 xl:p-14">
-          {/* Mobile branding */}
           <div className="mb-9 flex items-center gap-3 lg:hidden">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-black text-white">
               <HardHat className="h-6 w-6" />
@@ -700,7 +729,6 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleLogin} className="space-y-5">
-            {/* Email */}
             <div>
               <label
                 htmlFor="email"
@@ -711,7 +739,6 @@ export default function LoginPage() {
 
               <div className="relative">
                 <Mail className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-
                 <input
                   id="email"
                   type="email"
@@ -725,7 +752,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Password */}
             <div>
               <div className="mb-2 flex items-center justify-between gap-3">
                 <label
@@ -738,7 +764,6 @@ export default function LoginPage() {
 
               <div className="relative">
                 <Lock className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
@@ -765,7 +790,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Sign in */}
             <button
               type="submit"
               disabled={isLoading}
@@ -778,7 +802,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Signup */}
           <div className="my-7 flex items-center gap-4">
             <div className="h-px flex-1 bg-gray-200" />
             <span className="text-xs font-medium text-gray-400">
@@ -813,7 +836,6 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          {/* Footer */}
           <div className="mt-8 text-center">
             <p className="text-xs text-gray-500">
               © {new Date().getFullYear()} DriWE Construction CRM
@@ -827,3 +849,4 @@ export default function LoginPage() {
     </main>
   );
 }
+

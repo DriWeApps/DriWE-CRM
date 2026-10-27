@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -199,20 +198,6 @@ export default function AttendancePage() {
     const halfDayCount = projectWorkers.filter(
         (worker) => attendance[worker.workerId] === "Half Day"
     ).length;
-
-    const labourCost = projectWorkers.reduce((total, worker) => {
-        const status = attendance[worker.workerId];
-
-        if (status === "Present") {
-            return total + Number(worker.dailyWage || 0);
-        }
-
-        if (status === "Half Day") {
-            return total + Number(worker.dailyWage || 0) * 0.5;
-        }
-
-        return total;
-    }, 0);
 
     function setWorkerStatus(workerId: string, status: AttendanceStatus) {
         setAttendance((prev) => ({
@@ -417,7 +402,7 @@ export default function AttendancePage() {
                 )}
 
                 {/* Statistics */}
-                <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
                     <div className={`${cardClass} p-5`}>
                         <div className="flex items-center justify-between gap-3">
                             <div>
@@ -459,24 +444,9 @@ export default function AttendancePage() {
                             <XCircle className="h-6 w-6 text-red-600" />
                         </div>
                     </div>
-
-                    <div className={`${cardClass} p-5`}>
-                        <div className="flex items-center justify-between gap-3">
-                            <div>
-                                <p className="text-sm text-gray-600">
-                                    Labour Cost
-                                </p>
-                                <p className="mt-1 text-2xl font-bold text-black">
-                                    ₹
-                                    {labourCost.toLocaleString("en-IN")}
-                                </p>
-                            </div>
-                            <Users className="h-6 w-6 text-gray-700" />
-                        </div>
-                    </div>
                 </div>
 
-                {/* Attendance */}
+                {/* Daily Attendance */}
                 <div className={`${cardClass} overflow-hidden`}>
                     <div className="flex flex-col gap-3 border-b border-gray-200 px-5 py-4 md:flex-row md:items-center md:justify-between">
                         <div>
@@ -543,13 +513,7 @@ export default function AttendancePage() {
                                                 Role
                                             </th>
                                             <th className="px-5 py-3 font-medium">
-                                                Daily Wage
-                                            </th>
-                                            <th className="px-5 py-3 font-medium">
                                                 Attendance
-                                            </th>
-                                            <th className="px-5 py-3 font-medium">
-                                                Labour Cost
                                             </th>
                                         </tr>
                                     </thead>
@@ -561,21 +525,6 @@ export default function AttendancePage() {
                                                     getWorkerId(worker);
                                                 const status =
                                                     attendance[workerId];
-
-                                                let cost = 0;
-
-                                                if (status === "Present") {
-                                                    cost = Number(
-                                                        worker.dailyWage || 0
-                                                    );
-                                                } else if (
-                                                    status === "Half Day"
-                                                ) {
-                                                    cost =
-                                                        Number(
-                                                            worker.dailyWage || 0
-                                                        ) * 0.5;
-                                                }
 
                                                 return (
                                                     <tr
@@ -593,15 +542,6 @@ export default function AttendancePage() {
 
                                                         <td className="px-5 py-4 text-gray-700">
                                                             {worker.role}
-                                                        </td>
-
-                                                        <td className="px-5 py-4 text-gray-800">
-                                                            ₹
-                                                            {Number(
-                                                                worker.dailyWage || 0
-                                                            ).toLocaleString(
-                                                                "en-IN"
-                                                            )}
                                                         </td>
 
                                                         <td className="px-5 py-4">
@@ -673,13 +613,6 @@ export default function AttendancePage() {
                                                                 </button>
                                                             </div>
                                                         </td>
-
-                                                        <td className="px-5 py-4 font-medium text-black">
-                                                            ₹
-                                                            {cost.toLocaleString(
-                                                                "en-IN"
-                                                            )}
-                                                        </td>
                                                     </tr>
                                                 );
                                             }
@@ -688,7 +621,7 @@ export default function AttendancePage() {
                                 </table>
                             </div>
 
-                            {/* Save */}
+                            {/* Save Attendance */}
                             <div className="flex justify-end border-t border-gray-200 px-5 py-4">
                                 <button
                                     type="button"
@@ -716,4 +649,3 @@ export default function AttendancePage() {
         </div>
     );
 }
-

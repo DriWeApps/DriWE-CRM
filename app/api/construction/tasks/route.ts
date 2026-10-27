@@ -1,513 +1,399 @@
 
 import { NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";
-
 import {
-    getTasks,
-    getTasksByProject,
-    getTasksByAssignee,
-    createTask,
+  getTasks,
+  getTasksByProject,
+  getTasksByAssignee,
+  getTasksForAssigneeAcrossCompanies,
+  createTask,
 } from "@/services/construction-task.service";
-
 import {
-    getProjectById,
-    getProjects,
+  getProjectById,
+  getProjects,
+  getAllProjects,
 } from "@/services/construction-project.service";
-
 import { getWorkers } from "@/services/construction-worker.service";
-
 import type { ConstructionTaskStatus } from "@/types/construction";
 
 type ConstructionUser = {
-    userId: string;
-    employeeId?: string;
-    email: string;
-    name?: string;
-    role?: string;
-    companyId?: string;
+  userId: string;
+  employeeId?: string;
+  email: string;
+  name?: string;
+  role: string;
+  companyId?: string;
 };
 
 type AssignedTask = {
-    assignedTo?: string;
-    assignedToEmail?: string;
+  taskId: string;
+  companyId: string;
+  projectId: string;
+  assignedTo?: string;
+  assignedToEmail?: string;
+  dueDate?: string;
+  createdAt?: string;
 };
 
 type AssignedProject = {
-    projectId: string;
-    projectName: string;
-    companyId: string;
-    companyName?: string;
-    projectManagerUserId?: string;
+  projectId: string;
+  projectName?: string;
+  companyId: string;
+  companyName?: string;
+  projectManagerUserId?: string;
 };
 
-const VALID_STATUSES: ConstructionTaskStatus[] = [
-    "Pending",
-    "In Progress",
-    "Completed",
-    "Delayed",
-];
+const isAdmin = (user: ConstructionUser) =>
+  ["ADMIN", "CONSTRUCTIONADMIN"].includes(user.role.toUpperCase());
 
-const VALID_PRIORITIES = ["Low", "Medium", "High"] as const;
+const isProjectManager = (user: ConstructionUser) =>
+  user.role.toUpperCase() === "CONSTRUCTIONPROJECTMANAGER";
 
-function normalizedRole(user: ConstructionUser) {
-    return user.role?.trim().toLowerCase() ?? "";
-}
+const isWorker = (user: ConstructionUser) =>
+  user.role.toUpperCase() === "CONSTRUCTIONEMPLOYEE";
 
-function isAdmin(user: ConstructionUser) {
-    return ["admin", "constructionadmin"].includes(
-        normalizedRole(user)
-    );
-}
+const getCompanyId = (user: ConstructionUser) =>
+  user.companyId || user.userId;
 
-function isProjectManager(user: ConstructionUser) {
-    return normalizedRole(user) === "constructionprojectmanager";
-}
+const isAssignedToUser = (
+  task: AssignedTask,
+  user: ConstructionUser
+) => {
+  const identifiers = [
+    user.userId,
+    user.employeeId,
+    user.email,
+  ]
+    .filter(Boolean)
+    .map((value) => value!.trim().toLowerCase());
 
-function isConstructionWorker(user: ConstructionUser) {
-    return normalizedRole(user) === "constructionemployee";
-}
-
-function getCompanyId(user: ConstructionUser) {
-    return user.companyId || user.userId;
-}
-
-function isAssignedToUser(
-    task: AssignedTask,
-    user: ConstructionUser
-): boolean {
-    const email = user.email?.trim().toLowerCase();
-    const assignedTo = task.assignedTo?.trim().toLowerCase();
-    const assignedToEmail = task.assignedToEmail?.trim().toLowerCase();
-    const employeeId = user.employeeId?.trim().toLowerCase();
-    const userId = user.userId?.trim().toLowerCase();
-
-    return Boolean(
-        (email && (assignedToEmail === email || assignedTo === email)) ||
-        (employeeId && assignedTo === employeeId) ||
-        (userId && assignedTo === userId)
-    );
-}
-
-function unauthorized() {
-    return NextResponse.json(
-        { success: false, message: "Unauthorized." },
-        { status: 401 }
-    );
-}
-
-function forbidden(
-    message = "You do not have permission to perform this action."
-) {
-    return NextResponse.json(
-        { success: false, message },
-        { status: 403 }
-    );
-}
-
-function badRequest(message: string) {
-    return NextResponse.json(
-        { success: false, message },
-        { status: 400 }
-    );
-}
+  return [task.assignedTo, task.assignedToEmail]
+    .filter(Boolean)
+    .some((value) => identifiers.includes(value!.trim().toLowerCase()));
+};
 
 async function getAuthorizedProject(
-    user: ConstructionUser,
-    projectId: string
-): Promise<AssignedProject | null> {
-    if (!isAdmin(user) && !isProjectManager(user)) {
-        return null;
+  user: ConstructionUser,
+  projectId: string
+) {
+  if (!isAdmin(user) && !isProjectManager(user)) {
+    return null;
+  }
+
+  // Admins can access projects across companies.
+  if (isAdmin(user)) {
+    const projects = (await getAllProjects()) as AssignedProject[];
+
+    return (
+      projects.find((project) => project.projectId === projectId) || null
+    );
+  }
+
+  // Project Managers remain restricted to their own company and projects.
+  const project = await getProjectById(projectId, getCompanyId(user));
+
+  if (!project) return null;
+
+  if (project.projectManagerUserId !== user.userId) {
+    return null;
+  }
+
+  return project;
+}
+
+export async function GET(req: Request) {
+  try {
+    const user = (await getUserFromRequest(req)) as
+      | ConstructionUser
+      | null;
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
-    const project = await getProjectById(
+    if (!isAdmin(user) && !isProjectManager(user) && !isWorker(user)) {
+      return NextResponse.json(
+        { error: "You do not have permission to view construction tasks." },
+        { status: 403 }
+      );
+    }
+
+    const url = new URL(req.url);
+    const projectId = url.searchParams.get("projectId");
+    const requestedAssignee = url.searchParams.get("assignedTo");
+    const companyId = getCompanyId(user);
+
+    let tasks: AssignedTask[] = [];
+
+    if (isWorker(user)) {
+      // Workers can see only tasks assigned to their authenticated identity.
+      tasks = await getTasksForAssigneeAcrossCompanies([
+        user.userId,
+        user.employeeId || "",
+        user.email,
+      ]);
+
+      tasks = tasks.filter((task) => isAssignedToUser(task, user));
+    } else if (isProjectManager(user)) {
+      const projects = (await getProjects(companyId)) as AssignedProject[];
+
+      const managedProjects = projects.filter(
+        (project) => project.projectManagerUserId === user.userId
+      );
+
+      const projectIds = projectId
+        ? managedProjects
+            .filter((project) => project.projectId === projectId)
+            .map((project) => project.projectId)
+        : managedProjects.map((project) => project.projectId);
+
+      if (projectId && projectIds.length === 0) {
+        return NextResponse.json(
+          { error: "You cannot access this project." },
+          { status: 403 }
+        );
+      }
+
+      const taskGroups = await Promise.all(
+        projectIds.map((id) => getTasksByProject(id, companyId))
+      );
+
+      tasks = taskGroups.flat() as AssignedTask[];
+
+      if (requestedAssignee) {
+        tasks = tasks.filter(
+          (task) =>
+            task.assignedTo === requestedAssignee ||
+            task.assignedToEmail?.toLowerCase() ===
+              requestedAssignee.toLowerCase()
+        );
+      }
+    } else if (projectId) {
+      const project = await getAuthorizedProject(user, projectId);
+
+      if (!project) {
+        return NextResponse.json(
+          { error: "You cannot access this project." },
+          { status: 403 }
+        );
+      }
+
+      // Use the selected project's company, not the admin's company.
+      tasks = (await getTasksByProject(
         projectId,
-        getCompanyId(user)
+        project.companyId
+      )) as AssignedTask[];
+
+      if (requestedAssignee) {
+        tasks = tasks.filter(
+          (task) =>
+            task.assignedTo === requestedAssignee ||
+            task.assignedToEmail?.toLowerCase() ===
+              requestedAssignee.toLowerCase()
+        );
+      }
+    } else if (isAdmin(user)) {
+      // Collect tasks from every project using its actual companyId.
+      const projects = (await getAllProjects()) as AssignedProject[];
+
+      const taskGroups = await Promise.all(
+        projects.map((project) =>
+          getTasksByProject(project.projectId, project.companyId)
+        )
+      );
+
+      tasks = taskGroups.flat() as AssignedTask[];
+
+      if (requestedAssignee) {
+        tasks = tasks.filter(
+          (task) =>
+            task.assignedTo === requestedAssignee ||
+            task.assignedToEmail?.toLowerCase() ===
+              requestedAssignee.toLowerCase()
+        );
+      }
+    } else if (requestedAssignee) {
+      tasks = (await getTasksByAssignee(
+        requestedAssignee,
+        companyId
+      )) as AssignedTask[];
+    } else {
+      tasks = (await getTasks(companyId)) as AssignedTask[];
+    }
+
+    tasks.sort((a, b) => {
+      const aDate = a.dueDate || a.createdAt || "";
+      const bDate = b.dueDate || b.createdAt || "";
+      return aDate.localeCompare(bDate);
+    });
+
+    return NextResponse.json({ tasks });
+  } catch (error) {
+    console.error("GET construction tasks error:", error);
+
+    return NextResponse.json(
+      { error: "Failed to fetch construction tasks." },
+      { status: 500 }
     );
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    const user = (await getUserFromRequest(req)) as
+      | ConstructionUser
+      | null;
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    if (!isAdmin(user) && !isProjectManager(user)) {
+      return NextResponse.json(
+        { error: "You cannot create tasks." },
+        { status: 403 }
+      );
+    }
+
+    const body = await req.json();
+
+    const {
+      projectId,
+      title,
+      description,
+      assignedTo,
+      priority,
+      status,
+      startDate,
+      dueDate,
+      remarks,
+      completionDescription,
+      completionLink,
+    } = body;
+
+    if (!projectId || !title?.trim()) {
+      return NextResponse.json(
+        { error: "Project and task title are required." },
+        { status: 400 }
+      );
+    }
+
+    const allowedStatuses: ConstructionTaskStatus[] = [
+      "Pending",
+      "In Progress",
+      "Completed",
+      "Delayed",
+    ];
+
+    const allowedPriorities = ["Low", "Medium", "High"];
+
+    if (status && !allowedStatuses.includes(status)) {
+      return NextResponse.json(
+        { error: "Invalid task status." },
+        { status: 400 }
+      );
+    }
+
+    if (priority && !allowedPriorities.includes(priority)) {
+      return NextResponse.json(
+        { error: "Invalid task priority." },
+        { status: 400 }
+      );
+    }
+
+    const project = await getAuthorizedProject(user, projectId);
 
     if (!project) {
-        return null;
+      return NextResponse.json(
+        { error: "You cannot create tasks for this project." },
+        { status: 403 }
+      );
     }
 
-    const assignedProject = project as AssignedProject;
+    const companyId = project.companyId;
 
-    if (
-        isProjectManager(user) &&
-        assignedProject.projectManagerUserId !== user.userId
-    ) {
-        return null;
+    const workers = await getWorkers(companyId);
+
+    const worker = workers.find((item: any) =>
+      [
+        item.workerId,
+        item.userId,
+        item.employeeId,
+        item.email,
+      ]
+        .filter(Boolean)
+        .some(
+          (value: string) =>
+            value.trim().toLowerCase() ===
+            String(assignedTo || "").trim().toLowerCase()
+        )
+    );
+
+    if (assignedTo && !worker) {
+      return NextResponse.json(
+        { error: "The selected worker was not found in this project's company." },
+        { status: 404 }
+      );
     }
 
-    return assignedProject;
-}
-
-/**
- * GET TASKS
- *
- * Admin: all tasks in the company.
- * Project manager: tasks in assigned projects only.
- * Worker: assigned tasks only.
- */
-export async function GET(req: Request) {
-    try {
-        const user = await getUserFromRequest(req) as
-            | ConstructionUser
-            | null;
-
-        if (!user) {
-            return unauthorized();
-        }
-
-        if (
-            !isAdmin(user) &&
-            !isProjectManager(user) &&
-            !isConstructionWorker(user)
-        ) {
-            return forbidden();
-        }
-
-        const companyId = getCompanyId(user);
-        const { searchParams } = new URL(req.url);
-
-        const requestedProjectId =
-            searchParams.get("projectId")?.trim();
-
-        const requestedAssignee =
-            searchParams.get("assignedTo")?.trim();
-
-        let tasks: Awaited<ReturnType<typeof getTasks>> = [];
-
-        if (isConstructionWorker(user)) {
-            // Ignore caller-supplied project/assignee filters.
-            // Always return only tasks assigned to this worker.
-            tasks = await getTasks(companyId);
-
-            tasks = tasks.filter((task) =>
-                isAssignedToUser(task, user)
-            );
-        } else if (requestedProjectId) {
-            const project = await getAuthorizedProject(
-                user,
-                requestedProjectId
-            );
-
-            if (!project) {
-                return forbidden(
-                    "You cannot access tasks for this project."
-                );
-            }
-
-            tasks = await getTasksByProject(
-                project.projectId,
-                companyId
-            );
-
-            if (requestedAssignee) {
-                const target = requestedAssignee.toLowerCase();
-
-                tasks = tasks.filter((task) =>
-                    [
-                        task.assignedTo,
-                        task.assignedToEmail,
-                    ].some(
-                        (value) =>
-                            value?.trim().toLowerCase() === target
-                    )
-                );
-            }
-        } else if (isProjectManager(user)) {
-            // Only collect tasks from projects assigned to this manager.
-            const projects = await getProjects(companyId);
-
-            const assignedProjects = (
-                projects as AssignedProject[]
-            ).filter(
-                (project) =>
-                    project.projectManagerUserId === user.userId
-            );
-
-            const taskGroups = await Promise.all(
-                assignedProjects.map((project) =>
-                    getTasksByProject(project.projectId, companyId)
-                )
-            );
-
-            tasks = taskGroups.flat();
-
-            if (requestedAssignee) {
-                const target = requestedAssignee.toLowerCase();
-
-                tasks = tasks.filter((task) =>
-                    [
-                        task.assignedTo,
-                        task.assignedToEmail,
-                    ].some(
-                        (value) =>
-                            value?.trim().toLowerCase() === target
-                    )
-                );
-            }
-        } else if (requestedAssignee) {
-            tasks = await getTasksByAssignee(
-                requestedAssignee,
-                companyId
-            );
-        } else {
-            tasks = await getTasks(companyId);
-        }
-
-        tasks.sort((a, b) => {
-            const first = a.dueDate || a.createdAt || "";
-            const second = b.dueDate || b.createdAt || "";
-
-            return (
-                new Date(first).getTime() -
-                new Date(second).getTime()
-            );
-        });
-
-        return NextResponse.json({
-            success: true,
-            tasks,
-            count: tasks.length,
-        });
-    } catch (error) {
-        console.error("GET construction tasks error:", error);
-
-        return NextResponse.json(
-            {
-                success: false,
-                message: "Failed to fetch construction tasks.",
-            },
-            { status: 500 }
-        );
+   if (
+  worker &&
+  (
+    (worker as any).status === "Inactive" ||
+    worker.loginEnabled === false
+  )
+) {
+      return NextResponse.json(
+        { error: "This worker is inactive or cannot log in." },
+        { status: 400 }
+      );
     }
-}
 
-/**
- * CREATE TASK
- *
- * Admin: any project in their company.
- * Project manager: assigned projects only.
- * Worker: cannot create or assign tasks.
- */
-export async function POST(req: Request) {
-    try {
-        const user = await getUserFromRequest(req) as
-            | ConstructionUser
-            | null;
-
-        if (!user) {
-            return unauthorized();
-        }
-
-        if (!isAdmin(user) && !isProjectManager(user)) {
-            return forbidden("Workers cannot create or assign tasks.");
-        }
-
-        const companyId = getCompanyId(user);
-        const body = await req.json();
-
-        if (!body || typeof body !== "object" || Array.isArray(body)) {
-            return badRequest("Invalid task details.");
-        }
-
-        const projectId =
-            typeof body.projectId === "string"
-                ? body.projectId.trim()
-                : "";
-
-        const title =
-            typeof body.title === "string"
-                ? body.title.trim()
-                : "";
-
-        const description =
-            typeof body.description === "string"
-                ? body.description.trim()
-                : "";
-
-        const requestedAssignee =
-            typeof body.assignedTo === "string"
-                ? body.assignedTo.trim()
-                : "";
-
-        const requestedAssigneeEmail =
-            typeof body.assignedToEmail === "string"
-                ? body.assignedToEmail.trim().toLowerCase()
-                : "";
-
-        const priority = body.priority || "Medium";
-        const status = body.status || "Pending";
-        const startDate = body.startDate || undefined;
-        const dueDate = body.dueDate || undefined;
-
-        const remarks =
-            typeof body.remarks === "string"
-                ? body.remarks.trim()
-                : "";
-
-        const completionDescription =
-            typeof body.completionDescription === "string"
-                ? body.completionDescription.trim()
-                : "";
-
-        const completionLink =
-            typeof body.completionLink === "string"
-                ? body.completionLink.trim()
-                : "";
-
-        if (!projectId) {
-            return badRequest("Project ID is required.");
-        }
-
-        if (!title) {
-            return badRequest("Task title is required.");
-        }
-
-        if (!VALID_STATUSES.includes(status as ConstructionTaskStatus)) {
-            return badRequest("Invalid task status.");
-        }
-
-        if (
-            !VALID_PRIORITIES.includes(
-                priority as (typeof VALID_PRIORITIES)[number]
-            )
-        ) {
-            return badRequest("Invalid task priority.");
-        }
-
-        if (
-            startDate &&
-            (typeof startDate !== "string" ||
-                Number.isNaN(Date.parse(startDate)))
-        ) {
-            return badRequest("Invalid start date.");
-        }
-
-        if (
-            dueDate &&
-            (typeof dueDate !== "string" ||
-                Number.isNaN(Date.parse(dueDate)))
-        ) {
-            return badRequest("Invalid due date.");
-        }
-
-        if (
-            startDate &&
-            dueDate &&
-            new Date(dueDate).getTime() < new Date(startDate).getTime()
-        ) {
-            return badRequest(
-                "Due date cannot be earlier than the start date."
-            );
-        }
-
-        const project = await getAuthorizedProject(
-            user,
-            projectId
-        );
-
-        if (!project) {
-            return forbidden(
-                "You can create tasks only for projects you are authorized to manage."
-            );
-        }
-
-        let assignedTo: string | undefined;
-        let assignedToName: string | undefined;
-        let assignedToEmail: string | undefined;
-
-        if (requestedAssignee || requestedAssigneeEmail) {
-            const workers = await getWorkers(companyId);
-
-            const searchValue = requestedAssignee.toLowerCase();
-            const searchEmail = requestedAssigneeEmail || searchValue;
-
-            const worker = workers.find((item) => {
-                const matchesId =
-                    item.workerId?.toLowerCase() === searchValue ||
-                    item.userId?.toLowerCase() === searchValue;
-
-                const matchesEmail =
-                    item.email?.trim().toLowerCase() === searchEmail;
-
-                return matchesId || matchesEmail;
-            });
-
-            if (!worker) {
-                return badRequest(
-                    "Assigned worker was not found in your company."
-                );
-            }
-
-            if (
-                worker.active === false ||
-                worker.loginEnabled === false
-            ) {
-                return badRequest(
-                    "This worker is inactive or login is disabled."
-                );
-            }
-
-            if (worker.projectId !== project.projectId) {
-                return badRequest(
-                    "You can assign tasks only to workers assigned to this project."
-                );
-            }
-
-            assignedTo = worker.userId || worker.workerId;
-            assignedToName = worker.name;
-            assignedToEmail = worker.email?.trim().toLowerCase();
-        }
-
-        const task = await createTask({
-            companyId,
-            companyName: project.companyName,
-
-            projectId: project.projectId,
-            projectName: project.projectName,
-
-            title,
-            description: description || undefined,
-
-            assignedTo,
-            assignedToName,
-            assignedToEmail,
-
-            assignedBy: user.userId,
-            assignedByName: user.name || user.email,
-
-            priority,
-            status,
-            startDate,
-            dueDate,
-
-            remarks: remarks || undefined,
-            completionDescription:
-                completionDescription || undefined,
-            completionLink: completionLink || undefined,
-
-            createdBy: user.userId,
-            createdByName: user.name || user.email,
-        });
-
-        return NextResponse.json(
-            {
-                success: true,
-                message: "Construction task created successfully.",
-                task,
-            },
-            { status: 201 }
-        );
-    } catch (error) {
-        console.error("POST construction task error:", error);
-
-        return NextResponse.json(
-            {
-                success: false,
-                message: "Failed to create construction task.",
-            },
-            { status: 500 }
-        );
+    if (worker && worker.projectId && worker.projectId !== projectId) {
+      return NextResponse.json(
+        { error: "The selected worker does not belong to this project." },
+        { status: 400 }
+      );
     }
+
+    const task = await createTask({
+      companyId,
+      companyName: (project as any).companyName,
+      projectId,
+      projectName: (project as any).projectName,
+      title: title.trim(),
+      description,
+      assignedTo: worker
+        ? worker.userId || worker.workerId
+        : assignedTo,
+      assignedToName: worker?.name,
+      assignedToEmail: worker?.email,
+      assignedBy: user.userId,
+      assignedByName: user.name || user.email,
+      priority: priority || "Medium",
+      status: status || "Pending",
+      startDate,
+      dueDate,
+      remarks,
+      completionDescription,
+      completionLink,
+      createdBy: user.userId,
+      createdByName: user.name || user.email,
+    });
+
+    return NextResponse.json({ task }, { status: 201 });
+  } catch (error) {
+    console.error("POST construction task error:", error);
+
+    return NextResponse.json(
+      { error: "Failed to create construction task." },
+      { status: 500 }
+    );
+  }
 }

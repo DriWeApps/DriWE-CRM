@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { ErrorPopup } from "@/components/ui/error-popup";
 import { useParams, useRouter } from "next/navigation";
 import {
     ArrowLeft,
@@ -257,10 +258,10 @@ export default function ProjectWorkersPage() {
         } catch (err) {
             console.error(err);
 
-            alert(
+            setError(
                 err instanceof Error
                     ? err.message
-                    : "Failed to delete worker."
+                    : "Failed to delete worker. Please retry."
             );
         }
     }
@@ -299,6 +300,7 @@ export default function ProjectWorkersPage() {
 
     return (
         <div className="min-h-screen bg-white text-black">
+            <ErrorPopup message={error} onClose={() => setError("")} />
             <div className="mx-auto max-w-7xl px-6 py-8">
                 {/* Breadcrumb */}
                 <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-gray-500">
