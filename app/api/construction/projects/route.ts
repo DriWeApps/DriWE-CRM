@@ -77,17 +77,6 @@ const validWorkerTypes: WorkerType[] = [
     "Subcontractor",
 ];
 
-/**
- * GET /api/construction/projects
- *
- * Admin: all projects.
- * Project manager: projects assigned to them.
- * Construction employee: projects assigned to them.
- * Builder: projects created by their account.
- *
- * Each returned project includes workerCount.
- * Optional query: ?projectId=...
- */
 export async function GET(req: Request) {
     try {
         const user = await getUserFromRequest(req);
@@ -112,7 +101,6 @@ export async function GET(req: Request) {
             : await getProjects(getCompanyId(authUser));
 
         if (admin) {
-            // Admin can view all projects.
         } else if (manager) {
             projects = projects.filter(
                 (project) =>
@@ -147,7 +135,6 @@ export async function GET(req: Request) {
             );
         }
 
-        // Fetch workers for each individual project.
         const projectsWithWorkerCounts = await Promise.all(
             projects.map(async (project) => {
                 try {
@@ -166,8 +153,6 @@ export async function GET(req: Request) {
                         error
                     );
 
-                    // Avoid failing the entire project list if one
-                    // worker-count lookup fails.
                     return {
                         ...project,
                         workerCount: 0,
@@ -193,12 +178,6 @@ export async function GET(req: Request) {
     }
 }
 
-/**
- * POST /api/construction/projects
- *
- * Admin and builder accounts may create projects.
- * The server determines createdBy and companyId from the authenticated user.
- */
 export async function POST(req: Request) {
     let createdProjectId: string | null = null;
     let createdCompanyId: string | null = null;

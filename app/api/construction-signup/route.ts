@@ -59,7 +59,6 @@ export async function POST(req: Request) {
         ? body.password
         : "";
 
-    // Validate required fields.
     if (!firstName) {
       return NextResponse.json(
         { success: false, message: "First name is required." },
@@ -139,7 +138,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Prevent duplicate accounts.
     const existingUser = await getUserByEmail(email);
 
     if (existingUser) {
@@ -159,31 +157,23 @@ export async function POST(req: Request) {
 
     const hashedPassword = await hashPassword(password);
 
-    /*
-     * Public signup creates a builder account, NOT an admin.
-     * Never accept role, userId, or companyId from the request body.
-     */
     const role = "ConstructionBuilder";
     const portal = "construction" as const;
 
     const employee = {
       employeeId,
 
-      // Personal details
       firstName,
       lastName,
       email,
       mobile: contactNo,
 
-      // Company details
       companyName,
       companyGSTNo,
       companyPANNo,
 
-      // Location
       pincode,
 
-      // Account permissions
       designation: "Builder",
       department: "Construction",
       role,
@@ -191,7 +181,6 @@ export async function POST(req: Request) {
       portal,
       joiningDate: now.split("T")[0],
 
-      // Profile fields
       dateOfBirth: "",
       gender: "",
       address: "",
@@ -199,19 +188,14 @@ export async function POST(req: Request) {
       state: "",
       country: "India",
 
-      // No CRM page access by default
       pageAccess: [],
 
       createdAt: now,
       updatedAt: now,
     };
 
-    // Create employee profile.
     await createEmployee(employee);
-
-    // Create login user.
-    // A unique companyId isolates this builder's projects from
-    // other builders, provided project creation uses this companyId.
+    
     const user = await createUser({
       userId,
       employeeId,

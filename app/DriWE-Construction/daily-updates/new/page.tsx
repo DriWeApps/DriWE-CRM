@@ -1,4 +1,3 @@
-
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
@@ -40,9 +39,6 @@ export default function NewDailyUpdatePage() {
         tasksCompleted: "0",
         materialReceived: "0",
         materialUsed: "0",
-        issues: "0",
-        issueDescription: "",
-        note: "",
     });
 
     useEffect(() => {
@@ -124,9 +120,6 @@ export default function NewDailyUpdatePage() {
                     tasksCompleted: Number(form.tasksCompleted),
                     materialReceived: Number(form.materialReceived),
                     materialUsed: Number(form.materialUsed),
-                    issues: Number(form.issues),
-                    issueDescription: form.issueDescription,
-                    note: form.note,
                 }),
             });
 
@@ -346,85 +339,6 @@ export default function NewDailyUpdatePage() {
                         </div>
                     </section>
 
-                    {/* Issues */}
-                    <section className="w-full rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-7">
-                        <div className="mb-6 border-b border-gray-100 pb-5">
-                            <h2 className="flex items-center gap-2 text-lg font-semibold">
-                                <AlertTriangle size={19} className="text-black" />
-                                Site Issues
-                            </h2>
-                            <p className="mt-1 text-sm text-gray-500">
-                                Record any issues found during today's work.
-                            </p>
-                        </div>
-
-                        <div className="grid min-w-0 gap-5 lg:grid-cols-3">
-                            <div className="min-w-0">
-                                <NumberField
-                                    label="Number of Issues"
-                                    icon={<AlertTriangle size={17} />}
-                                    value={form.issues}
-                                    onChange={(value) =>
-                                        updateField("issues", value)
-                                    }
-                                />
-                            </div>
-
-                            <div className="min-w-0 lg:col-span-2">
-                                <label
-                                    htmlFor="issueDescription"
-                                    className="mb-2 block text-sm font-medium text-gray-700"
-                                >
-                                    Issue Description
-                                </label>
-
-                                <textarea
-                                    id="issueDescription"
-                                    value={form.issueDescription}
-                                    onChange={(e) =>
-                                        updateField(
-                                            "issueDescription",
-                                            e.target.value
-                                        )
-                                    }
-                                    rows={4}
-                                    placeholder="Describe the issues reported at the site..."
-                                    className={`${inputClass} resize-y`}
-                                />
-                            </div>
-                        </div>
-                    </section>
-
-                    {/* Note */}
-                    <section className="w-full rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-7">
-                        <div className="mb-5 border-b border-gray-100 pb-5">
-                            <h2 className="text-lg font-semibold">
-                                Site Note
-                            </h2>
-                            <p className="mt-1 text-sm text-gray-500">
-                                Add a summary of today's site activities.
-                            </p>
-                        </div>
-
-                        <label
-                            htmlFor="siteNote"
-                            className="mb-2 block text-sm font-medium text-gray-700"
-                        >
-                            Daily Summary
-                        </label>
-
-                        <textarea
-                            id="siteNote"
-                            value={form.note}
-                            onChange={(e) =>
-                                updateField("note", e.target.value)
-                            }
-                            rows={5}
-                            placeholder="Example: Foundation work completed for Block A. Electrical work started on the first floor..."
-                            className={`${inputClass} resize-y`}
-                        />
-                    </section>
-
                     {/* Actions */}
                     <div className="flex w-full flex-col-reverse gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:items-center sm:justify-end">
                         <Link
@@ -436,7 +350,11 @@ export default function NewDailyUpdatePage() {
 
                         <button
                             type="submit"
-                            disabled={saving || loadingProjects || projects.length === 0}
+                            disabled={
+                                saving ||
+                                loadingProjects ||
+                                projects.length === 0
+                            }
                             className="inline-flex items-center justify-center gap-2 rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             {saving ? (

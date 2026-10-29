@@ -96,9 +96,6 @@ async function findProject(
     return (project as ProjectRecord | null) ?? null;
 }
 
-/**
- * GET SINGLE PROJECT
- */
 export async function GET(
     req: Request,
     { params }: RouteContext
@@ -128,8 +125,6 @@ export async function GET(
 
         const project = await findProject(projectId, authUser);
 
-        // Return 404 for inaccessible projects to avoid revealing
-        // whether another builder's project exists.
         if (!project) {
             return NextResponse.json(
                 { success: false, message: "Project not found." },
@@ -171,9 +166,6 @@ export async function GET(
     }
 }
 
-/**
- * UPDATE PROJECT
- */
 export async function PUT(
     req: Request,
     { params }: RouteContext
@@ -215,8 +207,6 @@ export async function PUT(
             );
         }
 
-        // Only Admin or the builder who created the project can edit.
-        // Project managers and employees cannot edit project details.
         if (
             !admin &&
             (manager || existingProject.createdBy !== authUser.userId)
@@ -361,9 +351,6 @@ export async function PUT(
     }
 }
 
-/**
- * DELETE PROJECT
- */
 export async function DELETE(
     req: Request,
     { params }: RouteContext

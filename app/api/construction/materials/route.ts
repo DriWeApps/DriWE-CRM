@@ -38,6 +38,21 @@ type ConstructionProject = {
   projectName?: string;
   companyId: string;
   companyName?: string;
+
+  // Project ownership and manager assignment fields
+  createdBy?: string;
+  createdByEmail?: string;
+  projectCreatorId?: string;
+  projectManagerId?: string;
+  managerId?: string;
+  assignedManagerId?: string;
+  projectManagerEmail?: string;
+  managerEmail?: string;
+  assignedManagerEmail?: string;
+  assignedTo?: string;
+  assignedToEmail?: string;
+
+  [key: string]: any;
 };
 
 const VALID_STATUSES: MaterialStatus[] = [
@@ -52,6 +67,56 @@ const isConstructionAdmin = (user: ConstructionUser) =>
 
 const getCompanyId = (user: ConstructionUser) =>
   user.companyId || user.userId;
+
+/* ============================================================
+   PROJECT PERMISSIONS
+============================================================ */
+
+
+function canManageProject(
+  user: ConstructionUser,
+  project: ConstructionProject
+): boolean {
+  const userIdentifiers = [
+    user.userId,
+    user.email,
+    user.employeeId,
+  ]
+    .filter((value): value is string => Boolean(value))
+    .map((value) => value.trim().toLowerCase());
+
+  const creatorValues = [
+    project.createdBy,
+    project.projectCreatorId,
+    project.createdByEmail,
+  ]
+    .filter((value): value is string => Boolean(value))
+    .map((value) => value.trim().toLowerCase());
+
+  const managerValues = [
+    project.projectManagerId,
+    project.managerId,
+    project.assignedManagerId,
+    project.projectManagerEmail,
+    project.managerEmail,
+    project.assignedManagerEmail,
+    project.assignedTo,
+    project.assignedToEmail,
+  ]
+    .filter((value): value is string => Boolean(value))
+    .map((value) => value.trim().toLowerCase());
+
+  const isCreator = creatorValues.some((value) =>
+    userIdentifiers.includes(value)
+  );
+
+  const isProjectManager = managerValues.some((value) =>
+    userIdentifiers.includes(value)
+  );
+
+  return isCreator || isProjectManager;
+}
+
 
 /* ============================================================
    GET MATERIALS
@@ -111,8 +176,6 @@ export async function GET(req: Request) {
         );
       }
     } else if (siteId) {
-      // The existing service is company-scoped.
-      // Admins query each project's company to avoid cross-company leakage.
       if (isConstructionAdmin(user)) {
         const projects = (await getAllProjects()) as ConstructionProject[];
         const companyIds = [
@@ -131,20 +194,14 @@ export async function GET(req: Request) {
       const projects = (await getAllProjects()) as ConstructionProject[];
 
       const results = await Promise.all(
-        projects.map((project) =>
-          getMaterials(project.companyId)
-        )
+        projects.map((project) => getMaterials(project.companyId))
       );
 
-      // De-duplicate records if multiple projects share a company.
       const uniqueMaterials = new Map<string, any>();
 
       for (const group of results) {
         for (const material of group) {
-          uniqueMaterials.set(
-            material.materialId,
-            material
-          );
+          uniqueMaterials.set(material.materialId, material);
         }
       }
 
@@ -180,6 +237,7 @@ export async function GET(req: Request) {
 
 /* ============================================================
    CREATE MATERIAL
+   Only the project manager, project creator, or admin can create.
 ============================================================ */
 
 export async function POST(req: Request) {
@@ -192,21 +250,6 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
         { status: 401 }
-      );
-    }
-
-    if (
-      !isConstructionAdmin(user) &&
-      !["CONSTRUCTIONMANAGER", "MANAGER"].includes(
-        (user.role || "").toUpperCase()
-      )
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "You do not have permission to create materials",
-        },
-        { status: 403 }
       );
     }
 
@@ -340,7 +383,11 @@ export async function POST(req: Request) {
       );
     }
 
-    let project: any;
+    /*
+     * Load the actual project from the database.
+     * Never trust ownership or manager IDs supplied by the browser.
+     */
+    let project: ConstructionProject | null = null;
 
     if (isConstructionAdmin(user)) {
       const projects = (await getAllProjects()) as ConstructionProject[];
@@ -348,10 +395,10 @@ export async function POST(req: Request) {
       project =
         projects.find((item) => item.projectId === projectId) || null;
     } else {
-      project = await getProjectById(
+      project = (await getProjectById(
         projectId,
         getCompanyId(user)
-      );
+      )) as ConstructionProject | null;
     }
 
     if (!project) {
@@ -361,7 +408,28 @@ export async function POST(req: Request) {
       );
     }
 
-    // Always store the project's real company ID.
+    /*
+     * Authorization:
+     * - Admins can create materials.
+     * - The project creator can create materials.
+     * - The assigned project manager can create materials.
+     * - Everyone else is denied.
+     */
+    if (
+      !isConstructionAdmin(user) &&
+      !canManageProject(user, project)
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "You can create materials only for projects you created or manage.",
+        },
+        { status: 403 }
+      );
+    }
+
+    // Always use the actual project's company and identity.
     const companyId = project.companyId;
 
     const material = await createMaterial({
